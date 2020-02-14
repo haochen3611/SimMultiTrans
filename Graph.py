@@ -2,53 +2,76 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import json
+
+import logging
+
+from Node import Node
 
 class Graph(object):
-    def __init__(self):
-        self.graph_dic = {
-            'A': [('A1',1),('A2',1),('A3',1), ('B',2),('C',2)],
-            'A1': [('A',1), ('A2',1),('A3',1)],
-            'A2': [('A',1), ('A1',1),('A3',1)],
-            'A3': [('A',1), ('A2',1),('A1',1)],
-            'B': [('B1',1),('B2',1),('B3',1), ('A',2),('C',2)],
-            'B1': [('B',1), ('B2',1),('B3',1)],
-            'B2': [('B',1), ('B1',1),('B3',1)],
-            'B3': [('B',1) ,('B2',1),('B1',1)],
-            'C': [('C1',1),('C2',1),('C3',1), ('B',2),('A',2)],
-            'C1': [('C',1), ('C1',1),('C2',1)],
-            'C2': [('C',1), ('C1',1),('C3',1)],
-            'C3': [('C',1), ('C2',1),('C1',1)]
-        }
+    def __init__(self, file_name):
+        # generate graph
+        self.graph_dic = self.set_nodes_file(file_name)
 
+        # path ram
         self.garph_path = {}
+
+
+    def set_nodes_file(self, file_name):
+        with open('{}'.format(file_name)) as file_data:
+            return json.load(file_data)
+ 
+    def generate_nodes(self):
+        for node in self.graph_dic.keys():
+            # print(node, (self.graph_dic[node]['locx'], self.graph_dic[node]['locy']), self.graph_dic[node]['mode'].split(','))
+            n = Node( node, (self.graph_dic[node]['locx'], self.graph_dic[node]['locy']), self.graph_dic[node]['mode'].split(','))
+            # print(n.get_id())
+            self.graph_dic[node].update({'node': n})
+
+    def save_nodes_file(self, file_name):
+        with open('{}'.format(file_name), 'w') as file_data:
+            json.dump(self.graph_dic, file_data)
+
 
     def get_allnodes(self):
         return list(self.graph_dic.keys())
 
     def get_edge(self, ori, dest):
         if (ori in self.graph_dic) and (dest in self.graph_dic):
-            for e in self.graph_dic[ori]:
-                if e[0] == dest:
-                    return (ori, e)
-
+            if dest in self.graph_dic[ori]['nei'].keys():
+                return (ori, dest, self.graph_dic[ori]['nei'][dest])
+                    
 
     def get_path(self, ori, dest): 
-        if (ori in self.garph_path) and (dest not in self.garph_path[ori]):
+        if (ori in self.garph_path) and (dest in self.garph_path[ori]):
+            # print('path exists')
             return self.garph_path[ori][dest]
         else:
             path = []
-            dest_set = [ d[0] for d in self.graph_dic[ori] ]
-            if (dest in dest_set):
+            stops = ori
+            # by scooter
+            if (dest in self.graph_dic[ori]['nei']):
                 path.append(self.get_edge(ori, dest))
             else:
-                if (ori != ori[0]):
-                    path.append(self.get_edge(ori, ori[0]))
-                for d in self.graph_dic[ori[0]]:
-                    if (d[0] == dest[0]):
-                        path.append(self.get_edge(ori[0], dest[0]))
+                # find nearest bus stop
+                if ( 'bus' not in self.graph_dic[ori]['mode'].split(',') ):
+                    # print('find a bus stop')
+                    for busstop in self.graph_dic[ori]['nei']:
+                        # print(self.graph_dic[busstop]['mode'])
+                        if ('bus' in self.graph_dic[busstop]['mode'].split(',')):
+                            print(busstop)
+                            path.append(self.get_edge(ori, busstop))
+                            stops = busstop
                 
-                if (len(dest) != 1):
-                    path.append(self.get_edge(dest[0], dest))
+                # find transfer bus stop
+                if ( 'bus' in self.graph_dic[dest]['mode'].split(',') ):
+                    path.append(self.get_edge(stops, dest))
+                else:
+                    # travel by bus
+                    for busstop in self.graph_dic[dest]['nei']:
+                        if ('bus' in self.graph_dic[busstop]['mode'].split(',')):
+                            path.append(self.get_edge(stops, busstop))
+                            path.append(self.get_edge(busstop,dest))
             return path
         
     def save_path(self, ori, dest, path):
