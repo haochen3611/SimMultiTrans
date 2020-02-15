@@ -3,6 +3,7 @@
 
 import numpy as np
 import json
+import matplotlib.pyplot as plt
 
 from Node import Node
 
@@ -22,7 +23,7 @@ class Graph(object):
             self.graph_top = json.load(file_data)
  
     def generate_node(self, nid):
-        n = Node( nid, (self.graph_top[nid]['locx'], self.graph_top[nid]['locy']), self.graph_top[nid]['mode'].split(',') )
+        n = Node( nid, self.graph_top )
         # print(n.get_id())
         self.graph_top[nid].update({'node': n})
             
@@ -30,7 +31,7 @@ class Graph(object):
     def generate_nodes(self):
         for node in self.graph_top.keys():
             # print(node, (self.graph_top[node]['locx'], self.graph_top[node]['locy']), self.graph_top[node]['mode'].split(','))
-            n = Node( node, (self.graph_top[node]['locx'], self.graph_top[node]['locy']), self.graph_top[node]['mode'].split(',') )
+            n = Node( node, self.graph_top )
             # print(n.get_id())
             self.graph_top[node].update({'node': n})
 
@@ -122,3 +123,18 @@ class Graph(object):
         else:
             self.garph_path[ori][dest] = {path}
 
+    def plot_topology(self):
+        fig, ax = plt.subplots()
+        
+        x = [ self.get_node_location(node)[0] for node in self.graph_top ]
+        y = [ self.get_node_location(node)[1] for node in self.graph_top ]
+
+        color = np.random.randint(1, 100, size=len(self.get_allnodes()))
+        scale = 100
+        ax.scatter(x, y, c=color, s=scale, label=color,
+                alpha=0.8, edgecolors='none')
+
+        # ax.legend()
+        ax.grid(True)
+
+        plt.show()

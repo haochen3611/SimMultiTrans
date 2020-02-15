@@ -12,13 +12,15 @@ class Converter(object):
     def randon_graph(self, msize, modeset):
         '''create a graph with matrix M'''
         g = Graph()
+        np.random.seed(self.seed)
         M = np.random.randint(2, size=(msize, msize))
         
         transfer_mode = ','.join(modeset)
 
         max_localnodes = 4
-        
-        loc_set = np.random.randint(low=0, high=20*msize, size=(msize, 2))
+        map_scale = 20
+
+        loc_set = np.random.randint(low=0, high=map_scale*msize, size=(msize, 2))
         
         # generage transfer nodes and edges
         for ori in range(msize):
@@ -41,13 +43,13 @@ class Converter(object):
             (x, y) = g.get_node_location(t_node) 
 
             for l_node in range(M):
-                x = x + np.random.normal(1)
-                y = y + np.random.normal(1)
+                x = x + round(map_scale/msize * np.random.normal(1) ,2)
+                y = y + round(map_scale/msize * np.random.normal(1) ,2)
                 nid = t_node+chr(49+l_node)
                 g.add_node(nid=nid, locx=x, locy=y, mode=modeset[1])
                 # g.generate_node(nid='{}'.format(l_node))
                 
-                dist = round(g.get_L1dist(t_node, nid),2)
+                dist = g.get_L1dist(t_node, nid)
                 g.add_edge(ori=t_node, dest=nid, mode=modeset[1], dist=dist)
                 g.add_edge(ori=nid, dest=t_node, mode=modeset[1], dist=dist)
 

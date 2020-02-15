@@ -44,6 +44,7 @@ class Simulator(object):
             dest = random.choice(nodes_set)            
             return (ori, dest)
 
+    '''
     def import_passenger_attribute(self, file_name):
         with open('{}'.format(file_name)) as file_data:
             json_data = json.load(file_data)
@@ -61,6 +62,6 @@ class Simulator(object):
     def vehicle_generator(self):
         v = Vehicle(vid=0, mode='scooter', ori='A')
     
-    
+    '''    
 
 
