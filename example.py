@@ -4,16 +4,25 @@
 from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
-from Converter import Converter
+
+from Simulator import Simulator
 
 import numpy as np
 import random
 
 
 def main():
+    # create graph
     g = Graph()
     g.import_graph(file_name='city.json')
-    g.generate_nodes()
+    # g.plot_topology()
+
+    # setup simulator
+    simu = Simulator(graph=g, time_horizon=10000)
+    simu.start()
+    # simu.plot_passenger_queuelen(10000-1)
+    simu.animation(100)
+
     '''
     g.add_node(nid='a', locx=1, locy=2, mode='scooter')
     g.add_node(nid='b', locx=2, locy=2, mode='scooter,bus')
@@ -28,15 +37,6 @@ def main():
     # g.plot_topology()
     '''
 
-    for time in range(50):
-        print('time=', time)
-        for node in g.get_allnodes():
-            print('node=', node)
-            g.graph_top[node]['node'].syn_time(time)
-            g.graph_top[node]['node'].new_passenger_generator(g)
-
-    # p = Passenger(pid=1, ori='a', dest='c', arr_time=0)
-    # print(p.get_schdule(graph=g))
         
         
 

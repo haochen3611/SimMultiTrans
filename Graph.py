@@ -1,22 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from Node import Node
 
 import numpy as np
-import json
 import matplotlib.pyplot as plt
 
-from Node import Node
+import json
+
 
 class Graph(object):
     def __init__(self):
-        # generate graph
         self.graph_top = {}
+
+        # all edges
+        self.edges_set = []
 
         # path ram
         self.garph_path = {}
 
     def set_graph(self, graph):
         self.graph_top = graph
+
+    def get_graph_dic(self):
+        return self.graph_top
 
     def import_graph(self, file_name):
         with open('{}'.format(file_name)) as file_data:
@@ -57,9 +63,18 @@ class Graph(object):
         return list(self.graph_top.keys())
 
     def get_edge(self, ori, dest):
+        '''return (ori, dest) edges'''
         if (ori in self.graph_top) and (dest in self.graph_top):
             if dest in self.graph_top[ori]['nei'].keys():
                 return (ori, dest, self.graph_top[ori]['nei'][dest])
+
+    def get_all_edges(self):
+        '''return all edges'''
+        if ( not self.edges_set ):
+            for ori in self.graph_top:
+                self.edges_set.append( [ (ori ,dest) for dest in self.graph_top[ori]['nei'] ] )
+        return self.edges_set
+        
 
     def get_topology(self):
         return self.graph_top
@@ -123,18 +138,96 @@ class Graph(object):
         else:
             self.garph_path[ori][dest] = {path}
 
+
+    def randomize_graph(self, seed, msize, modeset, max_localnodes, map_scale):
+        np.random.seed(seed)
+        M = np.random.randint(2, size=(msize, msize))
+        self.graph_top = {}
+        self.garph_path = {}
+        
+        transfer_mode = ','.join(modeset)
+
+        loc_set = np.random.randint(low=0, high=map_scale*msize, size=(msize, 2))
+        
+        # generage transfer nodes and edges
+        for ori in range(msize):
+            self.add_node(nid=chr(65+ori), locx=loc_set[ori][0], locy=loc_set[ori][1], mode=transfer_mode)
+            # g.generate_node(nid='{}'.format(ori))
+
+            for dest in self.get_allnodes():
+                if (ori == dest):
+                    break
+                else:
+                    dist = self.get_L1dist(ori, dest)
+                    # symmetric edge
+                    self.add_edge(ori=ori, dest=dest, mode=modeset[0], dist=dist)
+                    self.add_edge(ori=dest, dest=ori, mode=modeset[0], dist=dist)
+        
+        print(self.get_allnodes())
+        # generate local nodes
+        for t_node in self.get_allnodes():
+            M = int(np.random.randint(max_localnodes, size=1))
+            (x, y) = self.get_node_location(t_node) 
+
+            for l_node in range(M):
+                x = x + round(map_scale/msize * np.random.normal(1) ,2)
+                y = y + round(map_scale/msize * np.random.normal(1) ,2)
+                nid = t_node+chr(49+l_node)
+                self.add_node(nid=nid, locx=x, locy=y, mode=modeset[1])
+                # g.generate_node(nid='{}'.format(l_node))
+                
+                dist = self.get_L1dist(t_node, nid)
+                self.add_edge(ori=t_node, dest=nid, mode=modeset[1], dist=dist)
+                self.add_edge(ori=nid, dest=t_node, mode=modeset[1], dist=dist)
+
+
     def plot_topology(self):
         fig, ax = plt.subplots()
         
         x = [ self.get_node_location(node)[0] for node in self.graph_top ]
         y = [ self.get_node_location(node)[1] for node in self.graph_top ]
 
-        color = np.random.randint(1, 100, size=len(self.get_allnodes()))
-        scale = 100
-        ax.scatter(x, y, c=color, s=scale, label=color,
-                alpha=0.8, edgecolors='none')
+        '''
+        alledges = self.get_all_edges()
+        # print(alledges)
+        loc = np.zeros(shape=(2,2))
+
+        for odlist in alledges:
+            for odpair in odlist:
+                loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
+                loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.5, ls='--', lw=2, zorder=1)
+        '''
+        fig, ax = self.plot_alledges(x,y)
+
+        # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
+        color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
+        scale = [ 300 if (',' in self.graph_top[node]['mode']) else 100 for node in self.graph_top ]
+
+        ax.scatter(x, y, c=color, s=scale, label=color, alpha=0.8, edgecolors='none', zorder=2)
 
         # ax.legend()
-        ax.grid(True)
+        plt.grid(True)
+        # plt.legend(loc='lower right', framealpha=1)
+        plt.xlabel('Latitude')
+        plt.ylabel('Longitude')
+        plt.title('City Topology')
 
-        plt.show()
+        plt.savefig('City_Topology.png', dpi=600)
+        # plt.show()
+
+    def plot_alledges(self, x, y):
+        fig, ax = plt.subplots()
+
+        alledges = self.get_all_edges()
+        # print(alledges)
+        loc = np.zeros(shape=(2,2))
+
+        for odlist in alledges:
+            for odpair in odlist:
+                loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
+                loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.5, ls='--', lw=2, zorder=1)
+
+        # plt.show()
+        return fig, ax
