@@ -1,6 +1,8 @@
-
+.__pycache__
 *.pyc
-*.json
 .DS_Store
 .vscode
-results/
+results
+.png
+.jpeg
+.jpg

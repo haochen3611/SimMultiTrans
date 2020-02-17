@@ -1,0 +1,28 @@
+{
+    "scooter": {
+        "cap": 1,
+        "pri_mtd": "dis",
+        "pri": 4,
+        "vel": 0.02,
+        "type": "priv",
+        "route": "",
+        "interval": "0 sec",
+        "distrib": {
+            "A": 10, "A1": 5, "A2": 5, "A3": 5,
+            "B": 10, "B1": 5, "B2": 5, "B3": 5,
+            "C": 10, "C1": 5, "C2": 5, "C3": 5
+        }
+    },
+    "bus": {
+        "cap": 80,
+        "pri_mtd": "fix",
+        "pri": 2,
+        "vel": 0.250,
+        "type": "publ",
+        "route": "A,B,C,B",
+        "interval": "30 min",
+        "distrib": {
+            "A": 1
+        }
+    }
+}
