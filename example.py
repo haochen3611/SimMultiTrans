@@ -14,14 +14,18 @@ import random
 def main():
     # create graph
     g = Graph()
+    # g.randomize_graph(seed=10, msize=10, modeset=['bus','scooter'], max_localnodes=5, mapscale=1000)
     g.import_graph(file_name='city.json')
     # g.plot_topology()
 
     # setup simulator
-    simu = Simulator(graph=g, time_horizon=10000)
+    simu = Simulator(graph=g)
+    simu.set_running_time(timehorizon=4, unit='hour')
+    simu.import_arrival_rate(file_name='arr_rate.csv', unit='hour')
+    simu.import_vehicle_attribute(file_name='vehicle.json')
     simu.start()
     # simu.plot_passenger_queuelen(10000-1)
-    simu.animation(100)
+    simu.animation(frames=100)
 
     '''
     g.add_node(nid='a', locx=1, locy=2, mode='scooter')

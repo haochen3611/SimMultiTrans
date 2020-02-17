@@ -8,10 +8,16 @@ class Passenger(object):
         self.dest = dest
         self.arr_time = arr_time
 
-        self.cur_loc = self.ori
+        self.loc = self.ori
         self.mode_wait = 0
 
         self.path = []
+
+    def get_id(self):
+        return self.id
+    
+    def get_odpair(self):
+        return (self.ori, self.dest)
 
     def get_schdule(self, graph):
         self.path = graph.get_path(self.ori, self.dest)
@@ -19,13 +25,28 @@ class Passenger(object):
         return self.path
 
     def set_location(self, loc):
-        self.cur_loc = loc
+        self.loc = loc
 
-    def getoff(self, pos):
-        # print(self.path)
-        res = next((e for e in self.path if e[1] == pos), False)
-        # print(res)
-        return True if res else False
+    def get_waitingmode(self, loc):
+        return self.path[loc]['info']['mode']
+
+    def geton(self, loc, mode):
+        print(self.path)
+        if ( loc in self.path ):
+            self.path[loc]['info']['mode'] == mode
+            return True
+        return False
+        # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
+
+    def getoff(self, loc):
+        # return True if next((edge for edge in self.path if edge[1] == loc), False) else False
+        for node in self.path:
+            if (self.path[node]['dest'] == loc):
+                return True
+        return False
+
+    def get_nextstop(self, loc):
+        return self.path[loc]['dest']
 
 
 

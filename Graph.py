@@ -5,6 +5,7 @@ from Node import Node
 import numpy as np
 import matplotlib.pyplot as plt
 
+import itertools as itt
 import json
 
 
@@ -27,21 +28,22 @@ class Graph(object):
     def import_graph(self, file_name):
         with open('{}'.format(file_name)) as file_data:
             self.graph_top = json.load(file_data)
+        self.generate_nodes()
  
     def generate_node(self, nid):
         n = Node( nid, self.graph_top )
         # print(n.get_id())
         self.graph_top[nid].update({'node': n})
-            
+        
 
     def generate_nodes(self):
-        for node in self.graph_top.keys():
+        for node in self.graph_top:
             # print(node, (self.graph_top[node]['locx'], self.graph_top[node]['locy']), self.graph_top[node]['mode'].split(','))
             n = Node( node, self.graph_top )
             # print(n.get_id())
             self.graph_top[node].update({'node': n})
 
-    def export_nodes(self, file_name):
+    def export_graph(self, file_name):
         with open('{}'.format(file_name), 'w') as file_data:
             json.dump(self.graph_top, file_data)
 
@@ -61,6 +63,9 @@ class Graph(object):
 
     def get_allnodes(self):
         return list(self.graph_top.keys())
+    
+    def get_size(self):
+        return len( self.graph_top )
 
     def get_edge(self, ori, dest):
         '''return (ori, dest) edges'''
@@ -99,17 +104,18 @@ class Graph(object):
 
     def get_path(self, ori, dest): 
         if (ori not in self.graph_top and dest not in self.graph_top):
-            return []
+            return {}
 
         if (ori in self.garph_path) and (dest in self.garph_path[ori]):
             # print('path exists')
             return self.garph_path[ori][dest]
         else:
-            path = []
+            path = {}
             stops = ori
             # by scooter
             if (dest in self.graph_top[ori]['nei']):
-                path.append(self.get_edge(ori, dest))
+                # path.append(self.get_edge(ori, dest))
+                path.update({ori: {'dest': dest, 'info': self.get_edge(ori, dest)[2]}})
             else:
                 # find nearest bus stop
                 if ( 'bus' not in self.graph_top[ori]['node'].get_mode() ):
@@ -118,18 +124,22 @@ class Graph(object):
                         # print(self.graph_top[busstop]['mode'])
                         if ( 'bus' in self.graph_top[busstop]['node'].get_mode() ):
                             # print(busstop)
-                            path.append(self.get_edge(ori, busstop))
+                            # path.append(self.get_edge(ori, busstop))
+                            path.update({ori: {'dest': busstop, 'info': self.get_edge(ori, busstop)[2]}})
                             stops = busstop
                 
                 # find transfer bus stop
                 if ( 'bus' in self.graph_top[dest]['node'].get_mode() ):
-                    path.append(self.get_edge(stops, dest))
+                    # path.append(self.get_edge(stops, dest))
+                    path.update({stops: {'dest': dest, 'info': self.get_edge(stops, dest)[2]}})
                 else:
                     # travel by bus
                     for busstop in self.graph_top[dest]['nei']:
                         if ( 'bus' in self.graph_top[busstop]['node'].get_mode() ):
-                            path.append(self.get_edge(stops, busstop))
-                            path.append(self.get_edge(busstop,dest))
+                            # path.append(self.get_edge(stops, busstop))
+                            # path.append(self.get_edge(busstop, dest))
+                            path.update({stops: {'dest': busstop, 'info': self.get_edge(stops, busstop)[2]}})
+                            path.update({busstop: {'dest': dest, 'info': self.get_edge(busstop, dest)[2]}})
             return path
         
     def save_path(self, ori, dest, path):
@@ -139,21 +149,21 @@ class Graph(object):
             self.garph_path[ori][dest] = {path}
 
 
-    def randomize_graph(self, seed, msize, modeset, max_localnodes, map_scale):
+    def randomize_graph(self, seed, msize, modeset, max_localnodes, mapscale):
         np.random.seed(seed)
-        M = np.random.randint(2, size=(msize, msize))
+        # top_matrix = np.random.randint(2, size=(msize, msize))
         self.graph_top = {}
         self.garph_path = {}
         
         transfer_mode = ','.join(modeset)
 
-        loc_set = np.random.randint(low=0, high=map_scale*msize, size=(msize, 2))
+        loc_set = np.random.randint(low=0, high=mapscale*msize, size=(msize, 2))
         
         # generage transfer nodes and edges
         for ori in range(msize):
             self.add_node(nid=chr(65+ori), locx=loc_set[ori][0], locy=loc_set[ori][1], mode=transfer_mode)
             # g.generate_node(nid='{}'.format(ori))
-
+            '''
             for dest in self.get_allnodes():
                 if (ori == dest):
                     break
@@ -162,16 +172,24 @@ class Graph(object):
                     # symmetric edge
                     self.add_edge(ori=ori, dest=dest, mode=modeset[0], dist=dist)
                     self.add_edge(ori=dest, dest=ori, mode=modeset[0], dist=dist)
+            '''
+        nodeperm = itt.permutations(self.get_allnodes(), 2)
+        for odpair in nodeperm:
+            dist = self.get_L1dist(odpair[0], odpair[1])
+            self.add_edge(ori=odpair[0], dest=odpair[1], mode=modeset[0], dist=dist)
+            self.add_edge(ori=odpair[1], dest=odpair[0], mode=modeset[0], dist=dist)
         
+        self.generate_nodes()
+
         print(self.get_allnodes())
         # generate local nodes
         for t_node in self.get_allnodes():
-            M = int(np.random.randint(max_localnodes, size=1))
+            top_matrix = int(np.random.randint(max_localnodes, size=1))
             (x, y) = self.get_node_location(t_node) 
 
-            for l_node in range(M):
-                x = x + round(map_scale/msize * np.random.normal(1) ,2)
-                y = y + round(map_scale/msize * np.random.normal(1) ,2)
+            for l_node in range(top_matrix):
+                x = x + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
+                y = y + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
                 nid = t_node+chr(49+l_node)
                 self.add_node(nid=nid, locx=x, locy=y, mode=modeset[1])
                 # g.generate_node(nid='{}'.format(l_node))
@@ -214,6 +232,7 @@ class Graph(object):
         plt.title('City Topology')
 
         plt.savefig('City_Topology.png', dpi=600)
+        print(self.graph_top)
         # plt.show()
 
     def plot_alledges(self, x, y):
@@ -227,7 +246,7 @@ class Graph(object):
             for odpair in odlist:
                 loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
                 loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
-                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.5, ls='--', lw=2, zorder=1)
+                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.3, ls='--', lw=2, zorder=1)
 
         # plt.show()
         return fig, ax
