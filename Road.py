@@ -40,7 +40,7 @@ class Road(object):
                 # leave_vehicle.append(v)
                 
                 logging.info('Time {}: {} leave road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
-                g.get_graph_dic()[self.dest]['node'].vehilce_arrival(v)
+                g.get_graph_dic()[self.dest]['node'].vehicle_arrive(v)
 
 
     

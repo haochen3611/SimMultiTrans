@@ -27,6 +27,10 @@ class Vehicle(object):
         if (self.type == 'publ'):
             self.route_set = self.route.split(',')
             self.loc = self.route_set[0]
+            self.nextstop = self.route_set[1]
+            # curloc = self.route_set.pop(0)
+            # self.route_set.append(curloc)
+            
 
     def get_id(self):
         return self.id
@@ -40,22 +44,49 @@ class Vehicle(object):
     def get_type(self):
         return self.type
 
-    def set_location(self, loc):
-        self.loc = loc
+    def reverse_route(self, loc):
+        if (loc == self.route_set[-1]):
+            self.route_set.reverse()
+            print(self.route_set)
+            self.nextstop = self.route_set[1]
     
     def set_destination(self, dest):
         if (self.type == 'priv'):
             self.nextstop = dest
-        else:
-            # self.nextstop = next(self.route_set)
+        elif (self.type == 'publ'):
             loc_index = self.route_set.index(self.loc)
-            self.nextstop = self.route_set[ (loc_index+1)%len(self.route_set) ]
+            self.nextstop = self.route_set[ loc_index+1 ]
+            '''
+            if (self.loc != self.route_set[-1]):
+                loc_index = self.route_set.index(self.loc)
+                # self.nextstop = self.route_set[ (loc_index+1)%len(self.route_set) ]
+                # self.nextstop = self.route_set[0]
+                # curloc = self.route_set.pop(0)
+                # self.route_set.append(curloc)
+                self.nextstop = self.route_set[ loc_index+1 ]
+            else:
+                self.nextstop = None
+            '''
+
+    def finalstop(self, loc):
+        return True if (loc == self.route_set[-1]) else False       
+
+    def get_parktime(self):
+        interval_str = self.interval.split(' ')
+        unit_trans = {
+            'day': 60*60*24,
+            'hour': 60*60,
+            'min': 60,
+            'sec': 1
+        }
+        # print(int(interval_str[0]) * unit_trans[interval_str[1]])
+        return int(interval_str[0]) * unit_trans[interval_str[1]]
 
     def get_destination(self):
         return self.nextstop
 
     def update_location(self, loc):
-        self.loc = loc
+        self.loc = loc            
 
     def get_passengers(self):
         return self.seats

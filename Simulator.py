@@ -99,7 +99,7 @@ class Simulator(object):
                     name_cnt += 1
                     v = Vehicle(vid=vid, mode=mode, loc=node)
                     v.set_attri(v_attri)
-                    self.graph.get_graph_dic()[node]['node'].vehilce_arrival(v)
+                    self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
 
 
     def set_running_time(self, timehorizon, unit):
@@ -132,6 +132,11 @@ class Simulator(object):
         print('Simulation started')
         logging.info('Simulation started at {}'.format(time()))
         start_time = time()
+
+        # p_test = Passenger(pid='B1A1',ori='B1',dest='A1',arr_time=0)
+        # p_test.get_schdule(self.graph)
+        # self.graph.get_graph_dic()['B1']['node'].passenger_arrive(p_test)
+
         for timestep in range(self.time_horizon):
             for node in self.graph.get_allnodes():
                 # print('node=', node)
@@ -142,7 +147,7 @@ class Simulator(object):
                     n.get_road()[road].syn_time(timestep)
                     n.get_road()[road].leave(self.graph)
 
-                n.new_passenger_arrival(self.graph)
+                n.new_passenger_arrive(self.graph)
                 n.match_demands(self.vehicel_attri)
                 self.passenger_queuelen[node][timestep] = len( n.get_passenger_queue() )
                 
@@ -219,11 +224,17 @@ class Simulator(object):
 
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
-        # ani.save('results/animation.mp4', fps=12, dpi=300)
+        '''
+        try:
+            os.remove('results/animation.log')
+        except OSError:
+            # logging.warning('Delete log file failed'.format(figs_path))
+            pass
+        ani.save('results/animation.mp4', fps=12, dpi=300)
         
         with open("results/animation.html", "w") as file_data:
             print(ani.to_html5_video(), file=file_data)
-        ''''''
+        '''
         # animation.to_html5_video()
-        # plt.show()
+        plt.show()
         

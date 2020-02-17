@@ -14,12 +14,12 @@
         }
     },
     "bus": {
-        "cap": 80,
+        "cap": 800,
         "pri_mtd": "fix",
         "pri": 2,
         "vel": 0.250,
         "type": "publ",
-        "route": "A,B,C,B",
+        "route": "A,B,C",
         "interval": "30 min",
         "distrib": {
             "A": 1

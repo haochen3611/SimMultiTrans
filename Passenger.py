@@ -32,9 +32,8 @@ class Passenger(object):
 
     def geton(self, loc, mode):
         print(self.path)
-        if ( loc in self.path ):
-            self.path[loc]['info']['mode'] == mode
-            return True
+        if ( loc in self.path and self.path[loc]['info']['mode'] == mode):
+                return True
         return False
         # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
 
@@ -42,6 +41,7 @@ class Passenger(object):
         # return True if next((edge for edge in self.path if edge[1] == loc), False) else False
         for node in self.path:
             if (self.path[node]['dest'] == loc):
+                del(self.path[node])
                 return True
         return False
 
