@@ -91,15 +91,24 @@ class Simulator(object):
         for mode in self.vehicel_attri:
             # self.vehicel[mode] = {}
             name_cnt = 0
+        
             # initialize vehilce distribution
             for node in self.vehicel_attri[mode]['distrib']:
+                interarrival = 0
                 for locv in range(self.vehicel_attri[mode]['distrib'][node]):
                     v_attri = self.vehicel_attri[mode]
                     vid = '{}{}'.format(mode, name_cnt)
                     name_cnt += 1
                     v = Vehicle(vid=vid, mode=mode, loc=node)
                     v.set_attri(v_attri)
-                    self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
+                    
+                    if (v.get_type() == 'publ'):
+                        # public vehicle wait at park
+                        self.graph.get_graph_dic()[node]['node'].vehicle_park(v, interarrival)
+                        interarrival += v.get_parktime()
+                    elif (v.get_type() == 'priv'):
+                        # private vehicle wait at node
+                        self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
 
 
     def set_running_time(self, timehorizon, unit):

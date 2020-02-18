@@ -30,10 +30,12 @@ class Passenger(object):
     def get_waitingmode(self, loc):
         return self.path[loc]['info']['mode']
 
-    def geton(self, loc, mode):
-        print(self.path)
-        if ( loc in self.path and self.path[loc]['info']['mode'] == mode):
-                return True
+    def geton(self, loc, v):
+        # print(self.path)
+        if ( loc in self.path and self.path[loc]['info']['mode'] == v.get_mode()):
+            # get on the correct vehicle (orientation)
+            v.match_route(loc, self.path[loc]['dest'])
+            return True
         return False
         # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
 

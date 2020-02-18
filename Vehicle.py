@@ -47,8 +47,11 @@ class Vehicle(object):
     def reverse_route(self, loc):
         if (loc == self.route_set[-1]):
             self.route_set.reverse()
-            print(self.route_set)
+            # print(self.route_set)
             self.nextstop = self.route_set[1]
+
+    def get_route(self):
+        return self.route_set
     
     def set_destination(self, dest):
         if (self.type == 'priv'):
@@ -69,7 +72,9 @@ class Vehicle(object):
             '''
 
     def finalstop(self, loc):
-        return True if (loc == self.route_set[-1]) else False       
+        if (self.type == 'publ'):
+            return True if (loc == self.route_set[-1]) else False       
+        return False
 
     def get_parktime(self):
         interval_str = self.interval.split(' ')
@@ -93,6 +98,14 @@ class Vehicle(object):
 
     def get_emptyseats(self):
         return (self.cap - len(self.seats))
+    
+    def match_route(self, ori, dest):
+        if (self.type == 'priv'):
+            return True
+        elif (ori == self.loc):
+            bufroute = self.route_set[ self.route_set.index(ori): ]
+            return True if dest in bufroute else False
+        return False
 
     def pickup(self, p):
         if (self.get_emptyseats() != 0):

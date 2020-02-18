@@ -95,6 +95,13 @@ class Node(object):
                 self.passenger.append(p)
                 logging.info('Time {}: Pas {} arrived at {}'.format(
                     self.time, p.get_id(), self.id))
+        
+        # if v arrive at final stop, then move to the park
+        if (v.finalstop(self.id)):
+            self.vehilce_leave(v)
+            self.vehicle_park(v, self.time+ v.get_parktime())
+            logging.info('Time {}: Vel {} parking at {}'.format(
+                self.time, v.get_id(), self.id))
 
     def vehilce_leave(self, v):
         self.vehicle[v.get_mode()].remove(v)
@@ -143,7 +150,8 @@ class Node(object):
                 mode = p.get_waitingmode(self.id)
                 if ( len(self.vehicle[mode]) != 0 ):
                     v = self.vehicle[mode][0]
-                    if (v.pickup(p)):
+
+                    if (v.pickup(p) and p.geton(self.id, v)):
                         v.set_destination(p.get_nextstop(self.id))
                         self.passenger_leave(p)
                         logging.info('Time {}: Pas {} takes {} at node {}'.format(
@@ -158,15 +166,9 @@ class Node(object):
         for mode in self.vehicle:
             if ( attri[mode]['type'] == 'publ' and len(self.vehicle[mode]) != 0):
                 for v in self.vehicle[mode]:
-                    if (v.finalstop(self.id)):
-                        self.vehilce_leave(v)
-                        self.vehicle_park(v, self.time+ v.get_parktime())
-                        logging.info('Time {}: Vel {} parking at {}'.format(
-                            self.time, v.get_id(), self.id))
-                    else:
-                        v.set_destination(None)
-                        self.vehilce_leave(v)
-                        self.road[v.get_destination()].arrive(v)
-        
+                    v.set_destination(None)
+                    self.vehilce_leave(v)
+                    self.road[v.get_destination()].arrive(v)
+    
                 
 

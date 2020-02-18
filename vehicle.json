@@ -22,7 +22,7 @@
         "route": "A,B,C",
         "interval": "30 min",
         "distrib": {
-            "A": 1
+            "A": 2, "C": 2
         }
     }
 }
