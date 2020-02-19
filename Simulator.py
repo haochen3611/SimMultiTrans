@@ -86,7 +86,15 @@ class Simulator(object):
     def import_vehicle_attribute(self, file_name):
         with open('{}'.format(file_name)) as file_data:
             self.vehicel_attri = json.load(file_data)
-        
+        '''
+        # check the input correctness
+        mode_list = []
+        for node in self.graph.get_allnodes():
+            modesinnodes = self.graph.get_graph_dic[node]['node'].get_mode()
+
+        for mode in self.vehicel_attri:
+        ''' 
+
         # generate vehicles
         for mode in self.vehicel_attri:
             # self.vehicel[mode] = {}
@@ -251,7 +259,7 @@ class Simulator(object):
             time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
             return scat,time,
 
-        print('Data processed')
+        print('Generate passenger queue ......', end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
         file_name = 'results/passenger_queue'
@@ -264,10 +272,10 @@ class Simulator(object):
         if (autosave):
             ani.save(file_name+'.mp4', fps=12, dpi=300)
         '''
-        with open("results/animation.html", "w") as file_data:
+        with open(file_name, "w") as file_data:
             print(ani.to_html5_video(), file=file_data)
         '''
-        print('Animation saved')
+        print('Done')
         # animation.to_html5_video()
         if (autoplay):
             plt.show()
@@ -308,7 +316,7 @@ class Simulator(object):
             time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
             return scat,time,
 
-        print('Data processed')
+        print('Generate {} queue ......'.format(mode), end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
         file_name = 'results/{}_queue'.format(mode)
@@ -321,10 +329,10 @@ class Simulator(object):
         if (autosave):
             ani.save(file_name+'.mp4', fps=12, dpi=300)
         '''
-        with open("results/animation.html", "w") as file_data:
+        with open(file_name, "w") as file_data:
             print(ani.to_html5_video(), file=file_data)
         '''
-        print('Animation saved')
+        print('Done')
         # animation.to_html5_video()
         if (autoplay):
             plt.show()
@@ -367,9 +375,9 @@ class Simulator(object):
             time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
             return scat,time,
 
-        print('Data processed')
+        print('Generate passenger and {} queue ......'.format(mode), end='')
         # Construct the animation, using the update function as the animation director.
-        ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
+        ani = animation.FuncAnimation(fig=fig, func=update, interval=300, frames=frames, repeat=True)
         file_name = 'results/{}_combined_queue'.format(mode)
         try:
             os.remove(file_name+'.mp4')
@@ -380,10 +388,10 @@ class Simulator(object):
         if (autosave):
             ani.save(file_name+'.mp4', fps=12, dpi=300)
         '''
-        with open("results/animation.html", "w") as file_data:
+        with open(file_name, "w") as file_data:
             print(ani.to_html5_video(), file=file_data)
         '''
-        print('Animation saved')
+        print('Done')
         # animation.to_html5_video()
         if (autoplay):
             plt.show()
