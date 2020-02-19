@@ -28,7 +28,7 @@
     },
     "A1": {
         "locx": 4,
-        "locy": 5,
+        "locy": 4,
         "mode": "scooter",
         "nei": {
             "A": {
@@ -46,8 +46,8 @@
         }
     },
     "A2": {
-        "locx": 4,
-        "locy": 4,
+        "locx": 3,
+        "locy": 6,
         "mode": "scooter",
         "nei": {
             "A1": {
@@ -65,7 +65,7 @@
         }
     },
     "A3": {
-        "locx": 5,
+        "locx": 6,
         "locy": 4,
         "mode": "scooter",
         "nei": {
@@ -112,7 +112,7 @@
     },
     "B1": {
         "locx": 14,
-        "locy": 5,
+        "locy": 4,
         "mode": "scooter",
         "nei": {
             "B": {
@@ -130,8 +130,8 @@
         }
     },
     "B2": {
-        "locx": 14,
-        "locy": 4,
+        "locx": 16,
+        "locy": 6,
         "mode": "scooter",
         "nei": {
             "B1": {
@@ -149,8 +149,8 @@
         }
     },
     "B3": {
-        "locx": 15,
-        "locy": 4,
+        "locx": 16,
+        "locy": 3,
         "mode": "scooter",
         "nei": {
             "B1": {
@@ -195,8 +195,8 @@
         }
     },
     "C1": {
-        "locx": 14,
-        "locy": 15,
+        "locx": 13,
+        "locy": 14,
         "mode": "scooter",
         "nei": {
             "C": {
@@ -215,7 +215,7 @@
     },
     "C2": {
         "locx": 14,
-        "locy": 14,
+        "locy": 16,
         "mode": "scooter",
         "nei": {
             "C1": {
@@ -233,8 +233,8 @@
         }
     },
     "C3": {
-        "locx": 15,
-        "locy": 14,
+        "locx": 16,
+        "locy": 15,
         "mode": "scooter",
         "nei": {
             "C1": {

@@ -20,12 +20,14 @@ def main():
 
     # setup simulator
     simu = Simulator(graph=g)
-    simu.set_running_time(timehorizon=4, unit='hour')
     simu.import_arrival_rate(file_name='arr_rate.csv', unit='hour')
     simu.import_vehicle_attribute(file_name='vehicle.json')
+
+    simu.set_running_time(timehorizon=4, unit='hour')
     simu.start()
     # simu.plot_passenger_queuelen(10000-1)
-    simu.animation(frames=100)
+    # simu.passenger_queue_animation(frames=100)
+    simu.combination_queue_animation(mode='scooter', frames=100, autosave=True)
 
     '''
     g.add_node(nid='a', locx=1, locy=2, mode='scooter')

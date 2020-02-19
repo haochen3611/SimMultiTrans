@@ -3,7 +3,7 @@
         "cap": 1,
         "pri_mtd": "dis",
         "pri": 4,
-        "vel": 0.02,
+        "vel": 0.1,
         "type": "priv",
         "route": "",
         "interval": "0 sec",

@@ -246,7 +246,7 @@ class Graph(object):
             for odpair in odlist:
                 loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
                 loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
-                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.3, ls='--', lw=2, zorder=1)
+                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
 
         # plt.show()
         return fig, ax

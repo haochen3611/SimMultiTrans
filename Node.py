@@ -23,8 +23,12 @@ class Node(object):
 
         self.time = 0
         # print(self.id, self.loc, self.mode)
-        self.passenger = []
+        # self.passenger = []
+        self.passenger = {}
         self.vehicle = {}
+        for mode in self.mode:
+            self.vehicle[mode] = []
+            self.passenger[mode] = []
 
         # default arrival process
         self.arr_rate = np.random.uniform(0, 0.5, 1)
@@ -36,8 +40,7 @@ class Node(object):
         self.arr_prob_set = self.random_exp_arrival_prob(5, len(graph_top))
         # print(self.arr_rate_set, np.sum(self.arr_rate_set))
 
-        for mode in self.mode:
-            self.vehicle[mode] = []
+        
     
     def get_id(self):
         return self.id
@@ -51,8 +54,9 @@ class Node(object):
     def get_road(self):
         return self.road
 
-    def get_passenger_queue(self):
-        return self.passenger
+    def get_passenger_queue(self, mode):
+        # return self.passenger
+        return self.passenger[mode]
     
     def get_vehicle_queue(self, mode):
         return self.vehicle[mode]
@@ -71,10 +75,14 @@ class Node(object):
         self.arr_prob_set = self.exp_arrival_prob(rate)
 
     def passenger_arrive(self, p):
-        self.passenger.append(p)
+        # self.passenger.append(p)
+        mode = p.get_waitingmode(self.id)
+        if (mode != None):
+            self.passenger[p.get_waitingmode(self.id)].append(p)
 
     def passenger_leave(self, p):
-        self.passenger.remove(p)
+        # self.passenger.remove(p)
+        self.passenger[p.get_waitingmode(self.id)].remove(p)
 
     def vehicle_park(self, v, leavetime):
         self.park.append( (v, leavetime) )
@@ -92,7 +100,8 @@ class Node(object):
                 logging.info('Time {}: Pas {} arrived at destination {} and quit'.format(
                     self.time, p.get_id(), self.id))
             else:
-                self.passenger.append(p)
+                # self.passenger.append(p)
+                self.passenger_arrive(p)
                 logging.info('Time {}: Pas {} arrived at {}'.format(
                     self.time, p.get_id(), self.id))
         
@@ -138,30 +147,28 @@ class Node(object):
     def match_demands(self, attri):
         # check if the vehicle leave the park
         for (v, time) in self.park:
-            # print(self.time, time)
             if (time <= self.time):
                 v.reverse_route(self.id)
                 self.park.remove( (v, time) )
-                # self.vehicle.append(v)
                 self.vehicle_arrive(v)
 
-        if (len(self.passenger) != 0):
-            for p in self.passenger:
-                mode = p.get_waitingmode(self.id)
-                if ( len(self.vehicle[mode]) != 0 ):
-                    v = self.vehicle[mode][0]
+        if ( len(self.passenger) != 0 ):
+            for mode in self.passenger:
+                for p in self.passenger[mode]:
+                    if ( len(self.vehicle[mode]) != 0 ):
+                        v = self.vehicle[mode][0]
 
-                    if (v.pickup(p) and p.geton(self.id, v)):
-                        v.set_destination(p.get_nextstop(self.id))
-                        self.passenger_leave(p)
-                        logging.info('Time {}: Pas {} takes {} at node {}'.format(
-                            self.time, p.get_id(), v.get_id(), self.id))
+                        if (v.pickup(p) and p.geton(self.id, v)):
+                            v.set_destination(p.get_nextstop(self.id))
+                            self.passenger_leave(p)
+                            logging.info('Time {}: Pas {} takes {} at node {}'.format(
+                                self.time, p.get_id(), v.get_id(), self.id))
 
-                        # if vehicle is full, then move to road
-                        if (v.get_emptyseats() == 0):
-                            self.vehilce_leave(v)
-                            self.road[v.get_destination()].arrive(v)
-        
+                            # if vehicle is full, then move to road
+                            if (v.get_emptyseats() == 0):
+                                self.vehilce_leave(v)
+                                self.road[v.get_destination()].arrive(v)
+
         # all public trans will leave
         for mode in self.vehicle:
             if ( attri[mode]['type'] == 'publ' and len(self.vehicle[mode]) != 0):
