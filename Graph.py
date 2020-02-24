@@ -235,18 +235,20 @@ class Graph(object):
         print(self.graph_top)
         # plt.show()
 
-    def plot_alledges(self, x, y):
-        fig, ax = plt.subplots()
+    def plot_alledges(self, x, y, method='matplotlib'):
+        if (method == 'matplotlib'):
+            plt.style.use('dark_background')
+            fig, ax = plt.subplots()
 
-        alledges = self.get_all_edges()
-        # print(alledges)
-        loc = np.zeros(shape=(2,2))
+            alledges = self.get_all_edges()
+            # print(alledges)
+            loc = np.zeros(shape=(2,2))
 
-        for odlist in alledges:
-            for odpair in odlist:
-                loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
-                loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
-                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
+            for odlist in alledges:
+                for odpair in odlist:
+                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
+                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                    ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
 
-        # plt.show()
-        return fig, ax
+            # plt.show()
+            return fig, ax

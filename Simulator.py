@@ -224,12 +224,7 @@ class Simulator(object):
         print('Plot saved to results/City_Topology.png')
 
 
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
-
-        fig, ax = self.graph.plot_alledges(x, y)
-
+    def passenger_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):
         color = [ self.passenger_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
 
@@ -262,6 +257,19 @@ class Simulator(object):
         print('Generate passenger queue ......', end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
+
+
+    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+
+        if (method == 'matplotlib'):
+            fig, ax = self.graph.plot_alledges(x, y, method)
+            ani = self.passenger_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
+        elif (method == 'plotly'):
+            return
+
+        
         file_name = 'results/passenger_queue'
         try:
             os.remove(file_name+'.mp4')
@@ -280,12 +288,7 @@ class Simulator(object):
         if (autoplay):
             plt.show()
 
-
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
-
-        fig, ax = self.graph.plot_alledges(x, y)
+    def vehicle_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):
         # print(self.vehicle_queuelen['A'][mode])
         color = [ self.vehicle_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
@@ -319,6 +322,19 @@ class Simulator(object):
         print('Generate {} queue ......'.format(mode), end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
+        return ani
+
+
+    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+
+        if (method == 'matplotlib'):
+            fig, ax = self.graph.plot_alledges(x, y, method)
+            ani = self.vehicle_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
+        elif (method == 'plotly'):
+            return
+
         file_name = 'results/{}_queue'.format(mode)
         try:
             os.remove(file_name+'.mp4')
@@ -327,23 +343,21 @@ class Simulator(object):
             pass
 
         if (autosave):
-            ani.save(file_name+'.mp4', fps=12, dpi=300)
-        '''
-        with open(file_name, "w") as file_data:
-            print(ani.to_html5_video(), file=file_data)
-        '''
+            if (method == 'matplotlib'):
+                ani.save(file_name+'.mp4', fps=12, dpi=300)
+            elif (method == 'plotly'):
+                return
+
         print('Done')
-        # animation.to_html5_video()
+
         if (autoplay):
-            plt.show()
+            if (method == 'matplotlib'):
+                plt.show()
+            elif (method == 'plotly'):
+                return
         
-
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
-
-        fig, ax = self.graph.plot_alledges(x, y)
-        # print(self.vehicle_queuelen['A'][mode])
+        
+    def combination_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):    
         color = [ (self.passenger_queuelen[node][mode][0] - self.vehicle_queuelen[node][mode][0]) 
             for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
@@ -378,6 +392,21 @@ class Simulator(object):
         print('Generate passenger and {} queue ......'.format(mode), end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=300, frames=frames, repeat=True)
+        return ani
+
+    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+
+        if (method == 'matplotlib'):
+            fig, ax = self.graph.plot_alledges(x, y, method)
+            ani = self.combination_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
+        elif (method == 'plotly'):
+            return
+
+        fig, ax = self.graph.plot_alledges(x, y)
+        # print(self.vehicle_queuelen['A'][mode])
+        
         file_name = 'results/{}_combined_queue'.format(mode)
         try:
             os.remove(file_name+'.mp4')
@@ -386,15 +415,18 @@ class Simulator(object):
             pass
         
         if (autosave):
-            ani.save(file_name+'.mp4', fps=12, dpi=300)
-        '''
-        with open(file_name, "w") as file_data:
-            print(ani.to_html5_video(), file=file_data)
-        '''
+            if (method == 'matplotlib'):
+                ani.save(file_name+'.mp4', fps=12, dpi=300)
+            elif (method == 'plotly'):
+                return
+
         print('Done')
-        # animation.to_html5_video()
+
         if (autoplay):
-            plt.show()
+            if (method == 'matplotlib'):
+                plt.show()
+            elif (method == 'plotly'):
+                return
 
 
 class MidpointNormalize(mpl.colors.Normalize):
