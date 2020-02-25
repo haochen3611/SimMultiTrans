@@ -4,6 +4,13 @@ from Node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly as pt
+import plotly.express as px
+import plotly.graph_objects as go
+
+import pandas as pd
+
+from urllib.request import urlopen
 
 import itertools as itt
 import json
@@ -17,7 +24,7 @@ class Graph(object):
         self.edges_set = []
 
         # path ram
-        self.garph_path = {}
+        self.graph_path = {}
 
     def set_graph(self, graph):
         self.graph_top = graph
@@ -106,9 +113,9 @@ class Graph(object):
         if (ori not in self.graph_top and dest not in self.graph_top):
             return {}
 
-        if (ori in self.garph_path) and (dest in self.garph_path[ori]):
+        if (ori in self.graph_path) and (dest in self.graph_path[ori]):
             # print('path exists')
-            return self.garph_path[ori][dest]
+            return self.graph_path[ori][dest]
         else:
             path = {}
             stops = ori
@@ -143,17 +150,17 @@ class Graph(object):
             return path
         
     def save_path(self, ori, dest, path):
-        if (ori in self.garph_path) and (dest not in self.garph_path[ori]):
+        if (ori in self.graph_path) and (dest not in self.graph_path[ori]):
             return
         else:
-            self.garph_path[ori][dest] = {path}
+            self.graph_path[ori][dest] = {path}
 
 
     def randomize_graph(self, seed, msize, modeset, max_localnodes, mapscale):
         np.random.seed(seed)
         # top_matrix = np.random.randint(2, size=(msize, msize))
         self.graph_top = {}
-        self.garph_path = {}
+        self.graph_path = {}
         
         transfer_mode = ','.join(modeset)
 
@@ -199,43 +206,47 @@ class Graph(object):
                 self.add_edge(ori=nid, dest=t_node, mode=modeset[1], dist=dist)
 
 
-    def plot_topology(self):
-        fig, ax = plt.subplots()
-        
+    def plot_topology(self, method='matplotlib'):
         x = [ self.get_node_location(node)[0] for node in self.graph_top ]
         y = [ self.get_node_location(node)[1] for node in self.graph_top ]
+        
+        if (method == 'matplotlib'):
+            fig, ax = plt.subplots()
+            fig, ax = self.plot_topology_edges(x, y, method)
 
-        '''
-        alledges = self.get_all_edges()
-        # print(alledges)
-        loc = np.zeros(shape=(2,2))
+            # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
+            color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
+            scale = [ 300 if (',' in self.graph_top[node]['mode']) else 100 for node in self.graph_top ]
 
-        for odlist in alledges:
-            for odpair in odlist:
-                loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
-                loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
-                ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.5, ls='--', lw=2, zorder=1)
-        '''
-        fig, ax = self.plot_alledges(x,y)
+            ax.scatter(x, y, c=color, s=scale, label=color, alpha=0.8, edgecolors='none', zorder=2)
 
-        # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
-        color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
-        scale = [ 300 if (',' in self.graph_top[node]['mode']) else 100 for node in self.graph_top ]
+            # ax.legend()
+            plt.grid(False)
+            # plt.legend(loc='lower right', framealpha=1)
+            plt.xlabel('Latitude')
+            plt.ylabel('Longitude')
+            plt.title('City Topology')
 
-        ax.scatter(x, y, c=color, s=scale, label=color, alpha=0.8, edgecolors='none', zorder=2)
+            plt.savefig('City_Topology.pdf', dpi=600)
+            print(self.graph_top)
+            return fig, ax
 
-        # ax.legend()
-        plt.grid(True)
-        # plt.legend(loc='lower right', framealpha=1)
-        plt.xlabel('Latitude')
-        plt.ylabel('Longitude')
-        plt.title('City Topology')
+        elif (method == 'plotly'):
+            fig = self.plot_topology_edges(x, y, method)
 
-        plt.savefig('City_Topology.png', dpi=600)
-        print(self.graph_top)
-        # plt.show()
+            # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
+            color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
+            scale = [ 40 if (',' in self.graph_top[node]['mode']) else 20 for node in self.graph_top ]
 
-    def plot_alledges(self, x, y, method='matplotlib'):
+            # fig.add_trace( go.Scatter(x=x, y=y, mode='markers', marker=dict(size=scale, color=color)) )
+            marker = go.scatter.Marker(size=scale, color=color, opacity=0.75, colorscale="Viridis")
+            fig.add_trace(go.Scatter(x=x, y=y, mode="markers", marker=marker, showlegend=False))
+
+            fig.write_image('City_Topology.png', width=800, height=600)
+            pt.offline.plot(fig, filename='City_Topology.html')
+
+
+    def plot_topology_edges(self, x, y, method='matplotlib'):
         if (method == 'matplotlib'):
             plt.style.use('dark_background')
             fig, ax = plt.subplots()
@@ -249,6 +260,23 @@ class Graph(object):
                     loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
                     loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
                     ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
-
-            # plt.show()
             return fig, ax
+        elif (method == 'plotly'):
+            fig = go.Figure()
+            fig.update_layout(template='plotly_dark')
+
+            alledges = self.get_all_edges()
+            # print(alledges)
+            loc = np.zeros(shape=(2,2))
+
+            for odlist in alledges:
+                for odpair in odlist:
+                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
+                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                    # ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
+                    fig.add_trace( go.Scatter(x=loc[0,:], y=loc[1,:], 
+                        mode='lines', opacity=0.2, showlegend=False, 
+                        line=dict(color='grey', width=2, dash='dash')) )
+            return fig
+        else:
+            return None

@@ -203,7 +203,7 @@ class Simulator(object):
         x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        fig, ax = self.graph.plot_alledges(x, y)
+        fig, ax = self.graph.plot_topology_edges(x, y)
         # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
         color = [ self.passenger_queuelen[node][time] for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
@@ -264,7 +264,7 @@ class Simulator(object):
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
         if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_alledges(x, y, method)
+            fig, ax = self.graph.plot_topology_edges(x, y, method)
             ani = self.passenger_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
         elif (method == 'plotly'):
             return
@@ -330,7 +330,7 @@ class Simulator(object):
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
         if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_alledges(x, y, method)
+            fig, ax = self.graph.plot_topology_edges(x, y, method)
             ani = self.vehicle_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
         elif (method == 'plotly'):
             return
@@ -399,12 +399,12 @@ class Simulator(object):
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
         if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_alledges(x, y, method)
+            fig, ax = self.graph.plot_topology_edges(x, y, method)
             ani = self.combination_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
         elif (method == 'plotly'):
             return
 
-        fig, ax = self.graph.plot_alledges(x, y)
+        fig, ax = self.graph.plot_topology_edges(x, y)
         # print(self.vehicle_queuelen['A'][mode])
         
         file_name = 'results/{}_combined_queue'.format(mode)

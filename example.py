@@ -4,10 +4,11 @@
 from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
-
 from Simulator import Simulator
 
 import numpy as np
+import dash
+
 import random
 
 
@@ -16,19 +17,19 @@ def main():
     g = Graph()
     # g.randomize_graph(seed=10, msize=10, modeset=['bus','scooter'], max_localnodes=5, mapscale=1000)
     g.import_graph(file_name='city.json')
-    # g.plot_topology()
+    g.plot_topology(method='plotly')
 
     # setup simulator
-    simu = Simulator(graph=g)
-    simu.import_arrival_rate(file_name='arr_rate.csv', unit='hour')
-    simu.import_vehicle_attribute(file_name='vehicle.json')
+    # simu = Simulator(graph=g)
+    # simu.import_arrival_rate(file_name='arr_rate.csv', unit='hour')
+    # simu.import_vehicle_attribute(file_name='vehicle.json')
 
-    simu.set_running_time(timehorizon=4, unit='hour')
-    simu.start()
+    # simu.set_running_time(timehorizon=4, unit='hour')
+    # simu.start()
     # simu.plot_passenger_queuelen(10000-1)
     # simu.passenger_queue_animation(frames=100)
-    simu.combination_queue_animation(mode='scooter', frames=100, autosave=True)
-    simu.combination_queue_animation(mode='bus', frames=100, autosave=True)
+    # simu.combination_queue_animation(mode='scooter', frames=100, autosave=True)
+    # simu.combination_queue_animation(mode='bus', frames=100, autosave=True)
 
     '''
     g.add_node(nid='a', locx=1, locy=2, mode='scooter')
@@ -44,8 +45,6 @@ def main():
     # g.plot_topology()
     '''
 
-        
-        
 
 
 if __name__ == "__main__":
