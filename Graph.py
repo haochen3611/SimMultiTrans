@@ -45,7 +45,7 @@ class Graph(object):
 
     def generate_nodes(self):
         for node in self.graph_top:
-            # print(node, (self.graph_top[node]['locx'], self.graph_top[node]['locy']), self.graph_top[node]['mode'].split(','))
+            # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['long']), self.graph_top[node]['mode'].split(','))
             n = Node( node, self.graph_top )
             # print(n.get_id())
             self.graph_top[node].update({'node': n})
@@ -54,11 +54,11 @@ class Graph(object):
         with open('{}'.format(file_name), 'w') as file_data:
             json.dump(self.graph_top, file_data)
 
-    def add_node(self, nid, locx, locy, mode):
+    def add_node(self, nid, lat, long, mode):
         if ( nid not in self.graph_top ):
             self.graph_top[nid] = {}
-            self.graph_top[nid]['locx'] = locx
-            self.graph_top[nid]['locy'] = locy
+            self.graph_top[nid]['lat'] = lat
+            self.graph_top[nid]['long'] = long
             self.graph_top[nid]['mode'] = mode
             self.graph_top[nid]['nei'] = {}
             
@@ -101,11 +101,11 @@ class Graph(object):
             return False
 
     def get_node_location(self, node):
-        return (self.graph_top[node]['locx'], self.graph_top[node]['locy'])
+        return (self.graph_top[node]['lat'], self.graph_top[node]['long'])
     
     def get_L1dist(self, ori, dest):
         if ( self.node_exists(ori) and self.node_exists(dest) ):
-            return np.abs(self.graph_top[ori]['locx']-self.graph_top[dest]['locx']) + np.abs(self.graph_top[ori]['locy']-self.graph_top[dest]['locy'])
+            return np.abs(self.graph_top[ori]['lat']-self.graph_top[dest]['lat']) + np.abs(self.graph_top[ori]['long']-self.graph_top[dest]['long'])
         else:
             return 0
 
@@ -184,7 +184,7 @@ class Graph(object):
         
         # generage transfer nodes and edges
         for ori in range(msize):
-            self.add_node(nid=chr(65+ori), locx=loc_set[ori][0], locy=loc_set[ori][1], mode=transfer_mode)
+            self.add_node(nid=chr(65+ori), lat=loc_set[ori][0], long=loc_set[ori][1], mode=transfer_mode)
             # g.generate_node(nid='{}'.format(ori))
             '''
             for dest in self.get_allnodes():
@@ -214,7 +214,7 @@ class Graph(object):
                 x = x + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
                 y = y + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
                 nid = t_node+chr(49+l_node)
-                self.add_node(nid=nid, locx=x, locy=y, mode=modeset[1])
+                self.add_node(nid=nid, lat=x, long=y, mode=modeset[1])
                 # g.generate_node(nid='{}'.format(l_node))
                 
                 dist = self.get_L1dist(t_node, nid)
@@ -239,7 +239,7 @@ class Graph(object):
             # ax.legend()
             plt.grid(False)
             # plt.legend(loc='lower right', framealpha=1)
-            plt.xlabel('Latitude')
+            plt.xlabel('lat1itude')
             plt.ylabel('Longitude')
             plt.title('City Topology')
 
@@ -273,8 +273,8 @@ class Graph(object):
 
             for odlist in alledges:
                 for odpair in odlist:
-                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
-                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['lat'], self.graph_top[odpair[0]]['long']])
+                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['lat'], self.graph_top[odpair[1]]['long']])
                     ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
             return fig
         elif (method == 'plotly'):
@@ -287,8 +287,8 @@ class Graph(object):
 
             for odlist in alledges:
                 for odpair in odlist:
-                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
-                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
+                    loc[:,0] = np.array( [self.graph_top[odpair[0]]['lat'], self.graph_top[odpair[0]]['long']])
+                    loc[:,1] = np.array( [self.graph_top[odpair[1]]['lat'], self.graph_top[odpair[1]]['long']])
                     # ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
                     fig.add_trace( go.Scatter(x=loc[0,:], y=loc[1,:], 
                         mode='lines', opacity=0.2, showlegend=False, 

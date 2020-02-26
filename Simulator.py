@@ -5,6 +5,7 @@ from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
 from Node import Node
+from Converter import MidpointNormalize
 
 import numpy as np
 import matplotlib as mpl
@@ -24,10 +25,11 @@ import json
 import os
 import logging
 from time import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Simulator(object):
     def __init__(self, graph):
+        self.start_time = 0
         self.time_horizon = 100
         self.time = 0
 
@@ -123,13 +125,14 @@ class Simulator(object):
                         self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
 
 
-    def set_running_time(self, timehorizon, unit):
+    def set_running_time(self, starttime, timehorizon, unit):
         unit_trans = {
             'day': 60*60*24,
             'hour': 60*60,
             'min': 60,
             'sec': 1
         }
+        self.start_time = datetime.strptime(starttime, '%H:%M:%S')
         self.time_horizon = int(timehorizon*unit_trans[unit])
         print('Time horizon: {}'.format(self.time_horizon))
 
@@ -204,8 +207,8 @@ class Simulator(object):
         
 
     def plot_passenger_queuelen(self, time):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
         fig, ax = self.graph.plot_topology_edges(x, y)
         # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
@@ -214,7 +217,7 @@ class Simulator(object):
 
         norm = mpl.colors.Normalize(vmin=0, vmax=self.time_horizon)
         
-        plt.scatter(x, y, c=color, s=scale, cmap='Reds', label=color, norm=norm, zorder=2, alpha=0.8, edgecolors='none')
+        plt.scatter(x=lon, y=lat, c=color, s=scale, cmap='Reds', label=color, norm=norm, zorder=2, alpha=0.8, edgecolors='none')
         cbar = plt.colorbar()
 
         # ax.legend()
@@ -262,7 +265,7 @@ class Simulator(object):
         # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
         # set 0 be white
         zp = np.abs(result.min())/(result.max() - result.min())
-        colorsacle = [ [0, '#0277BD'], [zp, '#FAFAFA'], [1, '#C62828'] ]
+        colorsacle = [ [0, '#33691E'], [zp, '#FAFAFA'], [1, '#FF6F00'] ]
 
         data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
             # 'text': list(dataset_by_year_and_cont['country']),
@@ -283,9 +286,10 @@ class Simulator(object):
             frame['data'].append(data_dict)
 
             fig_dict['frames'].append(frame)
+            frame_time = timedelta(seconds=frame_index*self.time_horizon/frames) + self.start_time
             slider_step = {'args': [ 
                 [frame_index], {'frame': {'duration': 300, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
-                'label': frame_index, 'method': 'animate'}
+                'label': frame_time.strftime('%H:%M'), 'method': 'animate'}
             sliders_dict['steps'].append(slider_step)
 
         fig_dict['layout']['sliders'] = [sliders_dict]
@@ -349,14 +353,14 @@ class Simulator(object):
 
 
     def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        fig = self.graph.plot_topology_edges(x, y, method)
+        fig = self.graph.plot_topology_edges(lon, lat, method)
         if (method == 'matplotlib'):
-            ani = self.passenger_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.passenger_queue_animation_matplotlib(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
         elif (method == 'plotly'):
-            ani = self.passenger_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.passenger_queue_animation_plotly(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
         
         file_name = 'results/passenger_queue'
         try:
@@ -431,15 +435,15 @@ class Simulator(object):
 
 
     def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        fig = self.graph.plot_topology_edges(x, y, method)
+        fig = self.graph.plot_topology_edges(lon, lat, method)
 
         if (method == 'matplotlib'):
-            ani = self.vehicle_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.vehicle_queue_animation_matplotlib(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
         elif (method == 'plotly'):
-            ani = self.vehicle_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.vehicle_queue_animation_plotly(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
 
         file_name = 'results/{}_queue'.format(mode)
         try:
@@ -517,15 +521,15 @@ class Simulator(object):
 
 
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
+        lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        fig = self.graph.plot_topology_edges(x, y, method)
+        fig = self.graph.plot_topology_edges(lon, lat, method)
 
         if (method == 'matplotlib'):
-            ani = self.combination_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.combination_queue_animation_matplotlib(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
         elif (method == 'plotly'):
-            ani = self.combination_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
+            ani = self.combination_queue_animation_plotly(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
 
         file_name = 'results/{}_combined_queue'.format(mode)
         try:
@@ -546,13 +550,3 @@ class Simulator(object):
                 pt.offline.plot(ani, filename=file_name+'.html')
 
 
-class MidpointNormalize(mpl.colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, vcenter=None, clip=False):
-        self.vcenter = vcenter
-        mpl.colors.Normalize.__init__(self, vmin, vmax, clip)
-
-    def __call__(self, value, clip=None):
-        # I'm ignoring masked values and all kinds of edge cases to make a
-        # simple example...
-        x, y = [self.vmin, self.vcenter, self.vmax], [0, 0.5, 1]
-        return np.ma.masked_array(np.interp(value, x, y))

@@ -24,7 +24,8 @@ class Road(object):
         return self.vehicle
 
     def arrive(self, v):
-        leave_time = self.time + int(self.dist/v.get_velocity())
+        time = int(self.dist/v.get_velocity('m/s'))
+        leave_time = self.time + time
         self.vehicle.append( (v, leave_time) )
         logging.info('Time {}: {} arrive at road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
 

@@ -5,7 +5,10 @@ from Passenger import Passenger
 from Vehicle import Vehicle
 from Road import Road
 
+from Converter import Haversine
+
 import numpy as np
+
 
 import logging
 
@@ -13,12 +16,18 @@ class Node(object):
     def __init__(self, nid, graph_top):
         self.id = nid
 
-        self.loc = (graph_top[nid]['locx'], graph_top[nid]['locy'])
+        self.loc = (graph_top[nid]['lat'], graph_top[nid]['long'])
         self.mode = graph_top[nid]['mode'].split(',')
 
         self.road = {}
         for dest in graph_top[nid]['nei']:
-            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'])
+            # distance can be set by L1 norm
+            dist = graph_top[nid]['nei'][dest]['dist']
+            # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['long'])
+            L1dist = Haversine( (self.loc[0], self.loc[1]), (graph_top[dest]['lat'], graph_top[dest]['long']) ).meters
+            if (dist <= 0.5* L1dist):
+                dist = L1dist
+            r = Road(ori=nid, dest=dest, dist=dist)
             self.road[dest] = r
 
         self.time = 0

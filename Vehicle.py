@@ -38,8 +38,15 @@ class Vehicle(object):
     def get_mode(self):
         return self.mode
 
-    def get_velocity(self):
-        return self.vel
+    def get_velocity(self, unit):
+        unit_trans = {
+            'm/s': 0.44704,
+            'mph': 1,
+            'km/h': 1.60934,
+        }
+        if (unit not in unit_trans):
+            unit = 'm/s'
+        return (self.vel * unit_trans[unit])
     
     def get_type(self):
         return self.type
