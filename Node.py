@@ -77,6 +77,7 @@ class Node(object):
     def passenger_arrive(self, p):
         # self.passenger.append(p)
         mode = p.get_waitingmode(self.id)
+        # print(mode)
         if (mode != None):
             self.passenger[p.get_waitingmode(self.id)].append(p)
 

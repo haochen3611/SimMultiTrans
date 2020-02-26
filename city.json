@@ -1,252 +1,252 @@
 {
     "A": {
-        "locx": 5,
-        "locy": 5,
-        "mode": "scooter,bus",
+        "locx": 39.999517,
+        "locy": -83.014642,
+        "mode": "scooter,bus,taxi",
         "nei": {
             "A1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "A2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "A3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             },
             "B": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 100
             },
             "C": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 200
             }
         }
     },
     "A1": {
-        "locx": 4,
-        "locy": 4,
-        "mode": "scooter",
+        "locx": 39.960395,
+        "locy": -82.989773,
+        "mode": "scooter,taxi",
         "nei": {
             "A": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "A2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "A3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "A2": {
-        "locx": 3,
-        "locy": 6,
-        "mode": "scooter",
+        "locx": 39.959236,
+        "locy": -82.998964,
+        "mode": "scooter,taxi",
         "nei": {
             "A1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "A": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "A3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "A3": {
-        "locx": 6,
-        "locy": 4,
-        "mode": "scooter",
+        "locx": 39.961448,
+        "locy": -82.998463,
+        "mode": "scooter,taxi",
         "nei": {
             "A1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "A2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "A": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "B": {
-        "locx": 15,
-        "locy": 5,
-        "mode": "scooter,bus",
+        "locx": 39.958346,
+        "locy": -82.996252,
+        "mode": "scooter,bus,taxi",
         "nei": {
             "B1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "B2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "B3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             },
             "A": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 100
             },
             "C": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 120
             }
         }
     },
     "B1": {
-        "locx": 14,
-        "locy": 4,
-        "mode": "scooter",
+        "locx": 40.001835,
+        "locy": -83.019627,
+        "mode": "scooter,taxi",
         "nei": {
             "B": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "B2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "B3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "B2": {
-        "locx": 16,
-        "locy": 6,
-        "mode": "scooter",
+        "locx": 40.001712,
+        "locy": -83.013287,
+        "mode": "scooter,taxi",
         "nei": {
             "B1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "B": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "B3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "B3": {
-        "locx": 16,
-        "locy": 3,
-        "mode": "scooter",
+        "locx": 39.998094,
+        "locy": -83.008385,
+        "mode": "scooter,taxi",
         "nei": {
             "B1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "B2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "B": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "C": {
-        "locx": 15,
-        "locy": 15,
-        "mode": "scooter,bus",
+        "locx": 40.067011,
+        "locy": -83.090108,
+        "mode": "scooter,bus,taxi",
         "nei": {
             "C1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "C2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "C3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             },
             "B": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 120
             },
             "A": {
-                "mode": "bus",
+                "mode": "bus,taxi",
                 "dist": 200
             }
         }
     },
     "C1": {
-        "locx": 13,
-        "locy": 14,
-        "mode": "scooter",
+        "locx": 40.066559,
+        "locy": -83.096685,
+        "mode": "scooter,taxi",
         "nei": {
             "C": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "C2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "C3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "C2": {
-        "locx": 14,
-        "locy": 16,
-        "mode": "scooter",
+        "locx": 40.066143,
+        "locy": -83.080183,
+        "mode": "scooter,taxi",
         "nei": {
             "C1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "C": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "C3": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }
     },
     "C3": {
-        "locx": 16,
-        "locy": 15,
-        "mode": "scooter",
+        "locx": 40.064104,
+        "locy": -83.090446,
+        "mode": "scooter,taxi",
         "nei": {
             "C1": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 10
             },
             "C2": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 11
             },
             "C": {
-                "mode": "scooter",
+                "mode": "scooter,taxi",
                 "dist": 13
             }
         }

@@ -24,5 +24,17 @@
         "distrib": {
             "A": 2, "C": 2
         }
+    },
+    "taxi": {
+        "cap": 1,
+        "pri_mtd": "dis",
+        "pri": 6,
+        "vel": 0.50,
+        "type": "priv",
+        "route": "",
+        "interval": "0 sec",
+        "distrib": {
+            "A": 4, "B": 4, "C": 4
+        }
     }
 }

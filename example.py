@@ -29,6 +29,7 @@ def main():
     # simu.plot_passenger_queuelen(10000-1)
     # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True, method='plotly')
     # simu.vehicle_queue_animation(mode='scooter', frames=100, autoplay=True, method='plotly')
+    # simu.combination_queue_animation(mode='scooter', frames=100, autoplay=True)
     simu.combination_queue_animation(mode='scooter', frames=100, autoplay=True, method='plotly')
     # simu.combination_queue_animation(mode='bus', frames=100, autosave=True)
 

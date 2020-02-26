@@ -259,7 +259,11 @@ class Simulator(object):
 
         # make data
         time = 0
-        colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
+        # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
+        # set 0 be white
+        zp = np.abs(result.min())/(result.max() - result.min())
+        colorsacle = [ [0, '#0277BD'], [zp, '#FAFAFA'], [1, '#C62828'] ]
+
         data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
             # 'text': list(dataset_by_year_and_cont['country']),
             'marker': { 'sizemode': 'area', 'size': scale, 'color': color[:, 0], 'colorscale': colorsacle,
