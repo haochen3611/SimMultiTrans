@@ -260,7 +260,7 @@ class Graph(object):
                     loc[:,0] = np.array( [self.graph_top[odpair[0]]['locx'], self.graph_top[odpair[0]]['locy']])
                     loc[:,1] = np.array( [self.graph_top[odpair[1]]['locx'], self.graph_top[odpair[1]]['locy']])
                     ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
-            return fig, ax
+            return fig
         elif (method == 'plotly'):
             fig = go.Figure()
             fig.update_layout(template='plotly_dark')

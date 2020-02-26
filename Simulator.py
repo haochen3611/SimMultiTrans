@@ -11,6 +11,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pandas as pd
+import plotly as pt
+import plotly.express as px
+import plotly.graph_objects as go
+
 import itertools as itt
 
 from IPython.display import HTML
@@ -156,7 +160,7 @@ class Simulator(object):
         # p_test.get_schdule(self.graph)
         # self.graph.get_graph_dic()['B1']['node'].passenger_arrive(p_test)
 
-        # queuelength_str = ""
+        # queuelength_str = ''
 
         for timestep in range(self.time_horizon):
             for node in self.graph.get_allnodes():
@@ -224,7 +228,70 @@ class Simulator(object):
         print('Plot saved to results/City_Topology.png')
 
 
-    def passenger_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):
+    def plotly_sactter_animation_data(self, frames, x, y, color, scale, result):
+
+        fig_dict = {'data': [], 'layout': {}, 'frames': []}
+
+        # fill in most of layout
+        fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
+        fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['sliders'] = {
+            'args': [ 'transition', { 'duration': 400, 'easing': 'cubic-in-out' } ],
+            'initialValue': '0', 'plotlycommand': 'animate', 'values': range(frames), 'visible': True
+        }
+        fig_dict['layout']['updatemenus'] = [ {
+                'buttons': [ 
+                    { 'args': [None, {'frame': {'duration': 500, 'redraw': False},
+                      'fromcurrent': True, 'transition': {'duration': 300, 'easing': 'quadratic-in-out'}}],
+                      'label': 'Play', 'method': 'animate' },
+                    { 'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 0}}],
+                      'label': 'Pause', 'method': 'animate' }
+                ],
+                'direction': 'left', 'pad': {'r': 10, 't': 87}, 
+                'showactive': False, 'type': 'buttons',  'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
+            }  ]
+
+        sliders_dict = { 'active': 0, 'yanchor': 'top', 'xanchor': 'left', 
+            'currentvalue': { 'font': {'size': 20}, 'prefix': 'Time:', 'visible': True, 'xanchor': 'right' },
+            'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
+            'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []  }
+
+        # make data
+        time = 0
+        colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
+        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
+            # 'text': list(dataset_by_year_and_cont['country']),
+            'marker': { 'sizemode': 'area', 'size': scale, 'color': color[:, 0], 'colorscale': colorsacle,
+                          'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+        }
+        fig_dict['data'].append(data_dict)
+
+        # make frames
+        for frame_index in range(frames):
+            frame = {'data': [], 'name': str(frame_index)}
+
+            data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
+            # 'text': list(dataset_by_year_and_cont['country']),
+            'marker': { 'sizemode': 'area', 'size': scale, 'color': color[:, frame_index], 'colorscale': colorsacle,
+                          'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+            }
+            frame['data'].append(data_dict)
+
+            fig_dict['frames'].append(frame)
+            slider_step = {'args': [ 
+                [frame_index], {'frame': {'duration': 300, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
+                'label': frame_index, 'method': 'animate'}
+            sliders_dict['steps'].append(slider_step)
+
+        fig_dict['layout']['sliders'] = [sliders_dict]
+
+        fig = go.Figure(fig_dict)
+        fig.update_layout(template='plotly_dark')
+        return fig
+
+        
+    def passenger_queue_animation_matplotlib(self, fig, x, y, mode, frames):
         color = [ self.passenger_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
 
@@ -244,9 +311,9 @@ class Simulator(object):
         # add another axes at the top left corner of the figure
         axtext = fig.add_axes([0.0,0.95,0.1,0.05])
         # turn the axis labels/spines/ticks off
-        axtext.axis("off")
+        axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha="left", va="top")
+        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( scale )
@@ -254,21 +321,38 @@ class Simulator(object):
             time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
             return scat,time,
 
-        print('Generate passenger queue ......', end='')
+        print('Generate Passenger queue ......'.format(mode), end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
+        return ani
+
+
+    def passenger_queue_animation_plotly(self, fig, x, y, mode, frames):
+        
+        color = [ self.passenger_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
+        scale = [ 60 if (',' in self.graph.get_graph_dic()[node]['mode']) else 30 for node in self.graph.get_graph_dic() ]
+
+        result = np.array([self.passenger_queuelen[node][mode] for node in self.passenger_queuelen])
+
+        color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        for frame_index in range(0, int(frames)):
+            color_set[:, frame_index] = [ self.passenger_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] 
+                for node in self.graph.get_graph_dic() ]
+
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        
+        return fig
 
 
     def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
         x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
+        fig = self.graph.plot_topology_edges(x, y, method)
         if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_topology_edges(x, y, method)
-            ani = self.passenger_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
+            ani = self.passenger_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
         elif (method == 'plotly'):
-            return
-
+            ani = self.passenger_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
         
         file_name = 'results/passenger_queue'
         try:
@@ -279,16 +363,17 @@ class Simulator(object):
         
         if (autosave):
             ani.save(file_name+'.mp4', fps=12, dpi=300)
-        '''
-        with open(file_name, "w") as file_data:
-            print(ani.to_html5_video(), file=file_data)
-        '''
+
         print('Done')
         # animation.to_html5_video()
         if (autoplay):
-            plt.show()
+            if (method == 'matplotlib'):
+                plt.show()
+            elif (method == 'plotly'):
+                pt.offline.plot(ani, filename=file_name+'.html')
 
-    def vehicle_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):
+
+    def vehicle_queue_animation_matplotlib(self, fig, x, y, mode, frames):
         # print(self.vehicle_queuelen['A'][mode])
         color = [ self.vehicle_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
@@ -301,7 +386,6 @@ class Simulator(object):
         cbar = plt.colorbar()
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-
         for frame in range(0, int(frames)):
             color_set[:, frame] = [ self.vehicle_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
@@ -309,9 +393,9 @@ class Simulator(object):
         # add another axes at the top left corner of the figure
         axtext = fig.add_axes([0.0,0.95,0.1,0.05])
         # turn the axis labels/spines/ticks off
-        axtext.axis("off")
+        axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha="left", va="top")
+        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( scale )
@@ -325,15 +409,33 @@ class Simulator(object):
         return ani
 
 
+    def vehicle_queue_animation_plotly(self, fig, x, y, mode, frames):
+        
+        color = [ self.vehicle_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
+        scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
+
+        result = np.array([self.vehicle_queuelen[node][mode] for node in self.vehicle_queuelen])
+
+        color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        for frame in range(0, int(frames)):
+            color_set[:, frame] = [ self.vehicle_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] 
+                for node in self.graph.get_graph_dic() ]
+
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        
+        return fig
+
+
     def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
         x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
+        fig = self.graph.plot_topology_edges(x, y, method)
+
         if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_topology_edges(x, y, method)
-            ani = self.vehicle_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
+            ani = self.vehicle_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
         elif (method == 'plotly'):
-            return
+            ani = self.vehicle_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
 
         file_name = 'results/{}_queue'.format(mode)
         try:
@@ -343,21 +445,18 @@ class Simulator(object):
             pass
 
         if (autosave):
-            if (method == 'matplotlib'):
-                ani.save(file_name+'.mp4', fps=12, dpi=300)
-            elif (method == 'plotly'):
-                return
+            ani.save(file_name+'.mp4', fps=12, dpi=300)
 
         print('Done')
-
+        # animation.to_html5_video()
         if (autoplay):
             if (method == 'matplotlib'):
                 plt.show()
             elif (method == 'plotly'):
-                return
+                pt.offline.plot(ani, filename=file_name+'.html')
         
         
-    def combination_queue_animation_matplotlib(self, fig, ax, x, y, mode, frames):    
+    def combination_queue_animation_matplotlib(self, fig, x, y, mode, frames):    
         color = [ (self.passenger_queuelen[node][mode][0] - self.vehicle_queuelen[node][mode][0]) 
             for node in self.graph.get_graph_dic() ]
         scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
@@ -379,9 +478,9 @@ class Simulator(object):
         # add another axes at the top left corner of the figure
         axtext = fig.add_axes([0.0,0.95,0.1,0.05])
         # turn the axis labels/spines/ticks off
-        axtext.axis("off")
+        axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha="left", va="top")
+        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( scale )
@@ -394,19 +493,36 @@ class Simulator(object):
         ani = animation.FuncAnimation(fig=fig, func=update, interval=300, frames=frames, repeat=True)
         return ani
 
+    def combination_queue_animation_plotly(self, fig, x, y, mode, frames):
+        color = [ (self.passenger_queuelen[node][mode][0] - self.vehicle_queuelen[node][mode][0]) 
+            for node in self.graph.get_graph_dic() ]
+        scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
+
+        result = np.array([ (self.passenger_queuelen[node][mode] - self.vehicle_queuelen[node][mode])
+            for node in self.vehicle_queuelen ])
+
+        color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        for frame in range(0, int(frames)):
+            index = int(frame*self.time_horizon/frames)
+            color_set[:, frame] = [ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
+                for node in self.graph.get_graph_dic() ]
+
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        
+        return fig
+
+
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
         x = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         y = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        if (method == 'matplotlib'):
-            fig, ax = self.graph.plot_topology_edges(x, y, method)
-            ani = self.combination_queue_animation_matplotlib(fig=fig, ax=ax, x=x, y=y, mode=mode, frames=frames)
-        elif (method == 'plotly'):
-            return
+        fig = self.graph.plot_topology_edges(x, y, method)
 
-        fig, ax = self.graph.plot_topology_edges(x, y)
-        # print(self.vehicle_queuelen['A'][mode])
-        
+        if (method == 'matplotlib'):
+            ani = self.combination_queue_animation_matplotlib(fig=fig, x=x, y=y, mode=mode, frames=frames)
+        elif (method == 'plotly'):
+            ani = self.combination_queue_animation_plotly(fig=fig, x=x, y=y, mode=mode, frames=frames)
+
         file_name = 'results/{}_combined_queue'.format(mode)
         try:
             os.remove(file_name+'.mp4')
@@ -415,18 +531,15 @@ class Simulator(object):
             pass
         
         if (autosave):
-            if (method == 'matplotlib'):
-                ani.save(file_name+'.mp4', fps=12, dpi=300)
-            elif (method == 'plotly'):
-                return
+            ani.save(file_name+'.mp4', fps=12, dpi=300)
 
         print('Done')
-
+        # animation.to_html5_video()
         if (autoplay):
             if (method == 'matplotlib'):
                 plt.show()
             elif (method == 'plotly'):
-                return
+                pt.offline.plot(ani, filename=file_name+'.html')
 
 
 class MidpointNormalize(mpl.colors.Normalize):
