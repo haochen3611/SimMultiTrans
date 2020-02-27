@@ -149,7 +149,10 @@ class Node(object):
                 dest = self.dest[index]
                 pid = '{}{}_{}'.format(self.id, dest, self.time)
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
-                p.get_schdule(routing)
+
+                # random pick a routing policy
+                routing_method = np.random.choice(routing.get_methods(), 1)[0]
+                p.get_schdule(routing, routing_method)
                 # print('new passenger arrived')
                 # print(p.get_id(), p.get_odpair())
                 # print('get sch: ', p.get_schdule(routing))
