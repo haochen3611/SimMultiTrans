@@ -20,9 +20,33 @@
                 "mode": "bus,taxi",
                 "dist": 100
             },
+            "B1": {
+                "mode": "scooter,taxi",
+                "dist": 10
+            },
+            "B2": {
+                "mode": "taxi",
+                "dist": 110
+            },
+            "B3": {
+                "mode": "taxi",
+                "dist": 130
+            },
             "C": {
                 "mode": "bus,taxi",
                 "dist": 200
+            },
+            "C1": {
+                "mode": "scooter,taxi",
+                "dist": 210
+            },
+            "C2": {
+                "mode": "taxi",
+                "dist": 210
+            },
+            "C3": {
+                "mode": "taxi",
+                "dist": 230
             }
         }
     },
@@ -42,6 +66,38 @@
             "A3": {
                 "mode": "scooter,taxi",
                 "dist": 13
+            },
+            "B": {
+                "mode": "taxi",
+                "dist": 100
+            },
+            "B1": {
+                "mode": "taxi",
+                "dist": 10
+            },
+            "B2": {
+                "mode": "taxi",
+                "dist": 110
+            },
+            "B3": {
+                "mode": "taxi",
+                "dist": 130
+            },
+            "C": {
+                "mode": "taxi",
+                "dist": 200
+            },
+            "C1": {
+                "mode": "taxi",
+                "dist": 210
+            },
+            "C2": {
+                "mode": "taxi",
+                "dist": 210
+            },
+            "C3": {
+                "mode": "taxi",
+                "dist": 230
             }
         }
     },

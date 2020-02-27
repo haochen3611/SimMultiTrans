@@ -27,7 +27,7 @@ class Road(object):
         time = int(self.dist/v.get_velocity('m/s'))
         leave_time = self.time + time
         self.vehicle.append( (v, leave_time) )
-        logging.info('Time {}: {} arrive at road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
+        logging.info('Time {}: Vel {} arrive at road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
 
     def syn_time(self, time):
         self.time = time
@@ -40,7 +40,7 @@ class Road(object):
                 self.vehicle.remove( (v, leave_time) )
                 # leave_vehicle.append(v)
                 
-                logging.info('Time {}: {} leave road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
+                logging.info('Time {}: Vel {} leave road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
                 g.get_graph_dic()[self.dest]['node'].vehicle_arrive(v)
 
 

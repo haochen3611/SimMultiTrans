@@ -5,6 +5,7 @@ from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
 from Node import Node
+from Routing import Routing
 from Converter import MidpointNormalize
 
 import numpy as np
@@ -36,13 +37,15 @@ class Simulator(object):
         self.graph = graph
         self.graph.generate_nodes()
 
+        self.routing = None
+
         self.road_set = {}
 
         # saved data
         self.passenger_queuelen = {}
         self.vehicle_queuelen = {}
 
-        self.vehicel_attri = {}
+        self.vehicle_attri = {}
         self.vehicel_onroad = []
 
         for node in self.graph.get_graph_dic():
@@ -50,7 +53,6 @@ class Simulator(object):
             self.vehicle_queuelen[node] = {}
 
             self.road_set[node] = self.graph.get_graph_dic()[node]['node'].get_road()
-
 
         # create results dic
         figs_path = 'results'
@@ -91,26 +93,27 @@ class Simulator(object):
                 
     def import_vehicle_attribute(self, file_name):
         with open('{}'.format(file_name)) as file_data:
-            self.vehicel_attri = json.load(file_data)
+            self.vehicle_attri = json.load(file_data)
         '''
         # check the input correctness
         mode_list = []
         for node in self.graph.get_allnodes():
             modesinnodes = self.graph.get_graph_dic[node]['node'].get_mode()
 
-        for mode in self.vehicel_attri:
+        for mode in self.vehicle_attri:
         ''' 
+        self.routing = Routing(self.graph, self.vehicle_attri)
 
         # generate vehicles
-        for mode in self.vehicel_attri:
+        for mode in self.vehicle_attri:
             # self.vehicel[mode] = {}
             name_cnt = 0
         
             # initialize vehilce distribution
-            for node in self.vehicel_attri[mode]['distrib']:
+            for node in self.vehicle_attri[mode]['distrib']:
                 interarrival = 0
-                for locv in range(self.vehicel_attri[mode]['distrib'][node]):
-                    v_attri = self.vehicel_attri[mode]
+                for locv in range(self.vehicle_attri[mode]['distrib'][node]):
+                    v_attri = self.vehicle_attri[mode]
                     vid = '{}{}'.format(mode, name_cnt)
                     name_cnt += 1
                     v = Vehicle(vid=vid, mode=mode, loc=node)
@@ -124,7 +127,6 @@ class Simulator(object):
                         # private vehicle wait at node
                         self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
 
-
     def set_running_time(self, starttime, timehorizon, unit):
         unit_trans = {
             'day': 60*60*24,
@@ -134,12 +136,14 @@ class Simulator(object):
         }
         self.start_time = datetime.strptime(starttime, '%H:%M:%S')
         self.time_horizon = int(timehorizon*unit_trans[unit])
+
+        end_time = timedelta(seconds=self.time_horizon) + self.start_time
         print('Time horizon: {}'.format(self.time_horizon))
+        print('From {} to {}'.format(starttime, end_time.strftime('%H:%M:%S')))
 
         # reset data set length
         for node in self.graph.get_allnodes():
-            
-            for mode in self.vehicel_attri:
+            for mode in self.vehicle_attri:
                 self.vehicle_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_queuelen[node][mode] = np.zeros(self.time_horizon)
 
@@ -155,7 +159,7 @@ class Simulator(object):
             return (ori, dest)
 
     def start(self):
-        print('Simulation started')
+        print('Simulation started: ')
         logging.info('Simulation started at {}'.format(time()))
         start_time = time()
 
@@ -175,14 +179,15 @@ class Simulator(object):
                     n.get_road()[road].syn_time(timestep)
                     n.get_road()[road].leave(self.graph)
 
-                n.new_passenger_arrive(self.graph)
-                n.match_demands(self.vehicel_attri)
+                # n.new_passenger_arrive(self.graph)
+                n.new_passenger_arrive(self.routing)
+                n.match_demands(self.vehicle_attri)
                 
                 # save data
                 # self.passenger_queuelen[node][timestep] = len( n.get_passenger_queue() )
                 # queuelength_str += 'Time {}: Pas queue length: {}\n'.format(timestep, len( n.get_passenger_queue() ))
                 # logging.info('Time {}: Pas queue length: {}'.format(timestep, qlength))
-                for mode in self.vehicel_attri:
+                for mode in self.vehicle_attri:
                     if (mode in n.get_mode()):
                         self.passenger_queuelen[node][mode][timestep] = len( n.get_passenger_queue(mode) )
                         self.vehicle_queuelen[node][mode][timestep] = len( n.get_vehicle_queue(mode) )
@@ -265,12 +270,13 @@ class Simulator(object):
         # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
         # set 0 be white
         zp = np.abs(result.min())/(result.max() - result.min())
+        # print(scale[:, 0])
         colorsacle = [ [0, '#33691E'], [zp, '#FAFAFA'], [1, '#FF6F00'] ]
 
-        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
-            # 'text': list(dataset_by_year_and_cont['country']),
-            'marker': { 'sizemode': 'area', 'size': scale, 'color': color[:, 0], 'colorscale': colorsacle,
-                          'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'sizemode': 'area', 'size': scale[:, 0], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
+                        'color': color[:, 0], 'colorscale': colorsacle,
+                        'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
         }
         fig_dict['data'].append(data_dict)
 
@@ -278,10 +284,10 @@ class Simulator(object):
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
 
-            data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue',
-            # 'text': list(dataset_by_year_and_cont['country']),
-            'marker': { 'sizemode': 'area', 'size': scale, 'color': color[:, frame_index], 'colorscale': colorsacle,
-                          'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+            data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'sizemode': 'area', 'size': scale[:, frame_index], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
+                        'color': color[:, frame_index], 'colorscale': colorsacle,
+                        'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
             }
             frame['data'].append(data_dict)
 
@@ -311,10 +317,13 @@ class Simulator(object):
         cbar = plt.colorbar()
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-
+        scale_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
         for frame in range(0, int(frames)):
             color_set[:, frame] = [ self.passenger_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
+            scale_set[:, frame] = [ self.passenger_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] +100
+                for node in self.graph.get_graph_dic() ]
+            
 
         # add another axes at the top left corner of the figure
         axtext = fig.add_axes([0.0,0.95,0.1,0.05])
@@ -324,7 +333,7 @@ class Simulator(object):
         time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
 
         def update(frame):
-            scat.set_sizes( scale )
+            scat.set_sizes( scale_set[:, frame%frames] )
             scat.set_array( color_set[:, frame%frames] )
             time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
             return scat,time,
@@ -343,11 +352,14 @@ class Simulator(object):
         result = np.array([self.passenger_queuelen[node][mode] for node in self.passenger_queuelen])
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        scale_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
         for frame_index in range(0, int(frames)):
             color_set[:, frame_index] = [ self.passenger_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
+            scale_set[:, frame_index] = [ self.passenger_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] +100
+                for node in self.graph.get_graph_dic() ]
 
-        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale_set, result=result)
         
         return fig
 
@@ -394,8 +406,8 @@ class Simulator(object):
         cbar = plt.colorbar()
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame in range(0, int(frames)):
-            color_set[:, frame] = [ self.vehicle_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] 
+        for frame_index in range(0, int(frames)):
+            color_set[:, frame_index] = [ self.vehicle_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
 
         # add another axes at the top left corner of the figure
@@ -425,11 +437,14 @@ class Simulator(object):
         result = np.array([self.vehicle_queuelen[node][mode] for node in self.vehicle_queuelen])
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame in range(0, int(frames)):
-            color_set[:, frame] = [ self.vehicle_queuelen[node][mode][ int(frame*self.time_horizon/frames) ] 
+        scale_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        for frame_index in range(0, int(frames)):
+            color_set[:, frame_index] = [ self.vehicle_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] 
+                for node in self.graph.get_graph_dic() ]
+            scale_set[:, frame_index] = [ self.vehicle_queuelen[node][mode][ int(frame_index*self.time_horizon/frames) ] +100
                 for node in self.graph.get_graph_dic() ]
 
-        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale_set, result=result)
         
         return fig
 
@@ -478,9 +493,9 @@ class Simulator(object):
         scat = plt.scatter(x, y, c=color, s=scale, cmap='coolwarm', label=color, norm=norm, zorder=2, alpha=0.8, edgecolors='none')
         cbar = plt.colorbar()
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame in range(0, int(frames)):
-            index = int(frame*self.time_horizon/frames)
-            color_set[:, frame] = [ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
+        for frame_index in range(0, int(frames)):
+            index = int(frame_index*self.time_horizon/frames)
+            color_set[:, frame_index] = [ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
                 for node in self.graph.get_graph_dic() ]
 
         # add another axes at the top left corner of the figure
@@ -510,12 +525,15 @@ class Simulator(object):
             for node in self.vehicle_queuelen ])
 
         color_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame in range(0, int(frames)):
-            index = int(frame*self.time_horizon/frames)
-            color_set[:, frame] = [ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
+        scale_set = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        for frame_index in range(0, int(frames)):
+            index = int(frame_index*self.time_horizon/frames)
+            color_set[:, frame_index] = [ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
                 for node in self.graph.get_graph_dic() ]
+            scale_set[:, frame_index] = [ np.abs(self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) +100
+                for node in self.graph.get_graph_dic() ]            
 
-        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale, result=result)
+        fig = self.plotly_sactter_animation_data(frames=frames, x=x, y=y, color=color_set, scale=scale_set, result=result)
         
         return fig
 

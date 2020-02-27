@@ -19,8 +19,9 @@ class Passenger(object):
     def get_odpair(self):
         return (self.ori, self.dest)
 
-    def get_schdule(self, graph):
-        self.path = graph.get_path(self.ori, self.dest)
+    def get_schdule(self, routing):
+        # self.path = graph.get_path(self.ori, self.dest)
+        self.path = routing.get_path(self.ori, self.dest, method='bus_simplex')
         # print(self.path)
         return self.path
 
@@ -28,7 +29,11 @@ class Passenger(object):
         self.loc = loc
 
     def get_waitingmode(self, loc):
-        return self.path[loc]['info']['mode'] if (loc in self.path and loc != self.dest) else None
+        # print(self.id, loc)
+        # print(self.id, self.path)
+        mode = self.path[loc]['info']['mode'] if (loc in self.path and loc != self.dest) else None
+        # print(self.id, mode)
+        return mode
 
     def geton(self, loc, v):
         # print(self.path)

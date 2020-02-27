@@ -108,7 +108,7 @@ class Graph(object):
             return np.abs(self.graph_top[ori]['lat']-self.graph_top[dest]['lat']) + np.abs(self.graph_top[ori]['long']-self.graph_top[dest]['long'])
         else:
             return 0
-
+    '''
     def get_path(self, ori, dest): 
         # print('routing...')
         if (ori not in self.graph_top and dest not in self.graph_top):
@@ -118,59 +118,23 @@ class Graph(object):
             # print('path exists')
             return self.graph_path[ori][dest]
         else:
-            path = {}
-            stops = ori
-            # by scooter
-            if ( dest in self.graph_top[ori]['nei'] ):
-                # path.append(self.get_edge(ori, dest))
-                # print('dont need transfer')
-                path.update({ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}})
-            else:
-                # find nearest bus stop
-                if ( 'bus' not in self.graph_top[ori]['node'].get_mode() ):
-                    # print('find a bus stop')
-                    for busstop in self.graph_top[ori]['nei']:
-                        # print(self.graph_top[busstop]['mode'])
-                        if ( 'bus' in self.graph_top[busstop]['node'].get_mode() ):
-                            # print(busstop)
-                            # path.append(self.get_edge(ori, busstop))
-                            path.update({ori: {'dest': busstop, 'info': self.pathinfo_generator(ori=ori, dest=busstop, method='simplex')}})
-                            stops = busstop
-                
-                # find transfer bus stop
-                if ( 'bus' in self.graph_top[dest]['node'].get_mode() ):
-                    # path.append(self.get_edge(stops, dest))
-                    # print('ready to get off')
-                    path.update({stops: {'dest': dest, 'info': self.pathinfo_generator(ori=stops, dest=dest, method='simplex')}})
-                else:
-                    # travel by bus
-                    for busstop in self.graph_top[dest]['nei']:
-                        if ( 'bus' in self.graph_top[busstop]['node'].get_mode() ):
-                            # print('ready to transfer')
-                            # path.append(self.get_edge(stops, busstop))
-                            # path.append(self.get_edge(busstop, dest))
-                            path.update({stops: {'dest': busstop, 'info': self.pathinfo_generator(ori=stops, dest=busstop, method='simplex')}})
-                            path.update({busstop: {'dest': dest, 'info': self.pathinfo_generator(ori=busstop, dest=dest, method='simplex')}})
+            route = Routing(self, ori, dest)
+            path = route.get_path('bus_simplex')
+            # print(path)
+            self.save_path(ori, dest, path)
             return path
 
-    def pathinfo_generator(self, ori, dest, method):
-        edge = self.get_edge(ori, dest)
-        info = edge[2]
-        mode = info['mode'].split(',')
-        if ( len(mode) == 1 ):
-            return info
-        else:
-            if (method == 'simplex'):
-                return {'mode': mode[0], 'dist': info['dist']}
-            else:
-                return {'mode': mode[0], 'dist': info['dist']}
         
     def save_path(self, ori, dest, path):
-        if (ori in self.graph_path) and (dest in self.graph_path[ori]):
-            return
+        if (ori not in self.graph_path):
+            self.graph_path[ori] = {dest: []}
+            self.graph_path[ori][dest].append(path)
+        elif (dest not in self.graph_path):
+            self.graph_path[ori][dest] = []
+            self.graph_path[ori][dest].append(path)
         else:
-            self.graph_path[ori][dest] = {path}
-
+            return
+    '''
 
     def randomize_graph(self, seed, msize, modeset, max_localnodes, mapscale):
         np.random.seed(seed)

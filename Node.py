@@ -25,7 +25,7 @@ class Node(object):
             dist = graph_top[nid]['nei'][dest]['dist']
             # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['long'])
             L1dist = Haversine( (self.loc[0], self.loc[1]), (graph_top[dest]['lat'], graph_top[dest]['long']) ).meters
-            if (dist <= 0.5* L1dist):
+            if (dist <= 0.2* L1dist):
                 dist = L1dist
             r = Road(ori=nid, dest=dest, dist=dist)
             self.road[dest] = r
@@ -88,17 +88,19 @@ class Node(object):
         mode = p.get_waitingmode(self.id)
         # print(mode)
         if (mode != None):
-            self.passenger[p.get_waitingmode(self.id)].append(p)
+            self.passenger[mode].append(p)
 
     def passenger_leave(self, p):
         # self.passenger.remove(p)
-        self.passenger[p.get_waitingmode(self.id)].remove(p)
+        mode = p.get_waitingmode(self.id)
+        if (mode != None):
+            self.passenger[mode].remove(p)
 
     def vehicle_park(self, v, leavetime):
         self.park.append( (v, leavetime) )
 
     def vehicle_arrive(self, v):
-        logging.info('Time {}: {} arrive at node {}'.format(
+        logging.info('Time {}: Vel {} arrive at node {}'.format(
             self.time, v.get_id(), self.id))
         self.vehicle[v.get_mode()].append(v)
         v.update_location(self.id)
@@ -130,7 +132,7 @@ class Node(object):
     def exp_arrival_prob(self, rate):
         # default: exponential distribution
         # rate = ln(1-p) => p = 1-exp(-rate)
-        return 1- np.exp( - rate )
+        return 1- np.exp( -rate )
 
     def random_exp_arrival_prob(self, range, size):
         # default: exponential distribution
@@ -138,16 +140,19 @@ class Node(object):
         rd = np.random.uniform(0, range, size)
         return 1- np.exp( - self.arr_rate* rd/np.sum(rd) )
 
-    def new_passenger_arrive(self, g):
+    def new_passenger_arrive(self, routing):
         randomness = np.random.uniform(low=0, high=1, size=(len(self.dest)))
 
-        pp = np.greater(self.arr_prob_set, randomness)
-        for index, res in enumerate( pp ):
+        pp_toss = np.greater(self.arr_prob_set, randomness)
+        for index, res in enumerate(pp_toss):
             if (res):
                 dest = self.dest[index]
                 pid = '{}{}_{}'.format(self.id, dest, self.time)
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
-                p.get_schdule(g)
+                p.get_schdule(routing)
+                # print('new passenger arrived')
+                # print(p.get_id(), p.get_odpair())
+                # print('get sch: ', p.get_schdule(routing))
                 # self.passenger.append(p)
                 # print(pid, p.get_schdule(g))
                 self.passenger_arrive(p)
