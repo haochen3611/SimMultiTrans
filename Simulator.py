@@ -304,6 +304,80 @@ class Simulator(object):
         fig.update_layout(template='plotly_dark')
         return fig
 
+    def plotly_3d_animation_data(self, frames, data):
+
+        fig_dict = {'data': [], 'layout': {}, 'frames': []}
+
+        # fill in most of layout
+        fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
+        fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['sliders'] = {
+            'args': [ 'transition', { 'duration': 400, 'easing': 'cubic-in-out' } ],
+            'initialValue': '0', 'plotlycommand': 'animate', 'values': range(frames), 'visible': True
+        }
+        fig_dict['layout']['updatemenus'] = [ {
+                'buttons': [ 
+                    { 'args': [None, {'frame': {'duration': 500, 'redraw': False},
+                      'fromcurrent': True, 'transition': {'duration': 300, 'easing': 'quadratic-in-out'}}],
+                      'label': 'Play', 'method': 'animate' },
+                    { 'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 0}}],
+                      'label': 'Pause', 'method': 'animate' }
+                ],
+                'direction': 'left', 'pad': {'r': 10, 't': 87}, 
+                'showactive': False, 'type': 'buttons',  'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
+            }  ]
+
+        sliders_dict = { 'active': 0, 'yanchor': 'top', 'xanchor': 'left', 
+            'currentvalue': { 'font': {'size': 20}, 'prefix': 'Time:', 'visible': True, 'xanchor': 'right' },
+            'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
+            'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []  }
+
+        # make data
+        time = 0
+        # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
+        # set 0 be white
+        # zp = np.abs(result.min())/(result.max() - result.min())
+        # print(scale[:, 0])
+        # colorsacle = [ [0, '#33691E'], [zp, '#FAFAFA'], [1, '#FF6F00'] ]
+        '''
+        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'sizemode': 'area', 'size': scale[:, 0], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
+                        'color': color[:, 0], 'colorscale': colorsacle,
+                        'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+                        }
+        '''
+        
+        # data_dict = data[0]
+        fig_dict['data'].append(data[0])
+
+        # make frames
+        for frame_index in range(frames):
+            frame = {'data': [], 'name': str(frame_index)}
+            '''
+            data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'sizemode': 'area', 'size': scale[:, frame_index], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
+                        'color': color[:, frame_index], 'colorscale': colorsacle,
+                        'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
+            }
+            '''
+            # print(data[frame_index])
+            # frame['data'].append( [data[frame_index]] )
+            frame['data'].append( data[frame_index] )
+
+            fig_dict['frames'].append(frame)
+            frame_time = timedelta(seconds=frame_index*self.time_horizon/frames) + self.start_time
+            slider_step = {'args': [ 
+                [frame_index], {'frame': {'duration': 300, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
+                'label': frame_time.strftime('%H:%M'), 'method': 'animate'}
+            sliders_dict['steps'].append(slider_step)
+
+        fig_dict['layout']['sliders'] = [sliders_dict]
+
+        fig = go.Figure(fig_dict)
+        fig.update_layout(template='plotly_dark')
+        return fig
+
         
     def passenger_queue_animation_matplotlib(self, fig, x, y, mode, frames):
         color = [ self.passenger_queuelen[node][mode][0] for node in self.graph.get_graph_dic() ]
@@ -538,6 +612,95 @@ class Simulator(object):
         return fig
 
 
+    def combination_queue_animation_plotly_3d(self, fig, x, y, mode, frames):
+                    
+
+        def bar_data(position3d, size=(1,1,1)):
+            # position3d - 3-list or array of shape (3,) that represents the point of coords (x, y, 0), where a bar is placed
+            # size = a 3-tuple whose elements are used to scale a unit cube to get a paralelipipedic bar
+            # returns - an array of shape(8,3) representing the 8 vertices of  a bar at position3d
+            
+            bar = np.array([[0, 0, 0],[1, 0, 0],[1, 1, 0],[0, 1, 0],[0, 0, 1],[1, 0, 1],[1, 1, 1],[0, 1, 1]], dtype=float) # the vertices of the unit cube
+        
+            bar *= np.asarray(size)# scale the cube to get the vertices of a parallelipipedic bar
+            bar += np.asarray(position3d) #translate each  bar on the directio OP, with P=position3d
+            return bar
+
+        def triangulate_bar_faces(positions, sizes=None):
+            # positions - array of shape (N, 3) that contains all positions in the plane z=0, where a histogram bar is placed 
+            # sizes -  array of shape (N,3); each row represents the sizes to scale a unit cube to get a bar
+            # returns the array of unique vertices, and the lists i, j, k to be used in instantiating the go.Mesh3d class
+
+            if sizes is None:
+                sizes = [(1,1,1)]*len(positions)
+            else:
+                if isinstance(sizes, (list, np.ndarray)) and len(sizes) != len(positions):
+                    raise ValueError('Your positions and sizes lists/arrays do not have the same length')
+                    
+            all_bars = [bar_data(pos, size)  for pos, size in zip(positions, sizes) if size[2]!=0]
+            p, q, r = np.array(all_bars).shape
+            # extract unique vertices from the list of all bar vertices
+            vertices, ixr = np.unique(np.array(all_bars).reshape(p*q, r), return_inverse=True, axis=0)
+            # print(vertices)
+            #for each bar, derive the sublists of indices i, j, k assocated to its chosen  triangulation
+            I = []
+            J = []
+            K = []
+            for k in range(len(all_bars)):
+                I.extend(np.take(ixr, [8*k, 8*k+2,8*k, 8*k+5,8*k, 8*k+7, 8*k+5, 8*k+2, 8*k+3, 8*k+6, 8*k+7, 8*k+5])) 
+                J.extend(np.take(ixr, [8*k+1, 8*k+3, 8*k+4, 8*k+1, 8*k+3, 8*k+4, 8*k+1, 8*k+6, 8*k+7, 8*k+2, 8*k+4, 8*k+6])) 
+                K.extend(np.take(ixr, [8*k+2, 8*k, 8*k+5, 8*k, 8*k+7, 8*k, 8*k+2, 8*k+5, 8*k+6, 8*k+3, 8*k+5, 8*k+7]))  
+            return  vertices, I, J, K  #triangulation vertices and I, J, K for mesh3d
+
+        def get_plotly_mesh3d(x, y, z, bins=[5,5], bargap=0.05, range_extent=0.2):
+            # x, y- array-like of shape (n,), defining the x, and y-ccordinates of data set for which we plot a 3d hist
+            x_range = [np.min(x)-range_extent, np.max(x)+range_extent]
+            y_range = [np.min(y)-range_extent, np.max(y)+range_extent]
+            hist, xedges, yedges = np.histogram2d(x, y, bins=bins, range=[x_range, y_range])
+            
+            hist = np.zeros([bins[0], bins[1]])
+            for (x_index, x_value) in enumerate(x):
+                xpos = int((x_value-x_range[0])/((x_range[0]-x_range[1])/(bins[0]-1)))
+                ypos = int((y[x_index]-y_range[0])/((y_range[0]-y_range[1])/(bins[1]-1)))
+                #print(xpos, ypos)
+                hist[xpos][ypos] = z[x_index]
+            
+            xsize = xedges[1]-xedges[0]-bargap
+            ysize = yedges[1]-yedges[0]-bargap
+            xe, ye= np.meshgrid(xedges[:-1], yedges[:-1])
+            ze = np.zeros(xe.shape)
+
+            positions =np.dstack((xe, ye, ze))
+            m, n, p = positions.shape
+            positions = positions.reshape(m*n, p)
+            # print(hist.flatten())
+            sizes = np.array([(xsize, ysize, h) for h in hist.flatten()])
+            # print('sizes:',sizes)
+            vertices, I, J, K  = triangulate_bar_faces(positions, sizes=sizes)
+            X, Y, Z = vertices.T
+            return X, Y, Z, I, J, K
+
+
+        z = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data_list = []
+        for frame_index in range(0, int(frames)):
+            index = int(frame_index*self.time_horizon/frames)
+            z[:, frame_index] = np.asarray([ (self.passenger_queuelen[node][mode][index] - self.vehicle_queuelen[node][mode][index]) 
+                for node in self.graph.get_graph_dic() ])
+            
+            X, Y, Z, I, J, K = get_plotly_mesh3d(x, y, z[:, frame_index], bins =[500, 500], bargap=2*1e-5)
+            data = go.Mesh3d(x=X, y=Y, z=z[:, frame_index], i=I, j=J, k=K, color="#ba2461", flatshading=True)
+            # print(data)
+            data_list.append(data)
+
+        fig = self.plotly_3d_animation_data(frames=frames, data=data_list)
+        # layout = go.Layout(width=1200, height=900, title_text='3D Bar Chart', title_x =0.5)
+
+        # fig = go.Figure(data=[mesh3d], layout=layout)
+        # pt.offline.plot(fig)    
+        return fig
+
+
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
         lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
@@ -548,6 +711,8 @@ class Simulator(object):
             ani = self.combination_queue_animation_matplotlib(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
         elif (method == 'plotly'):
             ani = self.combination_queue_animation_plotly(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
+        elif (method == 'plotly_3d'):
+            ani = self.combination_queue_animation_plotly_3d(fig=fig, x=lon, y=lat, mode=mode, frames=frames)
 
         file_name = 'results/{}_combined_queue'.format(mode)
         try:
@@ -564,7 +729,7 @@ class Simulator(object):
         if (autoplay):
             if (method == 'matplotlib'):
                 plt.show()
-            elif (method == 'plotly'):
+            elif (method == 'plotly' or method == 'plotly_3d'):
                 pt.offline.plot(ani, filename=file_name+'.html')
 
 
