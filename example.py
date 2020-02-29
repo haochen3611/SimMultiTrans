@@ -24,7 +24,7 @@ def main():
     simu.import_vehicle_attribute(file_name='vehicle.json')
 
     # simu.set_running_time(timehorizon=1, unit='hour')
-    simu.set_running_time(starttime='06:00:00', timehorizon=1, unit='hour')
+    simu.set_running_time(starttime='06:00:00', timehorizon=4, unit='hour')
     simu.start()
     # simu.plot_passenger_queuelen(10000-1)
     # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True)

@@ -21,8 +21,11 @@ class Plot(object):
         self.graph = graph
         self.time_horizon = time_horizon
         self.start_time = start_time
-        self.lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        self.lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        self.lat = np.asarray([ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ])
+        self.lon = np.asarray([ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ])
+
+        self.relativesize = 50
+        self.mapbox_access_token = 'pk.eyJ1IjoibW9tb2R1cGkiLCJhIjoiY2s3NzJ5eW12MDNpeTNmbGsyeGt0OXJyOCJ9.ZkQ_HeNeybjIcrLiGpUEtg'
 
     def import_result(self, queue_p, queue_v):
         self.queue_p = queue_p
@@ -57,6 +60,17 @@ class Plot(object):
         fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
         fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
         fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['mapbox'] = {
+            'accesstoken': self.mapbox_access_token,
+            'bearing': 0,
+            'center': go.layout.mapbox.Center(
+                lat=np.mean(self.lat),
+                lon=np.mean(self.lon)
+            ),
+            'pitch': 60,
+            'zoom': 11,
+            'style': 'mapbox://styles/momodupi/ck7754i6n0m9c1io3th9xtd4h'
+        }
         fig_dict['layout']['sliders'] = {
             'args': [ 'transition', { 'duration': 400, 'easing': 'cubic-in-out' } ],
             'initialValue': '0', 'plotlycommand': 'animate', 'values': range(frames), 'visible': True
@@ -88,24 +102,22 @@ class Plot(object):
             colorsacle = [ [0, '#33691E'], [zp, '#FAFAFA'], [1, '#FF6F00'] ]
         else: 
             colorsacle = [ [0, '#FAFAFA'], [1, '#FF6F00'] ]
-
-        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
-            'marker': { 'sizemode': 'area', 'size': scale[:, 0], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
-                        'color': color[:, 0], 'colorscale': colorsacle,
+        
+        data_dict = { 'type':'scattermapbox', 'lon': x, 'lat': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'size': scale[:, 0], 'color': color[:, 0], 'colorscale': colorsacle,
                         'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
         }
-        
         fig_dict['data'].append(data_dict)
 
         # make frames
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
-
-            data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
-            'marker': { 'sizemode': 'area', 'size': scale[:, frame_index], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
-                        'color': color[:, frame_index], 'colorscale': colorsacle,
+            
+            data_dict = { 'type':'scattermapbox', 'lon': x, 'lat': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
+            'marker': { 'size': scale[:, frame_index], 'color': color[:, frame_index], 'colorscale': colorsacle,
                         'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
             }
+
             frame['data'].append(data_dict)
 
             fig_dict['frames'].append(frame)
@@ -235,8 +247,8 @@ class Plot(object):
 
     def passenger_queue_animation_plotly(self, fig, mode, frames):
         
-        color = [ self.queue_p[node][mode][0] for node in self.graph.get_graph_dic() ]
-        scale = [ 60 if (',' in self.graph.get_graph_dic()[node]['mode']) else 30 for node in self.graph.get_graph_dic() ]
+        # color = [ self.queue_p[node][mode][0] for node in self.graph.get_graph_dic() ]
+        # scale = [ 16 if (',' in self.graph.get_graph_dic()[node]['mode']) else 12 for node in self.graph.get_graph_dic() ]
 
         result = np.array([self.queue_p[node][mode] for node in self.queue_p])
 
@@ -245,7 +257,7 @@ class Plot(object):
         for frame_index in range(0, int(frames)):
             color_set[:, frame_index] = [ self.queue_p[node][mode][ int(frame_index*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
-            scale_set[:, frame_index] = [ self.queue_p[node][mode][ int(frame_index*self.time_horizon/frames) ] +100
+            scale_set[:, frame_index] = [ (self.queue_p[node][mode][ int(frame_index*self.time_horizon/frames) ] +self.relativesize)/2
                 for node in self.graph.get_graph_dic() ]
 
         fig = self.plotly_sactter_animation_data(frames=frames, x=self.lon, y=self.lat, color=color_set, scale=scale_set, result=result)
@@ -317,7 +329,7 @@ class Plot(object):
 
     def vehicle_queue_animation_plotly(self, fig, mode, frames):
         color = [ self.queue_v[node][mode][0] for node in self.graph.get_graph_dic() ]
-        scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
+        scale = [ 16 if (',' in self.graph.get_graph_dic()[node]['mode']) else 12 for node in self.graph.get_graph_dic() ]
 
         result = np.array([self.queue_v[node][mode] for node in self.queue_v])
 
@@ -326,7 +338,7 @@ class Plot(object):
         for frame_index in range(0, int(frames)):
             color_set[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] 
                 for node in self.graph.get_graph_dic() ]
-            scale_set[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] +100
+            scale_set[:, frame_index] = [ (self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] +self.relativesize)/2
                 for node in self.graph.get_graph_dic() ]
 
         fig = self.plotly_sactter_animation_data(frames=frames, x=self.lon, y=self.lat, color=color_set, scale=scale_set, result=result)
@@ -402,7 +414,7 @@ class Plot(object):
     def combination_queue_animation_plotly(self, fig, mode, frames):
         color = [ (self.queue_p[node][mode][0] - self.queue_v[node][mode][0]) 
             for node in self.graph.get_graph_dic() ]
-        scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
+        scale = [ 16 if (',' in self.graph.get_graph_dic()[node]['mode']) else 12 for node in self.graph.get_graph_dic() ]
 
         result = np.array([ (self.queue_p[node][mode] - self.queue_v[node][mode])
             for node in self.queue_v ])
@@ -413,7 +425,7 @@ class Plot(object):
             index = int(frame_index*self.time_horizon/frames)
             color_set[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
                 for node in self.graph.get_graph_dic() ]
-            scale_set[:, frame_index] = [ np.abs(self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) +100
+            scale_set[:, frame_index] = [ (np.abs(self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) +self.relativesize)/2
                 for node in self.graph.get_graph_dic() ]            
 
         fig = self.plotly_sactter_animation_data(frames=frames, x=self.lon, y=self.lat, color=color_set, scale=scale_set, result=result)
