@@ -218,8 +218,8 @@ class Simulator(object):
         self.plot.import_result(self.passenger_queuelen, self.vehicle_queuelen)
 
         
-    def plot_passenger_queuelen(self, time):
-        self.plot.plot_passenger_queuelen(time=time)
+    def plot_passenger_queuelen(self, mode, time):
+        self.plot.plot_passenger_queuelen(mode=mode, time=time)
 
     def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         self.plot.passenger_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)

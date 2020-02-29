@@ -24,24 +24,15 @@ def main():
     simu.import_vehicle_attribute(file_name='vehicle.json')
 
     # simu.set_running_time(timehorizon=1, unit='hour')
-    simu.set_running_time(starttime='06:00:00', timehorizon=4, unit='hour')
+    simu.set_running_time(starttime='06:00:00', timehorizon=1, unit='hour')
     simu.start()
-    # simu.plot_passenger_queuelen(10000-1)
-    # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True)
-    # simu.vehicle_queue_animation(mode='scooter', frames=100, autoplay=True)
+    simu.plot_passenger_queuelen(mode='scooter', time='06:05:00')
+    simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True)
+    simu.vehicle_queue_animation(mode='scooter', frames=30, autoplay=True)
     # simu.combination_queue_animation(mode='scooter', frames=100, autoplay=True)
     # simu.combination_queue_animation(mode='taxi', frames=30, autoplay=True)
     simu.combination_queue_animation(mode='scooter', frames=30, autoplay=True)
     # simu.combination_queue_animation(mode='bus', frames=100, autosave=True)
-
-    '''    
-    converter = Converter(1)
-    g.set_graph( converter.randon_graph(msize=6, modeset=['bus','scooter']) )
-    g.generate_nodes()
-    print(g.get_topology())
-    # g.plot_topology()
-    '''
-
 
 
 if __name__ == "__main__":
