@@ -24,14 +24,14 @@ def main():
     simu.import_vehicle_attribute(file_name='vehicle.json')
 
     # simu.set_running_time(timehorizon=1, unit='hour')
-    simu.set_running_time(starttime='06:00:00', timehorizon=1, unit='min')
+    simu.set_running_time(starttime='06:00:00', timehorizon=1, unit='hour')
     simu.start()
     # simu.plot_passenger_queuelen(10000-1)
-    # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True, method='plotly')
-    # simu.vehicle_queue_animation(mode='scooter', frames=100, autoplay=True, method='plotly')
+    # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True)
+    # simu.vehicle_queue_animation(mode='scooter', frames=100, autoplay=True)
     # simu.combination_queue_animation(mode='scooter', frames=100, autoplay=True)
-    # simu.combination_queue_animation(mode='scooter', frames=30, autoplay=True, method='plotly')
-    simu.combination_queue_animation(mode='scooter', frames=30, autoplay=True, method='plotly_3d')
+    # simu.combination_queue_animation(mode='taxi', frames=30, autoplay=True)
+    simu.combination_queue_animation(mode='scooter', frames=30, autoplay=True)
     # simu.combination_queue_animation(mode='bus', frames=100, autosave=True)
 
     '''    
