@@ -153,8 +153,8 @@ class Plot(object):
         time = 0
         # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
         # set 0 be white
-        cmin = np.min(data.min(), 0)
-        cmax = np.max(data.max(), 0)
+        cmin = np.min([data.min(), 0])
+        cmax = np.max([data.max(), 0])
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
         
         text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index, 0]) for index in range(len(data))]
