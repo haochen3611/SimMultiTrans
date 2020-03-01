@@ -7,6 +7,7 @@
         "type": "priv",
         "route": "",
         "interval": "0 sec",
+        "reb": "passive",
         "distrib": {
             "Greyhound Bus Station": 10, "Topiary Park": 5, "Grant Medical Center": 5, "Ohio Statehouse": 5,
             "Ohio Union": 10, "Thompson Library": 5, "Ohio Stadium": 5, "Ohio State University Hospital": 5,
@@ -21,6 +22,7 @@
         "type": "publ",
         "route": "Greyhound Bus Station,Ohio Union,Walmart Supercenter",
         "interval": "30 min",
+        "reb": "none",
         "distrib": {
             "Greyhound Bus Station": 2, "Walmart Supercenter": 2
         }
@@ -33,6 +35,7 @@
         "type": "priv",
         "route": "",
         "interval": "0 sec",
+        "reb": "active",
         "distrib": {
             "Greyhound Bus Station": 40, "Ohio Union": 40, "Walmart Supercenter": 40
         }

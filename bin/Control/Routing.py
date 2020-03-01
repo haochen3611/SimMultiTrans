@@ -11,7 +11,6 @@ class Routing(object):
             'bus_simplex': {},
             'simplex': {}
         }
-
         self.vehicle_attri = vehicle_attri
 
     def get_methods(self):

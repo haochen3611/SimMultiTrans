@@ -21,6 +21,7 @@ class Vehicle(object):
         self.type = attri['type']
         self.route = attri['route']
         self.interval = attri['interval']
+        self.reb = attri['reb']
 
         self.route_set = []
         # public mode has own schedule
