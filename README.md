@@ -28,11 +28,11 @@ bash conf/mapbox.sh
 
 ## Running
 ### Setup city parameters
-- Modify `city.json`
-- Modify `arr_rate.csv`
+- Modify `conf\city.json`
+- Modify `conf\arr_rate.csv`
 
 ### Setup vehicle attributes
-- Modify `vehicle.json`
+- Modify `conf\vehicle.json`
 
 ### Run a simple example
 ```
