@@ -7,9 +7,9 @@ A Multimodes Transportation Simulator
 git clone https://github.com/momodupi/SimMultiTrans.git
 ```
 
-### Installing the required packages
+### Install the required packages
 
-- Packages included in [Anaconda](https://www.anaconda.com/distribution/) (by default): [Numpy](https://numpy.org/) - -  [Scipy](https://www.scipy.org/) - - [Matplotlib](https://matplotlib.org/) - - [Pandas](https://pandas.pydata.org/) 
+- Packages included in [Anaconda](https://www.anaconda.com/distribution/) (by default): [Numpy](https://numpy.org/), [Scipy](https://www.scipy.org/), [Matplotlib](https://matplotlib.org/), [Pandas](https://pandas.pydata.org/) 
 
 - Other Packages: [Plotly](https://plot.ly/)
 
@@ -19,7 +19,6 @@ conda install numpy scipy matplotlib matplotlib-base mpl_sample_data pandas plot
 ```
 
 ### Setup [Mapbox](https://www.mapbox.com/)
-- Sign up an account
 - [Copy `default public token`](https://account.mapbox.com/) (or create a new `token`)
 - [Create a new `map style`](https://studio.mapbox.com/) and copy its URL
 - Setup `token` and `map style`:
