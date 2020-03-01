@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from Node import Node
+from bin.Network.Node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class Graph(object):
         return self.graph_top
 
     def import_graph(self, file_name):
-        with open('{}'.format(file_name)) as file_data:
+        with open('conf/{}'.format(file_name)) as file_data:
             self.graph_top = json.load(file_data)
         self.generate_nodes()
  

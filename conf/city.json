@@ -1,611 +1,611 @@
 {
-    "A": {
+    "Greyhound Bus Station": {
         "lat": 39.958346,
         "long": -82.996252,
         "mode": "scooter,bus,taxi",
         "nei": {
-            "A1": {
+            "Topiary Park": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "bus,taxi",
                 "dist": 100
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "scooter,taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "bus,taxi",
                 "dist": 200
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 230
             }
         }
     },
-    "A1": {
+    "Topiary Park": {
+        "lat": 39.961155,
+        "long": -82.987561,
+        "mode": "scooter,taxi",
+        "nei": {
+            "Greyhound Bus Station": {
+                "mode": "scooter",
+                "dist": 10
+            },
+            "Grant Medical Center": {
+                "mode": "scooter",
+                "dist": 11
+            },
+            "Ohio Statehouse": {
+                "mode": "scooter",
+                "dist": 13
+            },
+            "Ohio Union": {
+                "mode": "taxi",
+                "dist": 100
+            },
+            "Thompson Library": {
+                "mode": "taxi",
+                "dist": 10
+            },
+            "Ohio Stadium": {
+                "mode": "taxi",
+                "dist": 110
+            },
+            "Ohio State University Hospital": {
+                "mode": "taxi",
+                "dist": 130
+            },
+            "Walmart Supercenter": {
+                "mode": "taxi",
+                "dist": 200
+            },
+            "Ohio BMV": {
+                "mode": "taxi",
+                "dist": 210
+            },
+            "Sterling Place Apartments": {
+                "mode": "taxi",
+                "dist": 210
+            },
+            "Trotters Chase Apartments": {
+                "mode": "taxi",
+                "dist": 230
+            }
+        }
+    },
+    "Grant Medical Center": {
         "lat": 39.960395,
         "long": -82.989773,
         "mode": "scooter,taxi",
         "nei": {
-            "A": {
+            "Topiary Park": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "A2": {
+            "Greyhound Bus Station": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "taxi",
                 "dist": 200
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 230
             }
         }
     },
-    "A2": {
-        "lat": 39.959236,
-        "long": -82.998964,
-        "mode": "scooter,taxi",
-        "nei": {
-            "A1": {
-                "mode": "scooter",
-                "dist": 10
-            },
-            "A": {
-                "mode": "scooter",
-                "dist": 11
-            },
-            "A3": {
-                "mode": "scooter",
-                "dist": 13
-            },
-            "B": {
-                "mode": "taxi",
-                "dist": 100
-            },
-            "B1": {
-                "mode": "taxi",
-                "dist": 10
-            },
-            "B2": {
-                "mode": "taxi",
-                "dist": 110
-            },
-            "B3": {
-                "mode": "taxi",
-                "dist": 130
-            },
-            "C": {
-                "mode": "taxi",
-                "dist": 200
-            },
-            "C1": {
-                "mode": "taxi",
-                "dist": 210
-            },
-            "C2": {
-                "mode": "taxi",
-                "dist": 210
-            },
-            "C3": {
-                "mode": "taxi",
-                "dist": 230
-            }
-        }
-    },
-    "A3": {
+    "Ohio Statehouse": {
         "lat": 39.961448,
         "long": -82.998463,
         "mode": "scooter,taxi",
         "nei": {
-            "A1": {
+            "Topiary Park": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "taxi",
                 "dist": 200
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 210
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 230
             }
         }
     },
-    "B": {
-        "lat": 39.999517,
-        "long": -83.014642,
+    "Ohio Union": {
+        "lat": 39.997726,
+        "long": -83.008546,
         "mode": "scooter,bus,taxi",
         "nei": {
-            "B1": {
+            "Thompson Library": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "bus,taxi",
                 "dist": 100
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "bus,taxi",
                 "dist": 120
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "B1": {
-        "lat": 40.001835,
-        "long": -83.019627,
+    "Thompson Library": {
+        "lat": 39.999266,
+        "long": -83.014820,
         "mode": "scooter,taxi",
         "nei": {
-            "B": {
+            "Ohio Union": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "B2": {
-        "lat": 40.001712,
-        "long": -83.013287,
+    "Ohio Stadium": {
+        "lat": 40.001806,
+        "long": -83.019738,
         "mode": "scooter,taxi",
         "nei": {
-            "B1": {
+            "Thompson Library": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "B3": {
-        "lat": 39.998094,
-        "long": -83.008385,
+    "Ohio State University Hospital": {
+        "lat": 39.995416,
+        "long": -83.017792,
         "mode": "scooter,taxi",
         "nei": {
-            "B1": {
+            "Thompson Library": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "C1": {
+            "Ohio BMV": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "C": {
+    "Walmart Supercenter": {
         "lat": 40.067011,
         "long": -83.090108,
         "mode": "scooter,bus,taxi",
         "nei": {
-            "C1": {
+            "Ohio BMV": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "bus,taxi",
                 "dist": 120
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "bus,taxi",
                 "dist": 200
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "C1": {
+    "Ohio BMV": {
         "lat": 40.066559,
         "long": -83.096685,
         "mode": "scooter,taxi",
         "nei": {
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 200
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "C2": {
+    "Sterling Place Apartments": {
         "lat": 40.066143,
         "long": -83.080183,
         "mode": "scooter,taxi",
         "nei": {
-            "C1": {
+            "Ohio BMV": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "C3": {
+            "Trotters Chase Apartments": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 200
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             }
         }
     },
-    "C3": {
+    "Trotters Chase Apartments": {
         "lat": 40.064104,
         "long": -83.090446,
         "mode": "scooter,taxi",
         "nei": {
-            "C1": {
+            "Ohio BMV": {
                 "mode": "scooter",
                 "dist": 10
             },
-            "C2": {
+            "Sterling Place Apartments": {
                 "mode": "scooter",
                 "dist": 11
             },
-            "C": {
+            "Walmart Supercenter": {
                 "mode": "scooter",
                 "dist": 13
             },
-            "B": {
+            "Ohio Union": {
                 "mode": "taxi",
                 "dist": 120
             },
-            "B1": {
+            "Thompson Library": {
                 "mode": "taxi",
                 "dist": 10
             },
-            "B2": {
+            "Ohio Stadium": {
                 "mode": "taxi",
                 "dist": 110
             },
-            "B3": {
+            "Ohio State University Hospital": {
                 "mode": "taxi",
                 "dist": 130
             },
-            "A": {
+            "Greyhound Bus Station": {
                 "mode": "taxi",
                 "dist": 200
             },
-            "A1": {
+            "Topiary Park": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A2": {
+            "Grant Medical Center": {
                 "mode": "taxi",
                 "dist": 100
             },
-            "A3": {
+            "Ohio Statehouse": {
                 "mode": "taxi",
                 "dist": 100
             }

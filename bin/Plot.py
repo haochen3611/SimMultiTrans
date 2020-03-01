@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from Converter import MidpointNormalize
 
 import numpy as np
 import matplotlib as mpl
@@ -27,8 +26,8 @@ class Plot(object):
         self.relativesize = 6
 
         try:
-            self.mapbox_access_token = open(".mapbox_token").read()
-            self.map_style = open(".mapbox_style").read()
+            self.mapbox_access_token = open("conf/.mapbox_token").read()
+            self.map_style = open("conf/.mapbox_style").read()
         except OSError:
             print('Map Key Error!')
             pass
@@ -472,3 +471,16 @@ class Plot(object):
                 plt.show()
             elif (method == 'plotly'):
                 pt.offline.plot(ani, filename=file_name+'.html')
+
+
+
+class MidpointNormalize(mpl.colors.Normalize):
+    def __init__(self, vmin=None, vmax=None, vcenter=None, clip=False):
+        self.vcenter = vcenter
+        mpl.colors.Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        # I'm ignoring masked values and all kinds of edge cases to make a
+        # simple example...
+        x, y = [self.vmin, self.vcenter, self.vmax], [0, 0.5, 1]
+        return np.ma.masked_array(np.interp(value, x, y))

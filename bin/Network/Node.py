@@ -1,14 +1,11 @@
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from Passenger import Passenger
-from Vehicle import Vehicle
-from Road import Road
-
-from Converter import Haversine
+from bin.Network.Passenger import Passenger
+# from Vehicle import Vehicle
+from bin.Network.Road import Road
 
 import numpy as np
-
 
 import logging
 
@@ -147,7 +144,7 @@ class Node(object):
         for index, res in enumerate(pp_toss):
             if (res):
                 dest = self.dest[index]
-                pid = '{}{}_{}'.format(self.id, dest, self.time)
+                pid = '{}{}_{}'.format(self.id[0:2], dest[0:2], self.time)
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
                 # random pick a routing policy
@@ -197,3 +194,30 @@ class Node(object):
     
                 
 
+class Haversine:
+    '''
+    use the haversine class to calculat1e the distance between
+    two lon/lat coordnate pairs.
+    output distance available in kilometers, meters, miles, and feet.
+    example usage: Haversine([lon1,lat11],[lon2,lat12]).feet
+    '''
+    def __init__(self, coord1, coord2):
+        lon1, lat11 = coord1
+        lon2, lat12 = coord2
+        
+        R=6371000                               # radius of Earth in meters
+        phi_1 = np.radians(lat11)
+        phi_2 = np.radians(lat12)
+
+        delta_phi = np.radians(lat12-lat11)
+        delta_lambda = np.radians(lon2-lon1)
+
+        a = np.sin(delta_phi/2.0)**2+\
+           np.cos(phi_1)*np.cos(phi_2)*\
+           np.sin(delta_lambda/2.0)**2
+        c=2*np.arctan2(np.sqrt(a),np.sqrt(1-a))
+        
+        self.meters=R*c                         # output distance in meters
+        self.km=self.meters/1000.0              # output distance in kilometers
+        self.miles=self.meters*0.000621371      # output distance in miles
+        self.feet=self.miles*5280               # output distance in feet

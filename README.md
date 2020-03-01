@@ -24,7 +24,7 @@ conda install numpy scipy matplotlib matplotlib-base mpl_sample_data pandas plot
 - [Create a new `map style`](https://studio.mapbox.com/) and copy its URL
 - Setup `token` and `map style`:
 ```
-bash mapbox.sh
+bash conf/mapbox.sh
 ```
 
 ## Running
@@ -37,7 +37,7 @@ bash mapbox.sh
 
 ### Run a simple example
 ```
-python example
+python main.py
 ```
 
 ### Review results

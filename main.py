@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+'''
 from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
 from Simulator import Simulator
-
-import numpy as np
-
-import random
-
+'''
+from bin.Control import *
+from bin.Network import *
+from bin import *
 
 def main():
     # create graph

@@ -8,9 +8,9 @@
         "route": "",
         "interval": "0 sec",
         "distrib": {
-            "A": 10, "A1": 5, "A2": 5, "A3": 5,
-            "B": 10, "B1": 5, "B2": 5, "B3": 5,
-            "C": 10, "C1": 5, "C2": 5, "C3": 5
+            "Greyhound Bus Station": 10, "Topiary Park": 5, "Grant Medical Center": 5, "Ohio Statehouse": 5,
+            "Ohio Union": 10, "Thompson Library": 5, "Ohio Stadium": 5, "Ohio State University Hospital": 5,
+            "Walmart Supercenter": 10, "Ohio BMV": 5, "Sterling Place Apartments": 5, "Trotters Chase Apartments": 5
         }
     },
     "bus": {
@@ -19,10 +19,10 @@
         "pri": 2,
         "vel": 35,
         "type": "publ",
-        "route": "A,B,C",
+        "route": "Greyhound Bus Station,Ohio Union,Walmart Supercenter",
         "interval": "30 min",
         "distrib": {
-            "A": 2, "C": 2
+            "Greyhound Bus Station": 2, "Walmart Supercenter": 2
         }
     },
     "taxi": {
@@ -34,7 +34,7 @@
         "route": "",
         "interval": "0 sec",
         "distrib": {
-            "A": 40, "B": 40, "C": 40
+            "Greyhound Bus Station": 40, "Ohio Union": 40, "Walmart Supercenter": 40
         }
     }
 }

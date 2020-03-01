@@ -1,8 +1,6 @@
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from Passenger import Passenger
-from Vehicle import Vehicle
 
 import numpy as np
 

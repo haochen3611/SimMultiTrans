@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+'''
 from Graph import Graph
 from Passenger import Passenger
 from Vehicle import Vehicle
 from Node import Node
 from Routing import Routing
-from Converter import MidpointNormalize
-from Plot import Plot
+'''
+from bin.Control import *
+from bin.Network import *
+# from Converter import MidpointNormalize
+from bin.Plot import Plot
 
 import numpy as np
 # import matplotlib as mpl
@@ -81,6 +85,7 @@ class Simulator(object):
             'sec': 1
         }
         
+        file_name = 'conf/{}'.format(file_name)
         rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
         print('Node: ', self.graph.get_allnodes())
         (row, col) = rate_matrix.shape
@@ -94,7 +99,7 @@ class Simulator(object):
                 # print(self.graph.get_graph_dic()[node]['node'].arr_prob_set)
                 
     def import_vehicle_attribute(self, file_name):
-        with open('{}'.format(file_name)) as file_data:
+        with open('conf/{}'.format(file_name)) as file_data:
             self.vehicle_attri = json.load(file_data)
         '''
         # check the input correctness
