@@ -19,7 +19,6 @@ conda install numpy scipy matplotlib matplotlib-base mpl_sample_data pandas plot
 ```
 
 ### Setup [Mapbox](https://www.mapbox.com/)
-- Sign up an account
 - [Copy `default public token`](https://account.mapbox.com/) (or create a new `token`)
 - [Create a new `map style`](https://studio.mapbox.com/) and copy its URL
 - Setup `token` and `map style`:
