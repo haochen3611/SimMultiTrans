@@ -7,7 +7,7 @@ A Multimodes Transportation Simulator
 git clone https://github.com/momodupi/SimMultiTrans.git
 ```
 
-### Installing the required packages
+### Install the required packages
 
 - Packages included in [Anaconda](https://www.anaconda.com/distribution/) (by default): [Numpy](https://numpy.org/) - -  [Scipy](https://www.scipy.org/) - - [Matplotlib](https://matplotlib.org/) - - [Pandas](https://pandas.pydata.org/) 
 
