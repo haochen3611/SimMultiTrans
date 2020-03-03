@@ -37,29 +37,6 @@ class Plot(object):
         self.queue_v = queue_v
 
     def plot_passenger_queuelen(self, mode, time):
-        
-        '''
-        fig, ax = self.graph.plot_topology_edges(x=self.lon, y=self.lat)
-        # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
-        color = [ self.queue_p[node][time] for node in self.graph.get_graph_dic() ]
-        scale = [ 300 if (',' in self.graph.get_graph_dic()[node]['mode']) else 100 for node in self.graph.get_graph_dic() ]
-
-        norm = mpl.colors.Normalize(vmin=0, vmax=self.time_horizon)
-        
-        plt.scatter(x=self.lon, y=self.lat, c=color, s=scale, cmap='Reds', label=color, norm=norm, zorder=2, alpha=0.8, edgecolors='none')
-        cbar = plt.colorbar()
-
-        # ax.legend()
-        ax.grid(True)
-        # plt.legend(loc='lower right', framealpha=1)
-        plt.xlabel('Latitude')
-        plt.ylabel('Longitude')
-        plt.title('Finial Queue Length')
-
-        plt.savefig('results/City_Topology.png', dpi=600)
-        print('Plot saved to results/City_Topology.png')
-        '''
-
         time_step = (datetime.strptime(time, '%H:%M:%S')-self.start_time).seconds
 
         if (time_step < 0 or time_step > self.time_horizon):
@@ -86,6 +63,7 @@ class Plot(object):
         data = np.array([ self.queue_v[node][mode][ time_step ] for node in self.graph.get_graph_dic() ])
         cmin = np.min(data.min(), 0)
         cmax = np.max(data.max(), 0)
+        cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
 
         text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index]) for index in range(len(data))]
@@ -154,6 +132,7 @@ class Plot(object):
         # set 0 be white
         cmin = np.min([data.min(), 0])
         cmax = np.max([data.max(), 0])
+        cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
         
         text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index, 0]) for index in range(len(data))]
@@ -305,10 +284,11 @@ class Plot(object):
 
 
     def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
         if (method == 'matplotlib'):
+            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
             ani = self.passenger_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
         elif (method == 'plotly'):
+            fig = None
             ani = self.passenger_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
         
         file_name = 'results/passenger_queue'
@@ -372,11 +352,11 @@ class Plot(object):
 
 
     def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
-
         if (method == 'matplotlib'):
+            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
             ani = self.vehicle_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
         elif (method == 'plotly'):
+            fig = None
             ani = self.vehicle_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
 
         file_name = 'results/{}_queue'.format(mode)
@@ -447,11 +427,11 @@ class Plot(object):
         self.lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
         self.lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
 
-        fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
-
         if (method == 'matplotlib'):
+            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
             ani = self.combination_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
         elif (method == 'plotly'):
+            fig = None
             ani = self.combination_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
 
         file_name = 'results/{}_combined_queue'.format(mode)
@@ -471,6 +451,89 @@ class Plot(object):
                 plt.show()
             elif (method == 'plotly'):
                 pt.offline.plot(ani, filename=file_name+'.html')
+
+
+    def plot_topology(self, method='matplotlib'):
+        if (method == 'matplotlib'):
+            fig, ax = plt.subplots()
+            fig, ax = self.plot_topology_edges(self.lon, self.lat, method)
+
+            # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
+            color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
+            scale = [ 300 if (',' in self.graph_top[node]['mode']) else 100 for node in self.graph_top ]
+
+            ax.scatter(self.lon, self.lat, c=color, s=scale, label=color, alpha=0.8, edgecolors='none', zorder=2)
+
+            # ax.legend()
+            plt.grid(False)
+            # plt.legend(loc='lower right', framealpha=1)
+            plt.xlabel('lat1itude')
+            plt.ylabel('Longitude')
+            plt.title('City Topology')
+
+            plt.savefig('City_Topology.pdf', dpi=600)
+            print(self.graph_top)
+            return fig, ax
+
+        elif (method == 'plotly'):
+            fig_dict = {'data': [], 'layout': {}}
+
+            # fill in most of layout
+            fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
+            fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
+            fig_dict['layout']['hovermode'] = 'closest'
+            fig_dict['layout']['mapbox'] = {
+                'accesstoken': self.mapbox_access_token,
+                'bearing': 0,
+                'center': go.layout.mapbox.Center(
+                    lat = np.mean(self.lat),
+                    lon = np.mean(self.lon)
+                ),
+                'pitch': 60,
+                'zoom': 11,
+                'style': self.map_style
+            }
+
+            size = np.zeros([len(self.lon), 1])+self.relativesize*2
+            color = ['#FAFAFA' for node in self.lon]
+
+            text_str = ['{}'.format(self.graph.get_allnodes()[index]) for index in range(len(self.lon))]
+            data_dict = { 
+                'type':'scattermapbox', 
+                'lon': self.lon, 'lat': self.lat, 
+                'mode': 'markers', 
+                'name': 'Queue', 
+                'text': text_str,
+                'marker': { 'size': size, 'color': color }
+            }
+            fig_dict['data'].append(data_dict)
+            fig = go.Figure(fig_dict)
+
+            file_name = 'results/Topology'
+            fig.update_layout(template='plotly_dark')
+            pt.offline.plot(fig, filename=file_name+'.html')
+
+    
+    def plot_topology_edges(self, x, y, method='matplotlib'):
+        if (method == 'matplotlib'):
+            plt.style.use('dark_background')
+            fig, ax = plt.subplots()
+
+            alledges = self.graph.get_all_edges()
+            # print(alledges)
+            loc = np.zeros(shape=(2,2))
+
+            for odlist in alledges:
+                for odpair in odlist:
+                    loc[:,0] = np.array( [self.graph.graph_top[odpair[0]]['lat'], self.graph.graph_top[odpair[0]]['lon']])
+                    loc[:,1] = np.array( [self.graph.graph_top[odpair[1]]['lat'], self.graph.graph_top[odpair[1]]['lon']])
+                    ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
+            return fig
+        elif (method == 'plotly'):
+            
+            return fig
+        else:
+            return None
 
 
 
