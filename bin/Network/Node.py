@@ -13,15 +13,15 @@ class Node(object):
     def __init__(self, nid, graph_top):
         self.id = nid
 
-        self.loc = (graph_top[nid]['lat'], graph_top[nid]['long'])
+        self.loc = (graph_top[nid]['lat'], graph_top[nid]['lon'])
         self.mode = graph_top[nid]['mode'].split(',')
 
         self.road = {}
         for dest in graph_top[nid]['nei']:
             # distance can be set by L1 norm
             dist = graph_top[nid]['nei'][dest]['dist']
-            # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['long'])
-            L1dist = Haversine( (self.loc[0], self.loc[1]), (graph_top[dest]['lat'], graph_top[dest]['long']) ).meters
+            # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['lon'])
+            L1dist = Haversine( (self.loc[0], self.loc[1]), (graph_top[dest]['lat'], graph_top[dest]['lon']) ).meters
             if (dist <= 0.2* L1dist):
                 dist = L1dist
             r = Road(ori=nid, dest=dest, dist=dist)

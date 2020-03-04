@@ -77,13 +77,22 @@ class Simulator(object):
         logging.basicConfig(level = logging.INFO, filename = '{}/Simulator.log'.format(figs_path))
         logging.info('Graph initialized')
 
-    def import_arrival_rate(self, file_name, unit):
+    def import_arrival_rate(self, file_name=None, unit='min'):
         unit_trans = {
             'day': 60*60*24,
             'hour': 60*60,
             'min': 60,
             'sec': 1
         }
+        
+        testnode = self.graph.get_allnodes()[0]
+        if ('rate' in self.graph.get_graph_dic()[testnode]['nei'][testnode].keys()):
+            print('Rate infomation is embedded in the city.json')
+            for index, node in enumerate(self.graph.get_allnodes()):
+                # rate_matrix[index][index] = 0
+                # rate_matrix = []
+                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] for dest in self.graph.get_allnodes() ])
+                self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
         
         file_name = 'conf/{}'.format(file_name)
         rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
@@ -222,6 +231,8 @@ class Simulator(object):
         # self.plot = Plot(self.graph, self.time_horizon)
         self.plot.import_result(self.passenger_queuelen, self.vehicle_queuelen)
 
+    def plot_topology(self, method='ploty'):
+        self.plot.plot_topology(method='plotly')
         
     def plot_passenger_queuelen(self, mode, time):
         self.plot.plot_passenger_queuelen(mode=mode, time=time)
