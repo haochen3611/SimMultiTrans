@@ -37,7 +37,7 @@
         "interval": "0 sec",
         "reb": "active",
         "distrib": {
-            "Greyhound Bus Station": 40, "Ohio Union": 40, "Walmart Supercenter": 40
+            "Greyhound Bus Station": 10, "Ohio Union": 10, "Walmart Supercenter": 10
         }
     }
 }
