@@ -74,7 +74,8 @@ class Plot(object):
             'name': 'Queue', 
             'text': text_str,
             'marker': { 
-                'size': data+self.relativesize, 
+                # 'size': data+self.relativesize, 
+                'size': np.log(data+self.relativesize), 
                 'color': data, 'colorscale': colorsacle,
                 'cmin': data.min(), 'cmax': data.max(), 'colorbar': dict(title='Queue')  
             }
@@ -147,8 +148,11 @@ class Plot(object):
             frame = {'data': [], 'name': str(frame_index)}
             text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index, frame_index]) for index in range(len(data))]
             data_dict = { 'type':'scattermapbox', 'lon': lon, 'lat': lat, 'mode': 'markers', 'name': 'Queue', 'text': text_str,
-                'marker': { 'size': np.abs(data[:, frame_index])+self.relativesize, 'color': data[:, frame_index], 'colorscale': colorsacle,
-                        'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
+                'marker': { 
+                    # 'size': np.abs(data[:, frame_index])+self.relativesize,
+                    'size': 5*np.log(np.abs(data[:, frame_index])+self.relativesize), 
+                    'color': data[:, frame_index], 'colorscale': colorsacle,
+                    'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
             }
 
             frame['data'].append(data_dict)

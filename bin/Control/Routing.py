@@ -80,7 +80,6 @@ class Routing(object):
         
         return path
 
-
     def pathinfo_generator(self, ori, dest, method):
         edge = self.graph.get_edge(ori, dest)
         info = edge[2]

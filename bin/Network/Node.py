@@ -43,7 +43,7 @@ class Node(object):
         self.park = []
 
         # random_dstr = np.random.uniform(low=0, high=1, size=(len(self.dest)))
-        self.arr_prob_set = self.random_exp_arrival_prob(5, len(graph_top))
+        self.arr_prob_set = self.random_exp_arrival_prob(1, len(graph_top))
         # print(self.arr_rate_set, np.sum(self.arr_rate_set))
 
         
@@ -148,8 +148,10 @@ class Node(object):
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
                 # random pick a routing policy
-                routing_method = np.random.choice(routing.get_methods(), 1)[0]
-                p.get_schdule(routing, routing_method)
+                # routing_method = np.random.choice(routing.get_methods(), 1)[0]
+                # p.get_schdule(routing, routing_method)
+                p.get_schdule(routing, 'simplex')
+                
                 # print('new passenger arrived')
                 # print(p.get_id(), p.get_odpair())
                 # print('get sch: ', p.get_schdule(routing))
