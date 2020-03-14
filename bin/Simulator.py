@@ -93,19 +93,21 @@ class Simulator(object):
                 # rate_matrix = []
                 rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] for dest in self.graph.get_allnodes() ])
                 self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
-        
-        file_name = 'conf/{}'.format(file_name)
-        rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
-        print('Node: ', self.graph.get_allnodes())
-        (row, col) = rate_matrix.shape
-        if (row != col) or (row != self.graph.get_size()):
-            logging.error('Different dimensions of matrix and nodes')
-            print('Error input matirx!')
         else:
-            for index, node in enumerate(self.graph.get_allnodes()):
-                rate_matrix[index][index] = 0
-                self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate_matrix[:,index] )
-                # print(self.graph.get_graph_dic()[node]['node'].arr_prob_set)
+            # import from matrix
+            file_name = 'conf/{}'.format(file_name)
+            rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
+
+            print('Node: ', self.graph.get_allnodes())
+            (row, col) = rate_matrix.shape
+            if (row != col) or (row != self.graph.get_size()):
+                logging.error('Different dimensions of matrix and nodes')
+                print('Error input matirx!')
+            else:
+                for index, node in enumerate(self.graph.get_allnodes()):
+                    rate_matrix[index][index] = 0
+                    self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate_matrix[:,index] )
+                    # print(self.graph.get_graph_dic()[node]['node'].arr_prob_set)
                 
     def import_vehicle_attribute(self, file_name):
         with open('conf/{}'.format(file_name)) as file_data:
