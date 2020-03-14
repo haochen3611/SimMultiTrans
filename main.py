@@ -30,7 +30,7 @@ def main():
     # simu.plot_passenger_queuelen(mode='scooter', time='06:05:00')
     # simu.passenger_queue_animation(mode='scooter', frames=30, autoplay=True)
     # simu.vehicle_queue_animation(mode='scooter', frames=30, autoplay=True)
-    simu.combination_queue_animation(mode='scooter', frames=100, autoplay=True)
+    simu.combination_queue_animation(mode='taxi', frames=100, autoplay=True)
     # simu.combination_queue_animation(mode='taxi', frames=30, autoplay=True)
     #simu.combination_queue_animation(mode='scooter', frames=30, autoplay=True)
     # simu.combination_queue_animation(mode='bus', frames=100, autosave=True)

@@ -99,6 +99,7 @@ class Node(object):
     def vehicle_arrive(self, v):
         logging.info('Time {}: Vel {} arrive at node {}'.format(
             self.time, v.get_id(), self.id))
+        # print('node: {}'.format(self.id))
         self.vehicle[v.get_mode()].append(v)
         v.update_location(self.id)
         p_list = v.dropoff()            

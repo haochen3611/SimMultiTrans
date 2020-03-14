@@ -98,7 +98,7 @@ class Simulator(object):
             file_name = 'conf/{}'.format(file_name)
             rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
 
-            print('Node: ', self.graph.get_allnodes())
+            # print('Node: ', self.graph.get_allnodes())
             (row, col) = rate_matrix.shape
             if (row != col) or (row != self.graph.get_size()):
                 logging.error('Different dimensions of matrix and nodes')
