@@ -2,12 +2,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from bin.Network.Passenger import Passenger
-# from Vehicle import Vehicle
+# from bin.Network.Vehicle import Vehicle
 from bin.Network.Road import Road
 
 import numpy as np
 
 import logging
+import copy
 
 class Node(object):
     def __init__(self, nid, graph_top):
@@ -19,12 +20,13 @@ class Node(object):
         self.road = {}
         for dest in graph_top[nid]['nei']:
             # distance can be set by L1 norm
-            dist = graph_top[nid]['nei'][dest]['dist']
+            # dist = graph_top[nid]['nei'][dest]['dist']
             # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['lon'])
             L1dist = Haversine( (self.loc[0], self.loc[1]), (graph_top[dest]['lat'], graph_top[dest]['lon']) ).meters
-            if (dist <= 0.2* L1dist):
-                dist = L1dist
-            r = Road(ori=nid, dest=dest, dist=dist)
+            if (graph_top[nid]['nei'][dest]['dist'] <= 0.2* L1dist):
+                # dist = L1dist
+                graph_top[nid]['nei'][dest]['dist'] = L1dist
+            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'])
             self.road[dest] = r
 
         self.time = 0
@@ -36,6 +38,9 @@ class Node(object):
             self.vehicle[mode] = []
             self.passenger[mode] = []
 
+        # a copy of walk
+        self.walk = None
+
         # default arrival process
         self.arr_rate = np.random.uniform(0, 0.5, 1)
         self.dest = [d for d in graph_top]
@@ -46,8 +51,7 @@ class Node(object):
         self.arr_prob_set = self.random_exp_arrival_prob(1, len(graph_top))
         # print(self.arr_rate_set, np.sum(self.arr_rate_set))
 
-        
-    
+
     def get_id(self):
         return self.id
 
@@ -80,12 +84,19 @@ class Node(object):
         self.arr_rate = np.sum(rate)
         self.arr_prob_set = self.exp_arrival_prob(rate)
 
+    def set_walk(self, v):
+        self.walk = copy.deepcopy(v)
+
     def passenger_arrive(self, p):
         # self.passenger.append(p)
         mode = p.get_waitingmode(self.id)
         # print(mode)
         if (mode != None):
             self.passenger[mode].append(p)
+            # walk always available
+            if (mode == 'walk'):
+                v_walk = copy.deepcopy(self.walk)
+                self.vehicle_arrive(v_walk)
 
     def passenger_leave(self, p):
         # self.passenger.remove(p)
@@ -98,8 +109,7 @@ class Node(object):
 
     def vehicle_arrive(self, v):
         logging.info('Time {}: Vel {} arrive at node {}'.format(
-            self.time, v.get_id(), self.id))
-        # print('node: {}'.format(self.id))
+        self.time, v.get_id(), self.id))
         self.vehicle[v.get_mode()].append(v)
         v.update_location(self.id)
         p_list = v.dropoff()            
@@ -113,8 +123,8 @@ class Node(object):
                 # self.passenger.append(p)
                 self.passenger_arrive(p)
                 logging.info('Time {}: Pas {} arrived at {}'.format(
-                    self.time, p.get_id(), self.id))
-        
+                    self.time, p.get_id(), self.id)) 
+
         # if v arrive at final stop, then move to the park
         if (v.finalstop(self.id)):
             self.vehilce_leave(v)
@@ -145,13 +155,14 @@ class Node(object):
         for index, res in enumerate(pp_toss):
             if (res):
                 dest = self.dest[index]
-                pid = '{}{}_{}'.format(self.id[0:2], dest[0:2], self.time)
+                pid = '{}{}_{}'.format(self.id, dest, self.time)
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
                 # random pick a routing policy
                 # routing_method = np.random.choice(routing.get_methods(), 1)[0]
                 # p.get_schdule(routing, routing_method)
-                p.get_schdule(routing, 'simplex')
+                # p.get_schdule(routing, 'simplex')
+                p.get_schdule(routing, 'bus_walk_simplex')
                 
                 # print('new passenger arrived')
                 # print(p.get_id(), p.get_odpair())
@@ -159,6 +170,9 @@ class Node(object):
                 # self.passenger.append(p)
                 # print(pid, p.get_schdule(g))
                 self.passenger_arrive(p)
+
+                # each passenger combines a foot
+
                 logging.info('Time {}: Pas {} arrived, ori={}, dest={}'.format(
                     self.time, pid, self.id, dest))
 
@@ -194,6 +208,23 @@ class Node(object):
                     v.set_destination(None)
                     self.vehilce_leave(v)
                     self.road[v.get_destination()].arrive(v)
+
+    def dispatch(self, reb_flow):
+        print(reb_flow)
+        if (len(reb_flow) == 0):
+            return
+        for mode in reb_flow:
+            if ( mode in self.vehicle):
+                # only if more supplies
+                if ( len(self.vehicle[mode]) > len(self.passenger[mode]) and len(self.vehicle[mode]) != 0):
+                    for v in self.vehicle[mode]:
+                        # print(reb_flow[mode])
+                        dest = np.random.choice(reb_flow.keys(), 1, p=reb_flow[mode])[0]
+                        v.set_destination( reb_flow.keys()[dest] )
+
+                        self.vehilce_leave(v)
+                        self.road[v.get_destination()].arrive(v)
+
     
                 
 

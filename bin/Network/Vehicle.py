@@ -52,6 +52,9 @@ class Vehicle(object):
     def get_type(self):
         return self.type
 
+    def get_rebtype(self):
+        return self.reb
+
     def reverse_route(self, loc):
         if (loc == self.route_set[-1]):
             self.route_set.reverse()

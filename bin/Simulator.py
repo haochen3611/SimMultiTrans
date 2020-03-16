@@ -10,7 +10,6 @@ from Routing import Routing
 '''
 from bin.Control import *
 from bin.Network import *
-# from Converter import MidpointNormalize
 from bin.Plot import Plot
 
 import numpy as np
@@ -124,26 +123,36 @@ class Simulator(object):
 
         # generate vehicles
         for mode in self.vehicle_attri:
-            # self.vehicel[mode] = {}
-            name_cnt = 0
-        
-            # initialize vehilce distribution
-            for node in self.vehicle_attri[mode]['distrib']:
-                interarrival = 0
-                for locv in range(self.vehicle_attri[mode]['distrib'][node]):
+            # for walk, assign 1 walk to each node initially
+            if (mode == 'walk'):
+                for node in self.graph.get_graph_dic():
                     v_attri = self.vehicle_attri[mode]
-                    vid = '{}{}'.format(mode, name_cnt)
-                    name_cnt += 1
+                    vid = 'walk'
                     v = Vehicle(vid=vid, mode=mode, loc=node)
                     v.set_attri(v_attri)
-                    
-                    if (v.get_type() == 'publ'):
-                        # public vehicle wait at park
-                        self.graph.get_graph_dic()[node]['node'].vehicle_park(v, interarrival)
-                        interarrival += v.get_parktime()
-                    elif (v.get_type() == 'priv'):
-                        # private vehicle wait at node
-                        self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
+                    self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
+                    self.graph.get_graph_dic()[node]['node'].set_walk(v)
+            # for others
+            else:
+                name_cnt = 0
+            
+                # initialize vehilce distribution
+                for node in self.vehicle_attri[mode]['distrib']:                
+                    interarrival = 0
+                    for locv in range(self.vehicle_attri[mode]['distrib'][node]):
+                        v_attri = self.vehicle_attri[mode]
+                        vid = '{}{}'.format(mode, name_cnt)
+                        name_cnt += 1
+                        v = Vehicle(vid=vid, mode=mode, loc=node)
+                        v.set_attri(v_attri)
+                        
+                        if (v.get_type() == 'publ'):
+                            # public vehicle wait at park
+                            self.graph.get_graph_dic()[node]['node'].vehicle_park(v, interarrival)
+                            interarrival += v.get_parktime()
+                        elif (v.get_type() == 'priv'):
+                            # private vehicle wait at node
+                            self.graph.get_graph_dic()[node]['node'].vehicle_arrive(v)
 
     def set_running_time(self, starttime, timehorizon, unit):
         unit_trans = {
@@ -165,7 +174,6 @@ class Simulator(object):
                 self.vehicle_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_queuelen[node][mode] = np.zeros(self.time_horizon)
 
-        self.plot = Plot(self.graph, self.time_horizon, self.start_time)
 
     def ori_dest_generator(self, method):
         if ( method.equal('uniform') ):
@@ -178,20 +186,20 @@ class Simulator(object):
             dest = random.choice(nodes_set)            
             return (ori, dest)
 
-    def start(self):
+    def run(self):
         print('Simulation started: ')
         logging.info('Simulation started at {}'.format(time()))
         start_time = time()
 
-        # p_test = Passenger(pid='B1A1',ori='B1',dest='A1',arr_time=0)
-        # p_test.get_schdule(self.graph)
-        # self.graph.get_graph_dic()['B1']['node'].passenger_arrive(p_test)
+        # list of modes that can rebalance
+        self.rebalance = Rebalancing(self.graph, self.vehicle_attri)
+        reb_list = [ mode for mode in self.vehicle_attri if ( self.vehicle_attri[mode]['reb'] == 'active' ) ]
+        reb_flow = {}
 
-        # queuelength_str = ''
-
+        # Time horizon
         for timestep in range(self.time_horizon):
+
             for node in self.graph.get_allnodes():
-                # print('node=', node)
                 n = self.graph.get_graph_dic()[node]['node']
                 n.syn_time(timestep)
 
@@ -203,10 +211,18 @@ class Simulator(object):
                 n.new_passenger_arrive(self.routing)
                 n.match_demands(self.vehicle_attri)
                 
+                # dispatch
+                if ((timestep+1) % 300 == 0):
+                    # rebalance for every 300 steps
+                    for mode in reb_list:
+                        queue_p = [ self.passenger_queuelen[node][mode][timestep-1]
+                            for node in self.graph.get_allnodes() ]
+                        queue_v = [ self.vehicle_queuelen[node][mode][timestep-1]
+                            for node in self.graph.get_allnodes() ]
+                        reb_flow[mode] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
+                    n.dispatch(reb_flow)
+
                 # save data
-                # self.passenger_queuelen[node][timestep] = len( n.get_passenger_queue() )
-                # queuelength_str += 'Time {}: Pas queue length: {}\n'.format(timestep, len( n.get_passenger_queue() ))
-                # logging.info('Time {}: Pas queue length: {}'.format(timestep, qlength))
                 for mode in self.vehicle_attri:
                     if (mode in n.get_mode()):
                         self.passenger_queuelen[node][mode][timestep] = len( n.get_passenger_queue(mode) )
@@ -226,6 +242,7 @@ class Simulator(object):
         print('Running time: ', stop_time-start_time)
 
         # logging.info(queuelength_str)
+        self.plot = Plot(self.graph, self.time_horizon, self.start_time)
 
         for node in self.graph.get_allnodes():
             logging.info('Node #{}# history: {}'.format(node, self.passenger_queuelen[node]))

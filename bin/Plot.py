@@ -384,10 +384,25 @@ class Plot(object):
         
     def combination_queue_animation_matplotlib(self, fig, mode, frames):    
         data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame_index in range(0, int(frames)):
-            index = int(frame_index*self.time_horizon/frames)
-            data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                for node in self.graph.get_graph_dic() ]
+
+        # sum all buses
+        bus_list = []
+        if (mode == 'bus'):
+            for node in self.graph.get_topology():
+                modelist =  self.graph.get_topology()[node]['mode'].split(',')
+                modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
+                print(modelist)
+                bus_list = list(set(bus_list + modelist))
+            for bus in bus_list:
+                for frame_index in range(0, int(frames)):
+                    index = int(frame_index*self.time_horizon/frames)
+                    data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
+                            for node in self.graph.get_graph_dic() ]
+        else:
+            for frame_index in range(0, int(frames)):
+                index = int(frame_index*self.time_horizon/frames)
+                data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
+                    for node in self.graph.get_graph_dic() ]
 
         # norm = mpl.colors.Normalize(vmin=result.min(), vcenter=0, vmax=result.max())
         norm = MidpointNormalize(vmin=data.min(), vcenter=0, vmax=data.max())
@@ -418,10 +433,25 @@ class Plot(object):
 
     def combination_queue_animation_plotly(self, fig, mode, frames):
         data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
-        for frame_index in range(0, int(frames)):
-            index = int(frame_index*self.time_horizon/frames)
-            data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                for node in self.graph.get_graph_dic() ]  
+        # sum all buses
+        bus_list = []
+        if (mode == 'bus'):
+            for node in self.graph.get_topology():
+                modelist =  self.graph.get_topology()[node]['mode'].split(',')
+                modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
+                # print(modelist)
+                bus_list = list(set(bus_list + modelist))
+            # print(bus_list)
+            for bus in bus_list:
+                for frame_index in range(0, int(frames)):
+                    index = int(frame_index*self.time_horizon/frames)
+                    data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
+                            for node in self.graph.get_graph_dic() ]
+        else:
+            for frame_index in range(0, int(frames)):
+                index = int(frame_index*self.time_horizon/frames)
+                data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
+                    for node in self.graph.get_graph_dic() ]
 
         fig = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         return fig

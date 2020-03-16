@@ -4,12 +4,15 @@
 
 import numpy as np
 
+import random
+
 class Routing(object):
     def __init__(self, graph, vehicle_attri):
         self.graph = graph
         self.path = {
             'bus_simplex': {},
-            'simplex': {}
+            'simplex': {},
+            'bus_walk_simplex': {}
         }
         self.vehicle_attri = vehicle_attri
 
@@ -27,7 +30,8 @@ class Routing(object):
         else:
             methodset = {
                 'bus_simplex': self.bus_simplex,
-                'simplex': self.simplex
+                'simplex': self.simplex,
+                'bus_walk_simplex': self.bus_walk_simplex
             }
             # route = Routing(self, ori, dest)
             # print('routing: ', ori, dest)
@@ -41,6 +45,55 @@ class Routing(object):
             return {ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}}
         else:
             return {}
+
+    def bus_walk_simplex(self, ori, dest):
+        # stops = ori
+        path = {}
+        
+        # check avialability
+        ori_nei_id = [ node for node in self.graph.get_topology()[ori]['nei'] ]
+        ori_nei_dist = np.array( [ self.graph.get_topology()[ori]['nei'][node]['dist'] for node in self.graph.get_topology()[ori]['nei'] ] )
+        
+        # print(ori_nei)
+        dest_nei_id = [ node for node in self.graph.get_topology()[dest]['nei'] ]
+        dest_nei_dist = np.array( [ self.graph.get_topology()[dest]['nei'][node]['dist'] for node in self.graph.get_topology()[dest]['nei'] ] )
+
+        # print(dest_nei)
+        # print(np.where(ori_nei_dist == np.amin(ori_nei_dist))[0][0])
+        # print(np.where(dest_nei_dist == np.amin(dest_nei_dist))[0][0])
+
+        ori_trans = ori_nei_id[ 
+            np.where(ori_nei_dist == np.amin(ori_nei_dist[
+                ori_nei_dist != np.amin(ori_nei_dist)
+            ]))[0][0] 
+        ]
+
+        dest_trans = dest_nei_id[ 
+            np.where(dest_nei_dist == np.amin(dest_nei_dist[
+                dest_nei_dist != np.amin(dest_nei_dist)
+            ]))[0][0] 
+        ]
+
+        ori_trans_modes = self.graph.get_topology()[ori_trans]['mode'].split(',')
+        dest_trans_modes = self.graph.get_topology()[dest_trans]['mode'].split(',')
+        mode = list(set(ori_trans_modes).intersection(dest_trans_modes))
+        # no bus available, take taxi
+        # also add some randomness
+        if (len(mode) > 2 and random.choice([True, False])):
+            path.update({ori: {'dest': ori_trans, 'info': self.pathinfo_generator(ori=ori, dest=ori_trans, method='walk')}})
+            path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method=mode[0])}})
+            path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
+            # return path
+            # print(ori, dest)
+            # print('a', path)
+        # bus available
+        else:
+            path.update({ori: {'dest': ori_trans, 'info': self.pathinfo_generator(ori=ori, dest=ori_trans, method='walk')}})
+            path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method='taxi')}})
+            path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
+            # print(ori, dest)
+            # print('b', path)
+        return path
 
     def bus_simplex(self, ori, dest):
         stops = ori
@@ -77,7 +130,6 @@ class Routing(object):
                         # path.append(self.get_edge(busstop, dest))
                         path.update({stops: {'dest': busstop, 'info': self.pathinfo_generator(ori=stops, dest=busstop, method='simplex')}})
                         path.update({busstop: {'dest': dest, 'info': self.pathinfo_generator(ori=busstop, dest=dest, method='simplex')}})
-        
         return path
 
     def pathinfo_generator(self, ori, dest, method):
@@ -89,10 +141,12 @@ class Routing(object):
         else:
             if (method == 'simplex'):
                 return {'mode': mode[0], 'dist': info['dist']}
+            elif (method == 'walk'):
+                return {'mode': 'walk', 'dist': info['dist']} if ('walk' in mode) else {'mode': mode[0], 'dist': info['dist']}
             elif (method == 'taxi'):
                 return {'mode': 'taxi', 'dist': info['dist']} if ('taxi' in mode) else {'mode': mode[0], 'dist': info['dist']}
             else:
-                return {'mode': mode[0], 'dist': info['dist']}
+                return {'mode': method, 'dist': info['dist']} if (method in mode) else {'mode': mode[0], 'dist': info['dist']}
 
     def save_path(self, ori, dest, method, path):
         if (ori not in self.path[method]):
@@ -102,3 +156,33 @@ class Routing(object):
             self.path[method][ori][dest] = path
         else:
             return
+
+
+    # the follows are algorithms
+    # quick sort
+    def partition(self, array, start, end):
+        pivot = array[start]
+        low = start + 1
+        high = end
+
+        while True:
+            while (low <= high and array[high] >= pivot):
+                high = high - 1
+            while (low <= high and array[low] <= pivot):
+                low = low + 1
+            if (low <= high):
+                array[low], array[high] = array[high], array[low]
+            else:
+                break
+
+        array[start], array[high] = array[high], array[start]
+
+        return high
+    
+    def quick_sort(self, array, start, end):
+        if (start >= end):
+            return
+
+        p = partition(array, start, end)
+        quick_sort(array, start, p-1)
+        quick_sort(array, p+1, end)
