@@ -11,6 +11,9 @@ class Rebalancing(object):
         self.vehicle_attri = vehicle_attri
 
     def MaxWeight(self, node, queue, server):
+        if (np.sum(queue) == 0):
+            return np.zeros(len(queue))
+
         if (len(queue) == len(server)):
             # A_eq = np.ndarray(np.ones(shape=(1, len(queue))))
             # b_eq = np.sum(server)
@@ -18,8 +21,20 @@ class Rebalancing(object):
             # print('s', server)
             # print(A_eq, b_eq)
             # result = linprog(c=queue, A_eq=A_eq, b_eq=b_eq, bounds=[0, np.inf], method='simplex')
-            result = linprog(c=queue, bounds=[0, np.inf], method='simplex')
-            print(result.x)
+            A_ub = np.eye(len(queue))
+            dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
+                for dest in self.graph.get_topology()[node]['nei'] ] )
+            k = 4
+            k_near_list = dist_list.argsort()[:k]
+            b_ub = np.zeros(shape=(len(queue), 1))
+            # need review!!
+            b_ub[k_near_list] = sum(server)/2
+
+            A_eq = np.ones(shape=(1, len(queue)))
+            b_eq = sum(server)
+            c = -np.array(queue)
+            result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, sum(server)], method='simplex')
+            # print(result.x)
             return result.x
         return None
 
@@ -27,7 +42,10 @@ class Rebalancing(object):
         if (self.vehicle_attri[mode]['reb'] == 'active'):
             opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
             # normalize
-            return opt_queue_v / (np.sum(opt_queue_v))
+            sum_queue = np.sum(opt_queue_v)
+            # print(sum_queue)
+
+            return (opt_queue_v / sum_queue) if (sum_queue != 0) else np.zeros(len(opt_queue_v))
         else: 
             return None
         

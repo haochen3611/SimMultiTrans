@@ -93,6 +93,7 @@ class Routing(object):
             path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
             # print(ori, dest)
             # print('b', path)
+        # print(path)
         return path
 
     def bus_simplex(self, ori, dest):

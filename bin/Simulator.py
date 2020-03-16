@@ -194,7 +194,7 @@ class Simulator(object):
         # list of modes that can rebalance
         self.rebalance = Rebalancing(self.graph, self.vehicle_attri)
         reb_list = [ mode for mode in self.vehicle_attri if ( self.vehicle_attri[mode]['reb'] == 'active' ) ]
-        reb_flow = {}
+        reb_flow = {'nodes': self.graph.get_allnodes()}
 
         # Time horizon
         for timestep in range(self.time_horizon):
@@ -220,7 +220,7 @@ class Simulator(object):
                         queue_v = [ self.vehicle_queuelen[node][mode][timestep-1]
                             for node in self.graph.get_allnodes() ]
                         reb_flow[mode] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
-                    n.dispatch(reb_flow)
+                    # n.dispatch(reb_flow)
 
                 # save data
                 for mode in self.vehicle_attri:

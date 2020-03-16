@@ -13,6 +13,7 @@ import copy
 class Node(object):
     def __init__(self, nid, graph_top):
         self.id = nid
+        self.graph_top = graph_top
 
         self.loc = (graph_top[nid]['lat'], graph_top[nid]['lon'])
         self.mode = graph_top[nid]['mode'].split(',')
@@ -210,20 +211,20 @@ class Node(object):
                     self.road[v.get_destination()].arrive(v)
 
     def dispatch(self, reb_flow):
-        print(reb_flow)
+        # print(reb_flow)
         if (len(reb_flow) == 0):
             return
         for mode in reb_flow:
-            if ( mode in self.vehicle):
+            if ( mode in self.vehicle and np.sum(reb_flow[mode]) != 0):
                 # only if more supplies
                 if ( len(self.vehicle[mode]) > len(self.passenger[mode]) and len(self.vehicle[mode]) != 0):
                     for v in self.vehicle[mode]:
                         # print(reb_flow[mode])
-                        dest = np.random.choice(reb_flow.keys(), 1, p=reb_flow[mode])[0]
-                        v.set_destination( reb_flow.keys()[dest] )
-
-                        self.vehilce_leave(v)
-                        self.road[v.get_destination()].arrive(v)
+                        dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode])[0]
+                        if ( mode in self.graph_top[dest]['mode'] ):
+                            v.set_destination(dest)
+                            self.vehilce_leave(v)
+                            self.road[v.get_destination()].arrive(v)
 
     
                 
