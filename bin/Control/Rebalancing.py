@@ -28,7 +28,7 @@ class Rebalancing(object):
             k_near_list = dist_list.argsort()[:k]
             b_ub = np.zeros(shape=(len(queue), 1))
             # need review!!
-            b_ub[k_near_list] = 1
+            b_ub[k_near_list] = 1.0/np.sqrt(k)
 
             A_eq = np.ones(shape=(1, len(queue)))
             b_eq = 1
@@ -39,33 +39,34 @@ class Rebalancing(object):
         return None
 
     def Perposion(self, node, queue, server):
-        if (np.sum(queue) == 0):
-            return np.zeros(len(queue))
-
-        if (len(queue) == len(server)):
+        if (np.sum(queue) != 0 and len(queue) == len(server)):
             dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
                 for dest in self.graph.get_topology()[node]['nei'] ] )
             k = 20
             k_near_list = dist_list.argsort()[:k]
             rate = np.zeros(len(queue))
             # need review!!
-            queue = np.array(queue)
-            sum_rate = np.sum(queue[k_near_list]) 
-            sum_rate = sum_rate if (sum_rate != 0) else 1
+            asy = np.array(queue)
+            sum_rate = np.sum(asy[k_near_list]) 
+            if (sum_rate != 0):
+                return rate
             for k_near in k_near_list:
-                rate[k_near] = queue[k_near]/sum_rate
+                rate[k_near] = asy[k_near]/sum_rate
             return rate
-        return None
+        return np.zeros(len(queue))
     
 
     def Dispatch_active(self, node, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active'):
+            # opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
             opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
             # normalize
             sum_queue = np.sum(opt_queue_v)
-            # print(sum_queue)
-
-            return (opt_queue_v / sum_queue) if (sum_queue != 0) else np.zeros(len(opt_queue_v))
+            print(sum_queue)
+            if (sum_queue != 0):
+                return (opt_queue_v/sum_queue), True  
+            else:
+                return np.zeros(len(opt_queue_v)), False
         else: 
-            return None
+            return None, False
         

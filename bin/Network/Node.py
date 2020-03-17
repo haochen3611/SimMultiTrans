@@ -120,6 +120,7 @@ class Node(object):
                 # self.passenger_leave(p)
                 logging.info('Time {}: Pas {} arrived at destination {} and quit'.format(
                     self.time, p.get_id(), self.id))
+                del p
             else:
                 # self.passenger.append(p)
                 self.passenger_arrive(p)
@@ -220,10 +221,10 @@ class Node(object):
         for mode in reb_flow:
             if ( mode in self.vehicle and np.sum(reb_flow[mode]) != 0):
                 # only if more supplies
-                if ( len(self.vehicle[mode]) > len(self.passenger[mode]) and len(self.vehicle[mode]) != 0):
+                if ( len(self.vehicle[mode]) > len(self.passenger[mode]) and len(self.vehicle[mode]) != 0 and reb_flow[mode]['reb']):
                     for v in self.vehicle[mode]:
                         # print(reb_flow[mode])
-                        dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode])[0]
+                        dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode]['p'])[0]
                         if ( mode in self.graph_top[dest]['mode'] and dest != self.id ):
                             v.set_destination(dest)
                             self.vehilce_leave(v)

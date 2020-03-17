@@ -222,7 +222,8 @@ class Simulator(object):
                             for node in self.graph.get_allnodes() ]
                         queue_v = [ self.vehicle_queuelen[node][mode][timestep-1]
                             for node in self.graph.get_allnodes() ]
-                        reb_flow[mode] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
+                        reb_flow[mode] = {}
+                        reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
                     n.dispatch(reb_flow)
 
                 # save data

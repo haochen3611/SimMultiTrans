@@ -492,8 +492,9 @@ class Plot(object):
         x = np.arange(start=0, stop=self.time_horizon, step=1)
         y = np.zeros(len(x))
         for node in self.queue_p:
-            y = y + self.queue_p[node][mode]
-            fig.add_trace(go.Scatter(x=x, y=y, fill='tozeroy', name=node)) # fill down to xaxis
+            # y = y + self.queue_p[node][mode]
+            # fig.add_trace(go.Scatter(x=x, y=y, fill='tozeroy', name=node)) # fill down to xaxis
+            fig.add_trace(go.Scatter(x=x, y=y, name=node)) 
         
         file_name = 'results/{}_queue_time'.format(mode)
         pt.offline.plot(fig, filename=file_name+'.html')
