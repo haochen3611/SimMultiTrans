@@ -47,9 +47,11 @@ class Rebalancing(object):
                 for dest in self.graph.get_topology()[node]['nei'] ] )
             k = 20
             k_near_list = dist_list.argsort()[:k]
-            rate = np.zeros(shape=(len(queue), 1))
+            rate = np.zeros(len(queue))
             # need review!!
-            sum_rate = np.sum(queue[k_near_list])
+            queue = np.array(queue)
+            sum_rate = np.sum(queue[k_near_list]) 
+            sum_rate = sum_rate if (sum_rate != 0) else 1
             for k_near in k_near_list:
                 rate[k_near] = queue[k_near]/sum_rate
             return rate
@@ -58,7 +60,7 @@ class Rebalancing(object):
 
     def Dispatch_active(self, node, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active'):
-            opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
+            opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
             # normalize
             sum_queue = np.sum(opt_queue_v)
             # print(sum_queue)

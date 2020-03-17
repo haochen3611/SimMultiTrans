@@ -224,7 +224,7 @@ class Node(object):
                     for v in self.vehicle[mode]:
                         # print(reb_flow[mode])
                         dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode])[0]
-                        if ( mode in self.graph_top[dest]['mode'] ):
+                        if ( mode in self.graph_top[dest]['mode'] and dest != self.id ):
                             v.set_destination(dest)
                             self.vehilce_leave(v)
                             self.road[v.get_destination()].arrive(v)
