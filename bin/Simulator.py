@@ -91,6 +91,7 @@ class Simulator(object):
                 # rate_matrix[index][index] = 0
                 # rate_matrix = []
                 rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] for dest in self.graph.get_allnodes() ])
+                rate[ self.graph.get_allnodes().index(node) ] = 0
                 self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
         else:
             # import from matrix
@@ -220,7 +221,7 @@ class Simulator(object):
                         queue_v = [ self.vehicle_queuelen[node][mode][timestep-1]
                             for node in self.graph.get_allnodes() ]
                         reb_flow[mode] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
-                    # n.dispatch(reb_flow)
+                    n.dispatch(reb_flow)
 
                 # save data
                 for mode in self.vehicle_attri:
@@ -264,5 +265,8 @@ class Simulator(object):
         
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         self.plot.combination_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)
+    
+    def queue_length(self, mode, method='plotly'):
+        self.plot.queue_length(mode, method=method)
 
 

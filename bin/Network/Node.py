@@ -27,7 +27,7 @@ class Node(object):
             if (graph_top[nid]['nei'][dest]['dist'] <= 0.2* L1dist):
                 # dist = L1dist
                 graph_top[nid]['nei'][dest]['dist'] = L1dist
-            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'])
+            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'], time=graph_top[nid]['nei'][dest]['time'])
             self.road[dest] = r
 
         self.time = 0
@@ -141,7 +141,12 @@ class Node(object):
     def exp_arrival_prob(self, rate):
         # default: exponential distribution
         # rate = ln(1-p) => p = 1-exp(-rate)
-        return 1- np.exp( -rate )
+        # exp distirbution is supported form 0 to inf
+        # print(rate)
+        prob = 1- np.exp( -rate )
+        prob[np.where(rate < 0)] = 0
+        # print(prob)
+        return prob
 
     def random_exp_arrival_prob(self, range, size):
         # default: exponential distribution
@@ -162,8 +167,8 @@ class Node(object):
                 # random pick a routing policy
                 # routing_method = np.random.choice(routing.get_methods(), 1)[0]
                 # p.get_schdule(routing, routing_method)
-                # p.get_schdule(routing, 'simplex')
-                p.get_schdule(routing, 'bus_walk_simplex')
+                p.get_schdule(routing, 'simplex')
+                # p.get_schdule(routing, 'bus_walk_simplex')
                 
                 # print('new passenger arrived')
                 # print(p.get_id(), p.get_odpair())
@@ -171,8 +176,6 @@ class Node(object):
                 # self.passenger.append(p)
                 # print(pid, p.get_schdule(g))
                 self.passenger_arrive(p)
-
-                # each passenger combines a foot
 
                 logging.info('Time {}: Pas {} arrived, ori={}, dest={}'.format(
                     self.time, pid, self.id, dest))

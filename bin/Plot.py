@@ -487,6 +487,23 @@ class Plot(object):
                 pt.offline.plot(ani, filename=file_name+'.html')
 
 
+    def queue_length(self, mode, method='plotly'):
+        fig = go.Figure()
+        x = np.arange(start=0, stop=self.time_horizon, step=1)
+        y = np.zeros(len(x))
+        for node in self.queue_p:
+            y = y + self.queue_p[node][mode]
+            fig.add_trace(go.Scatter(x=x, y=y, fill='tozeroy', name=node)) # fill down to xaxis
+        
+        file_name = 'results/{}_queue_time'.format(mode)
+        pt.offline.plot(fig, filename=file_name+'.html')
+            
+
+        
+        
+
+
+
     def plot_topology(self, method='matplotlib'):
         if (method == 'matplotlib'):
             fig, ax = plt.subplots()
@@ -564,7 +581,6 @@ class Plot(object):
                     ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
             return fig
         elif (method == 'plotly'):
-            
             return fig
         else:
             return None

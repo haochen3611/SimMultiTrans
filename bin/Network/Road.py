@@ -7,11 +7,12 @@ import numpy as np
 import logging
 
 class Road(object):
-    def __init__(self, ori, dest, dist):
+    def __init__(self, ori, dest, dist=0, time=0):
         self.ori = ori
         self.dest = dest
         self.dist = dist
         self.time = 0
+        self.triptime = time
         
         self.vehicle = []
     
@@ -22,8 +23,9 @@ class Road(object):
         return self.vehicle
 
     def arrive(self, v):
-        time = int(self.dist/v.get_velocity('m/s'))
-        leave_time = self.time + time
+        if (self.triptime == 0):
+            self.triptime = int(self.dist/v.get_velocity('m/s'))
+        leave_time = self.time + self.triptime
         self.vehicle.append( (v, leave_time) )
         logging.info('Time {}: Vel {} arrive at road ({},{})'.format(self.time, v.get_id(), self.ori, self.dest))
 

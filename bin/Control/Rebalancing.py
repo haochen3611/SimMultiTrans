@@ -24,17 +24,17 @@ class Rebalancing(object):
             A_ub = np.eye(len(queue))
             dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
                 for dest in self.graph.get_topology()[node]['nei'] ] )
-            k = 4
+            k = 20
             k_near_list = dist_list.argsort()[:k]
-            b_ub = np.zeros(shape=(len(queue), 1))
+            b_ub = np.ones(shape=(len(queue), 1))
             # need review!!
-            b_ub[k_near_list] = sum(server)/2
+            b_ub[k_near_list] = 1
 
             A_eq = np.ones(shape=(1, len(queue)))
-            b_eq = sum(server)
+            b_eq = 1
             c = -np.array(queue)
-            result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, sum(server)], method='simplex')
-            # print(result.x)
+            result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0.01, 1], method='simplex')
+            # print(node, result.x)
             return result.x
         return None
 
