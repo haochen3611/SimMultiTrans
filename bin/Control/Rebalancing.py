@@ -44,13 +44,14 @@ class Rebalancing(object):
                 for dest in self.graph.get_topology()[node]['nei'] ] )
             k = 20
             k_near_list = dist_list.argsort()[:k]
-            rate = np.zeros(len(queue))
-            # need review!!
+            
             asy = np.array(queue)
             sum_rate = np.sum(asy[k_near_list]) 
-            if (sum_rate != 0):
-                return rate
+            if (sum_rate == 0):
+                return np.zeros(len(queue))
+
             for k_near in k_near_list:
+                rate = np.zeros(len(queue))
                 rate[k_near] = asy[k_near]/sum_rate
             return rate
         return np.zeros(len(queue))
@@ -62,7 +63,7 @@ class Rebalancing(object):
             opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
             # normalize
             sum_queue = np.sum(opt_queue_v)
-            print(sum_queue)
+            # print(sum_queue)
             if (sum_queue != 0):
                 return (opt_queue_v/sum_queue), True  
             else:
