@@ -26,17 +26,35 @@ class Rebalancing(object):
                 for dest in self.graph.get_topology()[node]['nei'] ] )
             k = 20
             k_near_list = dist_list.argsort()[:k]
-            b_ub = np.ones(shape=(len(queue), 1))
+            b_ub = np.zeros(shape=(len(queue), 1))
             # need review!!
             b_ub[k_near_list] = 1
 
             A_eq = np.ones(shape=(1, len(queue)))
             b_eq = 1
             c = -np.array(queue)
-            result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0.01, 1], method='simplex')
+            result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, 1], method='simplex')
             # print(node, result.x)
             return result.x
         return None
+
+    def Perposion(self, node, queue, server):
+        if (np.sum(queue) == 0):
+            return np.zeros(len(queue))
+
+        if (len(queue) == len(server)):
+            dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
+                for dest in self.graph.get_topology()[node]['nei'] ] )
+            k = 20
+            k_near_list = dist_list.argsort()[:k]
+            rate = np.zeros(shape=(len(queue), 1))
+            # need review!!
+            sum_rate = np.sum(queue[k_near_list])
+            for k_near in k_near_list:
+                rate[k_near] = queue[k_near]/sum_rate
+            return rate
+        return None
+    
 
     def Dispatch_active(self, node, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active'):

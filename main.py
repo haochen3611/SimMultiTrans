@@ -23,7 +23,7 @@ def main():
     simu.import_vehicle_attribute(file_name='vehicle.json')
 
     # simu.set_running_time(timehorizon=1, unit='hour')
-    simu.set_running_time(starttime='08:00:00', timehorizon=4, unit='hour')
+    simu.set_running_time(starttime='08:00:00', timehorizon=1, unit='hour')
 
     # simu.plot_topology()
     simu.run()

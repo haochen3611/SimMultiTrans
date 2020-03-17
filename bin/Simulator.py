@@ -84,14 +84,16 @@ class Simulator(object):
             'sec': 1
         }
         
-        testnode = self.graph.get_allnodes()[0]
-        if ('rate' in self.graph.get_graph_dic()[testnode]['nei'][testnode].keys()):
+        (tn1, tn2) = (self.graph.get_allnodes()[0], self.graph.get_allnodes()[1])
+        if ('rate' in self.graph.get_graph_dic()[tn1]['nei'][tn2].keys()):
             print('Rate infomation is embedded in the city.json')
             for index, node in enumerate(self.graph.get_allnodes()):
                 # rate_matrix[index][index] = 0
                 # rate_matrix = []
-                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] for dest in self.graph.get_allnodes() ])
-                rate[ self.graph.get_allnodes().index(node) ] = 0
+                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] if (dest != node) else 0
+                    for dest in self.graph.get_allnodes() ])
+                # rate[ self.graph.get_allnodes().index(node) ] = 0
+                # print(rate)
                 self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
         else:
             # import from matrix
@@ -213,7 +215,7 @@ class Simulator(object):
                 n.match_demands(self.vehicle_attri)
                 
                 # dispatch
-                if ((timestep+1) % 300 == 0):
+                if ((timestep+1) % 120 == 0):
                     # rebalance for every 300 steps
                     for mode in reb_list:
                         queue_p = [ self.passenger_queuelen[node][mode][timestep-1]
