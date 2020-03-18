@@ -66,40 +66,38 @@ class Simulator(object):
         try:
             os.mkdir(figs_path)
         except OSError:
-            # logging.warning('Create result directory {} failed'.format(figs_path))
             pass
 
         try:
-            os.remove('{}/Simulator.log'.format(figs_path))
+            os.remove(f'{figs_path}/Simulator.log')
         except OSError:
-            # logging.warning('Delete log file failed'.format(figs_path))
             pass
 
-        logging.basicConfig(level = logging.INFO, filename = '{}/Simulator.log'.format(figs_path))
+        logging.basicConfig(level = logging.INFO, filename = f'{figs_path}/Simulator.log')
         logging.info('Graph initialized')
 
-    def import_arrival_rate(self, file_name=None, unit='min'):
+    def import_arrival_rate(self, file_name=None, unit=(1,'min')):
         unit_trans = {
-            'day': 60*60*24,
-            'hour': 60*60,
-            'min': 60,
-            'sec': 1
+            'day': 60*60*24*unit[0],
+            'hour': 60*60*unit[0],
+            'min': 60*unit[0],
+            'sec': 1*unit[0]
         }
         
         (tn1, tn2) = (self.graph.get_allnodes()[0], self.graph.get_allnodes()[1])
         if ('rate' in self.graph.get_graph_dic()[tn1]['nei'][tn2].keys()):
             print('Rate infomation is embedded in the city.json')
             for index, node in enumerate(self.graph.get_allnodes()):
-                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate']/unit_trans[unit] 
+                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate']/unit_trans[unit[1]] 
                     if (dest != node) else 0 for dest in self.graph.get_allnodes() ])
                 self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
         elif (file_name == None):
             print('No input data!')
         else:
-            print('Rate infomation is imported from {}.csv'.format(file_name))
+            print(f'Rate infomation is imported from {file_name}.csv')
             # import from matrix
-            file_name = 'conf/{}'.format(file_name)
-            rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')
+            file_name = f'conf/{file_name}'
+            rate_matrix = (1/unit_trans[unit[1]])*np.loadtxt(file_name, delimiter=',')
 
             # print('Node: ', self.graph.get_allnodes())
             (row, col) = rate_matrix.shape
@@ -113,7 +111,7 @@ class Simulator(object):
                     # print(self.graph.get_graph_dic()[node]['node'].arr_prob_set)
                 
     def import_vehicle_attribute(self, file_name):
-        with open('conf/{}'.format(file_name)) as file_data:
+        with open(f'conf/{file_name}') as file_data:
             self.vehicle_attri = json.load(file_data)
         '''
         # check the input correctness
@@ -145,7 +143,7 @@ class Simulator(object):
                     interarrival = 0
                     for locv in range(self.vehicle_attri[mode]['distrib'][node]):
                         v_attri = self.vehicle_attri[mode]
-                        vid = '{}{}'.format(mode, name_cnt)
+                        vid = f'{mode}_{name_cnt}'
                         name_cnt += 1
                         v = Vehicle(vid=vid, mode=mode, loc=node)
                         v.set_attri(v_attri)
@@ -169,8 +167,8 @@ class Simulator(object):
         self.time_horizon = int(timehorizon*unit_trans[unit])
 
         end_time = timedelta(seconds=self.time_horizon) + self.start_time
-        print('Time horizon: {}'.format(self.time_horizon))
-        print('From {} to {}'.format(starttime, end_time.strftime('%H:%M:%S')))
+        print(f'Time horizon: {self.time_horizon}')
+        print(f'From {starttime} to {end_time.strftime("%H:%M:%S")}')
 
         # reset data set length
         for node in self.graph.get_allnodes():
@@ -193,7 +191,7 @@ class Simulator(object):
 
     def run(self):
         print('Simulation started: ')
-        logging.info('Simulation started at {}'.format(time()))
+        logging.info(f'Simulation started at {time()}')
         start_time = time()
 
         # list of modes that can rebalance
@@ -220,10 +218,8 @@ class Simulator(object):
                 if ((timestep+1) % 120 == 0):
                     # rebalance for every 300 steps
                     for mode in reb_list:
-                        queue_p = [ self.passenger_queuelen[node][mode][timestep-1]
-                            for node in self.graph.get_allnodes() ]
-                        queue_v = [ self.vehicle_queuelen[node][mode][timestep-1]
-                            for node in self.graph.get_allnodes() ]
+                        queue_p = [ self.passenger_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
+                        queue_v = [ self.vehicle_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
                         reb_flow[mode] = {}
                         reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
                     n.dispatch(reb_flow)
@@ -245,7 +241,7 @@ class Simulator(object):
                 print('-', end='')
 
         stop_time = time()
-        logging.info('Simulation ended at {}'.format(time()))
+        logging.info(f'Simulation ended at {time()}')
         print('\nSimulation ended')
         print('Running time: ', stop_time-start_time)
 
@@ -253,7 +249,7 @@ class Simulator(object):
         self.plot = Plot(self.graph, self.time_horizon, self.start_time)
         
         for node in self.graph.get_allnodes():
-            logging.info('Node {} history: {}'.format(node, self.passenger_queuelen[node]))
+            logging.info(f'Node {node} history: {self.passenger_queuelen[node]}')
             # print(self.passenger_waittime[node])
         ''''''
         

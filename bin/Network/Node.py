@@ -120,8 +120,7 @@ class Node(object):
         self.park.append( (v, leavetime) )
 
     def vehicle_arrive(self, v):
-        logging.info('Time {}: Vel {} arrive at node {}'.format(
-        self.time, v.get_id(), self.id))
+        logging.info(f'Time {self.time}: Vel {v.get_id()} arrive at node {self.id}')
         self.vehicle[v.get_mode()].append(v)
         v.update_location(self.id)
         p_list = v.dropoff()            
@@ -129,26 +128,25 @@ class Node(object):
         for p in p_list:
             if (p.get_odpair()[1] == self.id):
                 # self.passenger_leave(p)
-                logging.info('Time {}: Pas {} arrived at destination {} and quit'.format(
-                    self.time, p.get_id(), self.id))
+                logging.info(f'Time {self.time}: Pas {p.get_id()} arrived at destination {self.id} and quit')
                 del p
+                if (v.get_mode() == 'walk'):
+                    # passenger's foot leaves with himself!
+                    del v
             else:
                 # self.passenger.append(p)
                 self.passenger_arrive(p)
-                logging.info('Time {}: Pas {} arrived at {}'.format(
-                    self.time, p.get_id(), self.id)) 
+                logging.info(f'Time {self.time}: Pas {p.get_id()} arrived at {self.id}') 
 
         # if v arrive at final stop, then move to the park
         if (v.finalstop(self.id)):
             self.vehilce_leave(v)
             self.vehicle_park(v, self.time+ v.get_parktime())
-            logging.info('Time {}: Vel {} parking at {}'.format(
-                self.time, v.get_id(), self.id))
+            logging.info(f'Time {self.time}: Vel {v.get_id()} parking at {self.id}')
 
     def vehilce_leave(self, v):
         self.vehicle[v.get_mode()].remove(v)
-        logging.info('Time {}: Vel {} leave {}'.format(
-                    self.time, v.get_id(), self.id))
+        logging.info(f'Time {self.time}: Vel {v.get_id()} leave {self.id}')
 
     def exp_arrival_prob(self, rate):
         # default: exponential distribution
@@ -174,7 +172,7 @@ class Node(object):
             if (res):
                 dest = self.dest[index] 
 
-                pid = '{}_{}_{}'.format(self.id, dest, self.time)
+                pid = f'{self.id}_{dest}_{self.time}'
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
                 # random pick a routing policy
@@ -190,8 +188,7 @@ class Node(object):
                 # print(pid, p.get_schdule(g))
                 self.passenger_arrive(p)
 
-                logging.info('Time {}: Pas {} arrived, ori={}, dest={}'.format(
-                    self.time, pid, self.id, dest))
+                logging.info(f'Time {self.time}: Pas {pid} arrived, ori={self.id}, dest={dest}')
 
     def match_demands(self, attri):
         # check if the vehicle leave the park
@@ -210,8 +207,7 @@ class Node(object):
                         if (v.pickup(p) and p.geton(self.id, v)):
                             v.set_destination(p.get_nextstop(self.id))
                             self.passenger_leave(p)
-                            logging.info('Time {}: Pas {} takes {} at node {}'.format(
-                                self.time, p.get_id(), v.get_id(), self.id))
+                            logging.info(f'Time {self.time}: Pas {p.get_id()} takes {v.get_id()} at node {self.id}')
 
                             # if vehicle is full, then move to road
                             if (v.get_emptyseats() == 0):

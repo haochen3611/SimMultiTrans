@@ -69,7 +69,7 @@ class Plot(object):
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
 
-        text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index]) for index in range(len(data))]
+        text_str = [f'{self.graph.get_allnodes()[index]}: {data[index]}' for index in range(len(data))]
         data_dict = { 
             'type':'scattermapbox', 
             'lon': self.lon, 'lat': self.lat, 
@@ -86,7 +86,7 @@ class Plot(object):
         fig_dict['data'].append(data_dict)
         fig = go.Figure(fig_dict)
 
-        file_name = 'results/Passenger_{}_queue_at_{}'.format(mode, time)
+        file_name = f'results/Passenger_{mode}_queue_at_{time}'
         fig.update_layout(template='plotly_dark')
         pt.offline.plot(fig, filename=file_name+'.html')
 
@@ -139,7 +139,7 @@ class Plot(object):
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
         
-        text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index, 0]) for index in range(len(data))]
+        text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, 0]}' for index in range(len(data))]
         data_dict = { 'type':'scattermapbox', 'lon': lon, 'lat': lat, 'mode': 'markers', 'name': 'Queue', 'text': text_str,
             'marker': { 'size': np.abs(data[:, 0])+self.relativesize, 'color': data[:, 0], 'colorscale': colorsacle,
                         'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
@@ -149,7 +149,7 @@ class Plot(object):
         # make frames
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
-            text_str = ['{}: {}'.format(self.graph.get_allnodes()[index], data[index, frame_index]) for index in range(len(data))]
+            text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
             data_dict = { 'type':'scattermapbox', 'lon': lon, 'lat': lat, 'mode': 'markers', 'name': 'Queue', 'text': text_str,
                 'marker': { 
                     'size': np.abs(data[:, frame_index])+self.relativesize,
@@ -265,15 +265,15 @@ class Plot(object):
         # turn the axis labels/spines/ticks off
         axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
+        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( np.abs(data[:, frame%frames])+100 )
             scat.set_array( data[:, frame%frames] )
-            time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
+            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
             return scat,time,
 
-        print('Generate Passenger queue ......'.format(mode), end='')
+        print(f'Generate {mode} Passenger queue ......', end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
         return ani
@@ -302,7 +302,6 @@ class Plot(object):
         try:
             os.remove(file_name+'.mp4')
         except OSError:
-            # logging.warning('Delete log file failed'.format(figs_path))
             pass
         
         if (autosave and method == 'matplotlib'):
@@ -334,15 +333,15 @@ class Plot(object):
         # turn the axis labels/spines/ticks off
         axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
+        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( np.abs(data[:, frame%frames])+100 )
             scat.set_array( data[:, frame%frames] )
-            time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
+            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
             return scat,time,
 
-        print('Generate {} queue ......'.format(mode), end='')
+        print(f'Generate {mode} queue ......', end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
         return ani
@@ -366,11 +365,10 @@ class Plot(object):
             fig = None
             ani = self.vehicle_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
 
-        file_name = 'results/{}_queue'.format(mode)
+        file_name = f'results/{mode}_queue'
         try:
             os.remove(file_name+'.mp4')
         except OSError:
-            # logging.warning('Delete log file failed'.format(figs_path))
             pass
 
         if (autosave and method == 'matplotlib'):
@@ -420,15 +418,15 @@ class Plot(object):
         # turn the axis labels/spines/ticks off
         axtext.axis('off')
         # place the text to the other axes
-        time = axtext.text(0.5,0.5, 'time step={}'.format(0), ha='left', va='top')
+        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
 
         def update(frame):
             scat.set_sizes( np.abs(data[:, frame%frames])+100 )
             scat.set_array( data[:, frame%frames] )
-            time.set_text('time step={}'.format(int(frame*self.time_horizon/frames)))
+            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
             return scat,time,
 
-        print('Generate passenger and {} queue ......'.format(mode), end='')
+        print(f'Generate passenger and {mode} queue ......', end='')
         # Construct the animation, using the update function as the animation director.
         ani = animation.FuncAnimation(fig=fig, func=update, interval=300, frames=frames, repeat=True)
         return ani
@@ -471,11 +469,10 @@ class Plot(object):
             fig = None
             ani = self.combination_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
 
-        file_name = 'results/{}_combined_queue'.format(mode)
+        file_name = f'results/{mode}_combined_queue'
         try:
             os.remove(file_name+'.mp4')
         except OSError:
-            # logging.warning('Delete log file failed'.format(figs_path))
             pass
         
         if (autosave and method == 'matplotlib'):
@@ -518,7 +515,7 @@ class Plot(object):
         )
         
         fig.update_layout(template='plotly_dark')
-        file_name = 'results/{}_queue_time'.format(mode)
+        file_name = f'results/{mode}_queue_time'
         pt.offline.plot(fig, filename=file_name+'.html')
             
     def plot_passenger_waittime(self, mode, method='plotly'):
@@ -529,7 +526,7 @@ class Plot(object):
         fig.update_xaxes(type='category')
         
         fig.update_layout(template='plotly_dark')
-        file_name = 'results/{}_waittime'.format(mode)
+        file_name = f'results/{mode}_waittime'
         pt.offline.plot(fig, filename=file_name+'.html')
 
     def plot_topology(self, method='matplotlib'):
@@ -576,7 +573,7 @@ class Plot(object):
             size = np.zeros([len(self.lon), 1])+self.relativesize*2
             color = ['#FAFAFA' for node in self.lon]
 
-            text_str = ['{}'.format(self.graph.get_allnodes()[index]) for index in range(len(self.lon))]
+            text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
             data_dict = { 
                 'type':'scattermapbox', 
                 'lon': self.lon, 'lat': self.lat, 

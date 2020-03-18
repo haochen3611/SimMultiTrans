@@ -33,7 +33,7 @@ class Graph(object):
         return self.graph_top
 
     def import_graph(self, file_name):
-        with open('conf/{}'.format(file_name)) as file_data:
+        with open(f'conf/{file_name}') as file_data:
             self.graph_top = json.load(file_data)
         self.generate_nodes()
  
@@ -51,7 +51,7 @@ class Graph(object):
             self.graph_top[node].update({'node': n})
 
     def export_graph(self, file_name):
-        with open('{}'.format(file_name), 'w') as file_data:
+        with open(f'{file_name}', 'w') as file_data:
             json.dump(self.graph_top, file_data)
 
     def add_node(self, nid, lat, lon, mode):
@@ -149,7 +149,6 @@ class Graph(object):
         # generage transfer nodes and edges
         for ori in range(msize):
             self.add_node(nid=chr(65+ori), lat=loc_set[ori][0], lon=loc_set[ori][1], mode=transfer_mode)
-            # g.generate_node(nid='{}'.format(ori))
             '''
             for dest in self.get_allnodes():
                 if (ori == dest):
@@ -179,7 +178,6 @@ class Graph(object):
                 y = y + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
                 nid = t_node+chr(49+l_node)
                 self.add_node(nid=nid, lat=x, lon=y, mode=modeset[1])
-                # g.generate_node(nid='{}'.format(l_node))
                 
                 dist = self.get_L1dist(t_node, nid)
                 self.add_edge(ori=t_node, dest=nid, mode=modeset[1], dist=dist)
