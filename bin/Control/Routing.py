@@ -81,7 +81,11 @@ class Routing(object):
         # also add some randomness
         if (len(mode) > 2 and random.choice([True, False])):
             path.update({ori: {'dest': ori_trans, 'info': self.pathinfo_generator(ori=ori, dest=ori_trans, method='walk')}})
-            path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method=mode[0])}})
+            
+            if (ori_trans != dest_trans):
+                # walk to destination
+                path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method=mode[0])}})
+
             path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
             # return path
             # print(ori, dest)
@@ -89,7 +93,10 @@ class Routing(object):
         # bus available
         else:
             path.update({ori: {'dest': ori_trans, 'info': self.pathinfo_generator(ori=ori, dest=ori_trans, method='walk')}})
-            path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method='taxi')}})
+            if (ori_trans != dest_trans):
+                # walk to destination
+                path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method='taxi')}})
+
             path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
             # print(ori, dest)
             # print('b', path)

@@ -77,10 +77,7 @@ class Node(object):
         return self.p_wait[mode]
     
     def get_average_wait_time(self, mode):
-        if (len(self.p_wait[mode]) != 0):
-            return sum(self.p_wait[mode])/len(self.p_wait[mode])  
-        else: 
-            return 0
+        return 0 if (len(self.p_wait[mode]) == 0) else sum(self.p_wait[mode])/len(self.p_wait[mode])  
 
     def syn_time(self, time):
         self.time = time
@@ -175,8 +172,9 @@ class Node(object):
         pp_toss = np.greater(self.arr_prob_set, randomness)
         for index, res in enumerate(pp_toss):
             if (res):
-                dest = self.dest[index]
-                pid = '{}{}_{}'.format(self.id, dest, self.time)
+                dest = self.dest[index] 
+
+                pid = '{}_{}_{}'.format(self.id, dest, self.time)
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
                 # random pick a routing policy

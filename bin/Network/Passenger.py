@@ -21,7 +21,7 @@ class Passenger(object):
         return (self.ori, self.dest)
 
     def get_schdule(self, routing, method):
-        # self.path = graph.get_path(self.ori, self.dest)
+        # print(self.ori, self.dest)
         self.path = routing.get_path(self.ori, self.dest, method=method)
         # print(self.path)
         return self.path
