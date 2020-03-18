@@ -9,12 +9,10 @@ class Rebalancing(object):
     def __init__(self, graph, vehicle_attri):
         self.graph = graph
         self.vehicle_attri = vehicle_attri
+        self.lazy = 1
 
     def MaxWeight(self, node, queue, server):
-        if (np.sum(queue) == 0):
-            return np.zeros(len(queue))
-
-        if (len(queue) == len(server)):
+        if (np.sum(queue) != 0 and len(queue) == len(server)):
             # A_eq = np.ndarray(np.ones(shape=(1, len(queue))))
             # b_eq = np.sum(server)
             # print('q', queue)
@@ -25,6 +23,7 @@ class Rebalancing(object):
             dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
                 for dest in self.graph.get_topology()[node]['nei'] ] )
             k = 20
+            # k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]
             b_ub = np.zeros(shape=(len(queue), 1))
             # need review!!
@@ -36,13 +35,13 @@ class Rebalancing(object):
             result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, 1], method='simplex')
             # print(node, result.x)
             return result.x
-        return None
+        return np.zeros(len(queue))
 
     def Perposion(self, node, queue, server):
         if (np.sum(queue) != 0 and len(queue) == len(server)):
             dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
                 for dest in self.graph.get_topology()[node]['nei'] ] )
-            k = 20
+            k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]
             
             asy = np.array(queue)
@@ -50,8 +49,8 @@ class Rebalancing(object):
             if (sum_rate == 0):
                 return np.zeros(len(queue))
 
+            rate = np.zeros(len(queue))
             for k_near in k_near_list:
-                rate = np.zeros(len(queue))
                 rate[k_near] = asy[k_near]/sum_rate
             return rate
         return np.zeros(len(queue))
@@ -59,15 +58,16 @@ class Rebalancing(object):
 
     def Dispatch_active(self, node, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active'):
-            # opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
-            opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
+            opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
+            # opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
             # normalize
+            opt_queue_v[ self.graph.get_allnodes().index(node) ] = self.lazy*np.amax(opt_queue_v)
             sum_queue = np.sum(opt_queue_v)
             # print(sum_queue)
             if (sum_queue != 0):
                 return (opt_queue_v/sum_queue), True  
             else:
-                return np.zeros(len(opt_queue_v)), False
+                return None, False
         else: 
             return None, False
         

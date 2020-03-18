@@ -49,6 +49,7 @@ class Simulator(object):
         # saved data
         self.passenger_queuelen = {}
         self.vehicle_queuelen = {}
+        self.passenger_waittime = {}
 
         self.vehicle_attri = {}
         self.vehicel_onroad = []
@@ -56,6 +57,7 @@ class Simulator(object):
         for node in self.graph.get_graph_dic():
             self.passenger_queuelen[node] = {}
             self.vehicle_queuelen[node] = {}
+            self.passenger_waittime[node] = {}
 
             self.road_set[node] = self.graph.get_graph_dic()[node]['node'].get_road()
 
@@ -176,6 +178,7 @@ class Simulator(object):
             for mode in self.vehicle_attri:
                 self.vehicle_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_queuelen[node][mode] = np.zeros(self.time_horizon)
+                self.passenger_waittime[node][mode] = np.zeros(self.time_horizon)
 
 
     def ori_dest_generator(self, method):
@@ -231,6 +234,8 @@ class Simulator(object):
                     if (mode in n.get_mode()):
                         self.passenger_queuelen[node][mode][timestep] = len( n.get_passenger_queue(mode) )
                         self.vehicle_queuelen[node][mode][timestep] = len( n.get_vehicle_queue(mode) )
+
+                        self.passenger_waittime[node][mode][timestep] = n.get_average_wait_time(mode)
                         # queuelength_str += 'Time {}: Vel {} queue length: {}'.format(timestep, mode, len( n.get_vehicle_queue(mode) ))
                         # logging.info('Time {}: Vel {} queue length: {}'.format(timestep, mode, qlength))
                 
@@ -247,12 +252,15 @@ class Simulator(object):
 
         # logging.info(queuelength_str)
         self.plot = Plot(self.graph, self.time_horizon, self.start_time)
-
+        
         for node in self.graph.get_allnodes():
-            logging.info('Node #{}# history: {}'.format(node, self.passenger_queuelen[node]))
-
+            logging.info('Node {} history: {}'.format(node, self.passenger_queuelen[node]))
+            # print(self.passenger_waittime[node])
+        ''''''
+        
         # self.plot = Plot(self.graph, self.time_horizon)
-        self.plot.import_result(self.passenger_queuelen, self.vehicle_queuelen)
+        self.plot.import_queuelength(self.passenger_queuelen, self.vehicle_queuelen)
+        self.plot.import_passenger_waittime(self.passenger_waittime)
 
     def plot_topology(self, method='ploty'):
         self.plot.plot_topology(method='plotly')
@@ -269,7 +277,10 @@ class Simulator(object):
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         self.plot.combination_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)
     
-    def queue_length(self, mode, method='plotly'):
-        self.plot.queue_length(mode, method=method)
+    def passenger_queuelen_time(self, mode, method='plotly'):
+        self.plot.plot_passenger_queuelen_time(mode, method=method)
+
+    def passegner_waittime(self, mode, method='plotly'):
+        self.plot.plot_passenger_waittime(mode, method=method)
 
 

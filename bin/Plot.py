@@ -32,9 +32,12 @@ class Plot(object):
             print('Map Key Error!')
             pass
 
-    def import_result(self, queue_p, queue_v):
+    def import_queuelength(self, queue_p, queue_v):
         self.queue_p = queue_p
         self.queue_v = queue_v
+    
+    def import_passenger_waittime(self, waittime):
+        self.passenger_waittime = waittime
 
     def plot_passenger_queuelen(self, mode, time):
         time_step = (datetime.strptime(time, '%H:%M:%S')-self.start_time).seconds
@@ -487,23 +490,47 @@ class Plot(object):
                 pt.offline.plot(ani, filename=file_name+'.html')
 
 
-    def queue_length(self, mode, method='plotly'):
+    def plot_passenger_queuelen_time(self, mode, method='plotly'):
         fig = go.Figure()
         x = np.arange(start=0, stop=self.time_horizon, step=1)
-        y = np.zeros(len(x))
-        for node in self.queue_p:
-            # y = y + self.queue_p[node][mode]
-            # fig.add_trace(go.Scatter(x=x, y=y, fill='tozeroy', name=node)) # fill down to xaxis
-            fig.add_trace(go.Scatter(x=x, y=y, name=node)) 
+        # x = [(timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(self.time_horizon)]
+        # x = range(self.time_horizon)
+        # y = np.zeros(len(x))
         
+        # cr = (244,67,54)
+        # cb = (33,150,243)
+        # crange = len(self.queue_p.keys())
+        # print(crange)
+        for index, node in enumerate(self.queue_p):
+            # r = abs(cr[0]-cb[0])*index/crange + min(cr[0],cb[0])
+            # g = abs(cr[1]-cb[2])*index/crange + min(cr[1],cb[1])
+            # b = abs(cr[2]-cb[2])*index/crange + min(cr[2],cb[2])
+            # color = 'rgb({},{},{})'.format(int(r), int(g), int(b))
+            # y = y + self.queue_p[node][mode]
+            y = self.queue_p[node][mode] - self.queue_v[node][mode]
+            # fig.add_trace(go.Scatter(x=x, y=y, name=node, line = {'color': color} ))
+            fig.add_trace(go.Scatter(x=x, y=y, name=node))
+
+
+        fig.update_xaxes(
+            ticktext=[(timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(0, self.time_horizon, int(self.time_horizon/10))],
+            tickvals=[t for t in range(0, self.time_horizon, int(self.time_horizon/10))],
+        )
+        
+        fig.update_layout(template='plotly_dark')
         file_name = 'results/{}_queue_time'.format(mode)
         pt.offline.plot(fig, filename=file_name+'.html')
             
-
+    def plot_passenger_waittime(self, mode, method='plotly'):
+        x = self.graph.get_allnodes()
+        # print(self.passenger_waittime)
+        y = [ self.passenger_waittime[node][mode][-1] for node in self.graph.get_allnodes() ]
+        fig = go.Figure(data=[go.Bar(x=x, y=y)])
+        fig.update_xaxes(type='category')
         
-        
-
-
+        fig.update_layout(template='plotly_dark')
+        file_name = 'results/{}_waittime'.format(mode)
+        pt.offline.plot(fig, filename=file_name+'.html')
 
     def plot_topology(self, method='matplotlib'):
         if (method == 'matplotlib'):

@@ -7,6 +7,7 @@ class Passenger(object):
         self.ori = ori
         self.dest = dest
         self.arr_time = arr_time
+        self.stop_time = arr_time
 
         self.loc = self.ori
         self.mode_wait = 0
@@ -27,6 +28,12 @@ class Passenger(object):
 
     def set_location(self, loc):
         self.loc = loc
+    
+    def set_stoptime(self, time):
+        self.stop_time = time
+    
+    def get_stoptime(self):
+        return self.stop_time
 
     def get_waitingmode(self, loc):
         # print(self.id, loc)

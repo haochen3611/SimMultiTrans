@@ -31,13 +31,14 @@ class Node(object):
             self.road[dest] = r
 
         self.time = 0
-        # print(self.id, self.loc, self.mode)
-        # self.passenger = []
+
         self.passenger = {}
         self.vehicle = {}
+        self.p_wait ={}
         for mode in self.mode:
             self.vehicle[mode] = []
             self.passenger[mode] = []
+            self.p_wait[mode] = []        
 
         # a copy of walk
         self.walk = None
@@ -66,11 +67,19 @@ class Node(object):
         return self.road
 
     def get_passenger_queue(self, mode):
-        # return self.passenger
         return self.passenger[mode]
     
     def get_vehicle_queue(self, mode):
         return self.vehicle[mode]
+
+    def get_wait_time(self, mode):
+        return self.p_wait[mode]
+    
+    def get_average_wait_time(self, mode):
+        if (len(self.p_wait[mode]) != 0):
+            return sum(self.p_wait[mode])/len(self.p_wait[mode])  
+        else: 
+            return 0
 
     def syn_time(self, time):
         self.time = time
@@ -94,6 +103,7 @@ class Node(object):
         # print(mode)
         if (mode != None):
             self.passenger[mode].append(p)
+            p.set_stoptime(self.time)
             # walk always available
             if (mode == 'walk'):
                 v_walk = copy.deepcopy(self.walk)
@@ -103,7 +113,10 @@ class Node(object):
         # self.passenger.remove(p)
         mode = p.get_waitingmode(self.id)
         if (mode != None):
+            waittime = self.time - p.get_stoptime()
+            self.p_wait[mode].append(waittime)
             self.passenger[mode].remove(p)
+
 
     def vehicle_park(self, v, leavetime):
         self.park.append( (v, leavetime) )
@@ -221,7 +234,7 @@ class Node(object):
         for mode in reb_flow:
             if ( mode in self.vehicle and np.sum(reb_flow[mode]) != 0):
                 # only if more supplies
-                if ( len(self.vehicle[mode]) > len(self.passenger[mode]) and len(self.vehicle[mode]) != 0 and reb_flow[mode]['reb']):
+                if ( len(self.passenger[mode]) == 0 and len(self.vehicle[mode]) > 0 and reb_flow[mode]['reb']):
                     for v in self.vehicle[mode]:
                         # print(reb_flow[mode])
                         dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode]['p'])[0]
@@ -229,9 +242,7 @@ class Node(object):
                             v.set_destination(dest)
                             self.vehilce_leave(v)
                             self.road[v.get_destination()].arrive(v)
-
-    
-                
+     
 
 class Haversine:
     '''
