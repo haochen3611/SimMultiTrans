@@ -90,14 +90,13 @@ class Simulator(object):
         if ('rate' in self.graph.get_graph_dic()[tn1]['nei'][tn2].keys()):
             print('Rate infomation is embedded in the city.json')
             for index, node in enumerate(self.graph.get_allnodes()):
-                # rate_matrix[index][index] = 0
-                # rate_matrix = []
-                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate'] if (dest != node) else 0
-                    for dest in self.graph.get_allnodes() ])
-                # rate[ self.graph.get_allnodes().index(node) ] = 0
-                # print(rate)
+                rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate']/unit_trans[unit] 
+                    if (dest != node) else 0 for dest in self.graph.get_allnodes() ])
                 self.graph.get_graph_dic()[node]['node'].set_arrival_rate( rate )
+        elif (file_name == None):
+            print('No input data!')
         else:
+            print('Rate infomation is imported from {}.csv'.format(file_name))
             # import from matrix
             file_name = 'conf/{}'.format(file_name)
             rate_matrix = (1/unit_trans[unit])*np.loadtxt(file_name, delimiter=',')

@@ -27,7 +27,9 @@ class Node(object):
             if (graph_top[nid]['nei'][dest]['dist'] <= 0.2* L1dist):
                 # dist = L1dist
                 graph_top[nid]['nei'][dest]['dist'] = L1dist
-            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'], time=graph_top[nid]['nei'][dest]['time'])
+            
+            time = 0 if ('time' not in graph_top[nid]['nei'][dest]) else graph_top[nid]['nei'][dest]['time']
+            r = Road(ori=nid, dest=dest, dist=graph_top[nid]['nei'][dest]['dist'], time=time)
             self.road[dest] = r
 
         self.time = 0
@@ -181,8 +183,8 @@ class Node(object):
                 # random pick a routing policy
                 # routing_method = np.random.choice(routing.get_methods(), 1)[0]
                 # p.get_schdule(routing, routing_method)
-                p.get_schdule(routing, 'simplex')
-                # p.get_schdule(routing, 'bus_walk_simplex')
+                # p.get_schdule(routing, 'simplex')
+                p.get_schdule(routing, 'bus_walk_simplex')
                 
                 # print('new passenger arrived')
                 # print(p.get_id(), p.get_odpair())
