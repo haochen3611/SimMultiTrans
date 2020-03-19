@@ -243,7 +243,7 @@ class Simulator(object):
         stop_time = time()
         logging.info(f'Simulation ended at {time()}')
         print('\nSimulation ended')
-        print('Running time: ', stop_time-start_time)
+        print(f'Running time: {stop_time-start_time}')
 
         # logging.info(queuelength_str)
         self.plot = Plot(self.graph, self.time_horizon, self.start_time)
@@ -256,6 +256,7 @@ class Simulator(object):
         # self.plot = Plot(self.graph, self.time_horizon)
         self.plot.import_queuelength(self.passenger_queuelen, self.vehicle_queuelen)
         self.plot.import_passenger_waittime(self.passenger_waittime)
+        # print(self.passenger_waittime)
 
     def plot_topology(self, method='ploty'):
         self.plot.plot_topology(method='plotly')

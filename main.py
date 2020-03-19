@@ -20,7 +20,7 @@ def main():
 
     # setup simulator
     simu = Simulator(graph=g)
-    simu.import_arrival_rate(unit=(2.5,'hour'))
+    simu.import_arrival_rate(unit=(1,'hour'))
     # simu.import_vehicle_attribute(file_name='vehicle.json')
     simu.import_vehicle_attribute(file_name='vehicle_ct.json')
 

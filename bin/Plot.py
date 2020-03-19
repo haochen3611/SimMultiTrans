@@ -23,7 +23,8 @@ class Plot(object):
         self.lat = np.asarray([ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ])
         self.lon = np.asarray([ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ])
 
-        self.relativesize = 6
+        self.relativesize = 120
+        self.basicsize = 6
 
         try:
             self.mapbox_access_token = open("conf/.mapbox_token").read()
@@ -68,7 +69,7 @@ class Plot(object):
         cmax = np.max(data.max(), 0)
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
-
+        sizescale = self.relativesize/np.max( [cmax, np.abs(cmin)] )
         text_str = [f'{self.graph.get_allnodes()[index]}: {data[index]}' for index in range(len(data))]
         data_dict = { 
             'type':'scattermapbox', 
@@ -77,8 +78,8 @@ class Plot(object):
             'name': 'Queue', 
             'text': text_str,
             'marker': { 
-                # 'size': data+self.relativesize, 
-                'size': np.log(data+self.relativesize), 
+                'size': data*sizescale + self.basicsize, 
+                # 'size': np.log(data+self.relativesize), 
                 'color': data, 'colorscale': colorsacle,
                 'cmin': data.min(), 'cmax': data.max(), 'colorbar': dict(title='Queue')  
             }
@@ -138,10 +139,17 @@ class Plot(object):
         cmax = np.max([data.max(), 0])
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
-        
+        sizescale = self.relativesize/np.max( [cmax, np.abs(cmin)] )
         text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, 0]}' for index in range(len(data))]
-        data_dict = { 'type':'scattermapbox', 'lon': lon, 'lat': lat, 'mode': 'markers', 'name': 'Queue', 'text': text_str,
-            'marker': { 'size': np.abs(data[:, 0])+self.relativesize, 'color': data[:, 0], 'colorscale': colorsacle,
+        data_dict = { 
+            'type':'scattermapbox', 
+            'lon': lon, 'lat': lat, 
+            'mode': 'markers', 
+            'name': 'Queue', 
+            'text': text_str,
+            'marker': { # 'size': np.abs(data[:, 0])+self.relativesize, 
+                        'size': np.abs(data[:, 0])*sizescale + self.basicsize,
+                        'color': data[:, 0], 'colorscale': colorsacle,
                         'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
         }
         fig_dict['data'].append(data_dict)
@@ -150,9 +158,14 @@ class Plot(object):
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
             text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
-            data_dict = { 'type':'scattermapbox', 'lon': lon, 'lat': lat, 'mode': 'markers', 'name': 'Queue', 'text': text_str,
+            data_dict = { 
+                'type':'scattermapbox', 
+                'lon': lon, 'lat': lat, 
+                'mode': 'markers', 
+                'name': 'Queue', 
+                'text': text_str,
                 'marker': { 
-                    'size': np.abs(data[:, frame_index])+self.relativesize,
+                    'size': np.abs(data[:, frame_index])*sizescale + self.basicsize,
                     # 'size': 5*np.log(np.abs(data[:, frame_index])+self.relativesize), 
                     'color': data[:, frame_index], 'colorscale': colorsacle,
                     'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }

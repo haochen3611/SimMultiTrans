@@ -125,6 +125,8 @@ class Node(object):
         v.update_location(self.id)
         p_list = v.dropoff()            
 
+        isVwalk = False
+
         for p in p_list:
             if (p.get_odpair()[1] == self.id):
                 # self.passenger_leave(p)
@@ -132,17 +134,19 @@ class Node(object):
                 del p
                 if (v.get_mode() == 'walk'):
                     # passenger's foot leaves with himself!
-                    del v
+                    # del v
+                    isVwalk = True
             else:
                 # self.passenger.append(p)
                 self.passenger_arrive(p)
                 logging.info(f'Time {self.time}: Pas {p.get_id()} arrived at {self.id}') 
 
         # if v arrive at final stop, then move to the park
-        if (v.finalstop(self.id)):
-            self.vehilce_leave(v)
-            self.vehicle_park(v, self.time+ v.get_parktime())
-            logging.info(f'Time {self.time}: Vel {v.get_id()} parking at {self.id}')
+        if (not isVwalk):
+            if (v.finalstop(self.id)):
+                self.vehilce_leave(v)
+                self.vehicle_park(v, self.time+ v.get_parktime())
+                logging.info(f'Time {self.time}: Vel {v.get_id()} parking at {self.id}')
 
     def vehilce_leave(self, v):
         self.vehicle[v.get_mode()].remove(v)
