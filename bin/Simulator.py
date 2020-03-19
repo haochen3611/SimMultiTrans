@@ -29,6 +29,7 @@ import random
 import json
 import os
 import logging
+import multiprocessing
 from time import time
 from datetime import datetime, timedelta
 
@@ -45,6 +46,8 @@ class Simulator(object):
         self.routing = None
 
         self.road_set = {}
+
+        self.multiprocessing_flag = False
 
         # saved data
         self.passenger_queuelen = {}
@@ -202,40 +205,55 @@ class Simulator(object):
         # Time horizon
         for timestep in range(self.time_horizon):
 
-            for node in self.graph.get_allnodes():
-                n = self.graph.get_graph_dic()[node]['node']
-                n.syn_time(timestep)
+            if (self.multiprocessing_flag): 
+                task = []
+                for node in self.graph.get_allnodes():
+                    p = multiprocessing.Process(
+                        target=self.node_task,
+                        args=[self.graph.get_graph_dic()[node]['node'], timestep, reb_list, reb_flow]
+                    )
+                    p.start()
+                    task.append(p)
+                for p in task:
+                    p.join()
+            else:
+                for node in self.graph.get_allnodes():
+                    self.node_task( self.graph.get_graph_dic()[node]['node'], timestep, reb_list, reb_flow )
+                    '''
+                    n = self.graph.get_graph_dic()[node]['node']
+                    n.syn_time(timestep)
 
-                for road in self.road_set[node]:
-                    n.get_road()[road].syn_time(timestep)
-                    n.get_road()[road].leave(self.graph)
+                    for road in self.road_set[node]:
+                        n.get_road()[road].syn_time(timestep)
+                        n.get_road()[road].leave(self.graph)
 
-                # n.new_passenger_arrive(self.graph)
-                n.new_passenger_arrive(self.routing)
-                n.match_demands(self.vehicle_attri)
-                
-                # dispatch
-                if ((timestep+1) % 120 == 0):
-                    # rebalance for every 300 steps
-                    for mode in reb_list:
-                        queue_p = [ self.passenger_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
-                        queue_v = [ self.vehicle_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
-                        reb_flow[mode] = {}
-                        reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
-                    n.dispatch(reb_flow)
+                    # n.new_passenger_arrive(self.graph)
+                    n.new_passenger_arrive(self.routing)
+                    n.match_demands(self.vehicle_attri)
+                    
+                    # dispatch
+                    if ((timestep+1) % 120 == 0):
+                        # rebalance for every 300 steps
+                        for mode in reb_list:
+                            queue_p = [ self.passenger_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
+                            queue_v = [ self.vehicle_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
+                            reb_flow[mode] = {}
+                            reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(node=node, mode=mode, queue_p=queue_p, queue_v=queue_v)
+                        n.dispatch(reb_flow)
+                    
+                    # save data
+                    for mode in self.vehicle_attri:
+                        if (mode in n.get_mode()):
+                            self.passenger_queuelen[node][mode][timestep] = len( n.get_passenger_queue(mode) )
+                            self.vehicle_queuelen[node][mode][timestep] = len( n.get_vehicle_queue(mode) )
 
-                # save data
-                for mode in self.vehicle_attri:
-                    if (mode in n.get_mode()):
-                        self.passenger_queuelen[node][mode][timestep] = len( n.get_passenger_queue(mode) )
-                        self.vehicle_queuelen[node][mode][timestep] = len( n.get_vehicle_queue(mode) )
-
-                        self.passenger_waittime[node][mode][timestep] = n.get_average_wait_time(mode)
-                        # queuelength_str += 'Time {}: Vel {} queue length: {}'.format(timestep, mode, len( n.get_vehicle_queue(mode) ))
-                        # logging.info('Time {}: Vel {} queue length: {}'.format(timestep, mode, qlength))
-                
-                # print('{}'.format( len(n.get_vehicle_queue('scooter')) ))
-                # logging.info('Time={}, Node={}: Pas={}'.format(timestep, node, self.passenger_queuelen[node][timestep]))
+                            self.passenger_waittime[node][mode][timestep] = n.get_average_wait_time(mode)
+                            # queuelength_str += 'Time {}: Vel {} queue length: {}'.format(timestep, mode, len( n.get_vehicle_queue(mode) ))
+                            # logging.info('Time {}: Vel {} queue length: {}'.format(timestep, mode, qlength))
+                    '''
+                    
+                    # print('{}'.format( len(n.get_vehicle_queue('scooter')) ))
+                    # logging.info('Time={}, Node={}: Pas={}'.format(timestep, node, self.passenger_queuelen[node][timestep]))
             
             if (timestep % (self.time_horizon/20) == 0):
                 print('-', end='')
@@ -257,6 +275,42 @@ class Simulator(object):
         self.plot.import_queuelength(self.passenger_queuelen, self.vehicle_queuelen)
         self.plot.import_passenger_waittime(self.passenger_waittime)
         # print(self.passenger_waittime)
+
+    def node_task(self, node, timestep, reb_list, reb_flow):
+        # n = self.graph.get_graph_dic()[node]['node']
+        nid = node.get_id()
+        node.syn_time(timestep)
+
+        for road in self.road_set[nid]:
+            node.get_road()[road].syn_time(timestep)
+            node.get_road()[road].leave(self.graph)
+
+        # n.new_passenger_arrive(self.graph)
+        node.new_passenger_arrive(self.routing)
+        node.match_demands(self.vehicle_attri)
+        
+        # dispatch
+        if ((timestep+1) % 120 == 0):
+            # rebalance for every 300 steps
+            for mode in reb_list:
+                queue_p = [ self.passenger_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
+                queue_v = [ self.vehicle_queuelen[node][mode][timestep-1] for node in self.graph.get_allnodes() ]
+                reb_flow[mode] = {}
+                reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(node=nid, mode=mode, queue_p=queue_p, queue_v=queue_v)
+            node.dispatch(reb_flow)
+
+        for mode in self.vehicle_attri:
+            if (mode in node.get_mode()):
+                self.passenger_queuelen[nid][mode][timestep] = len( node.get_passenger_queue(mode) )
+                self.vehicle_queuelen[nid][mode][timestep] = len( node.get_vehicle_queue(mode) )
+
+                self.passenger_waittime[nid][mode][timestep] = node.get_average_wait_time(mode)
+                # queuelength_str += 'Time {}: Vel {} queue length: {}'.format(timestep, mode, len( n.get_vehicle_queue(mode) ))
+                # logging.info('Time {}: Vel {} queue length: {}'.format(timestep, mode, qlength))
+
+
+    def set_multiprocessing(self, flag=False):
+        self.multiprocessing_flag = flag
 
     def plot_topology(self, method='ploty'):
         self.plot.plot_topology(method='plotly')

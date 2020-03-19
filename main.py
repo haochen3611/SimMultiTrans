@@ -23,9 +23,10 @@ def main():
     simu.import_arrival_rate(unit=(1,'hour'))
     # simu.import_vehicle_attribute(file_name='vehicle.json')
     simu.import_vehicle_attribute(file_name='vehicle_ct.json')
+    simu.set_multiprocessing(True)
 
     # simu.set_running_time(timehorizon=1, unit='hour')
-    simu.set_running_time(starttime='08:00:00', timehorizon=2.5, unit='hour')
+    simu.set_running_time(starttime='08:00:00', timehorizon=2.5, unit='min')
 
     # simu.plot_topology()
     simu.run()
