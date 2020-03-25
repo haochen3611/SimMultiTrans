@@ -9,7 +9,7 @@ class Rebalancing(object):
     def __init__(self, graph, vehicle_attri):
         self.graph = graph
         self.vehicle_attri = vehicle_attri
-        self.lazy = 1
+        self.lazy = 100
 
     def MaxWeight(self, node, queue, server):
         if (np.sum(queue) != 0 and len(queue) == len(server)):
@@ -22,8 +22,8 @@ class Rebalancing(object):
             A_ub = np.eye(len(queue))
             dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
                 for dest in self.graph.get_topology()[node]['nei'] ] )
-            # k = 20
-            k = len(queue)-1
+            k = 20
+            # k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]
             b_ub = np.zeros(shape=(len(queue), 1))
             # need review!!
@@ -58,8 +58,8 @@ class Rebalancing(object):
 
     def Dispatch_active(self, node, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active'):
-            # opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
-            opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
+            opt_queue_v = self.MaxWeight(node=node, queue=queue_p, server=queue_v)
+            # opt_queue_v = self.Perposion(node=node, queue=queue_p, server=queue_v)
             # normalize
             opt_queue_v[ self.graph.get_allnodes().index(node) ] = self.lazy*np.amax(opt_queue_v)
             sum_queue = np.sum(opt_queue_v)

@@ -30,6 +30,7 @@ import json
 import os
 import logging
 import multiprocessing
+import threading
 from time import time
 from datetime import datetime, timedelta
 
@@ -89,7 +90,7 @@ class Simulator(object):
         
         (tn1, tn2) = (self.graph.get_allnodes()[0], self.graph.get_allnodes()[1])
         if ('rate' in self.graph.get_graph_dic()[tn1]['nei'][tn2].keys()):
-            print('Rate infomation is embedded in the city.json')
+            print(f'Rate infomation is embedded in {file_name}')
             for index, node in enumerate(self.graph.get_allnodes()):
                 rate = np.asarray([ self.graph.get_graph_dic()[node]['nei'][dest]['rate']/unit_trans[unit[1]] 
                     if (dest != node) else 0 for dest in self.graph.get_allnodes() ])
@@ -97,7 +98,7 @@ class Simulator(object):
         elif (file_name == None):
             print('No input data!')
         else:
-            print(f'Rate infomation is imported from {file_name}.csv')
+            print(f'Rate infomation is imported from {file_name}')
             # import from matrix
             file_name = f'conf/{file_name}'
             rate_matrix = (1/unit_trans[unit[1]])*np.loadtxt(file_name, delimiter=',')
@@ -206,16 +207,24 @@ class Simulator(object):
         for timestep in range(self.time_horizon):
 
             if (self.multiprocessing_flag): 
+                
                 task = []
                 for node in self.graph.get_allnodes():
-                    p = multiprocessing.Process(
+                    p = threading.Thread(
                         target=self.node_task,
                         args=[self.graph.get_graph_dic()[node]['node'], timestep, reb_list, reb_flow]
                     )
-                    p.start()
+                    # p.start()
                     task.append(p)
                 for p in task:
+                    p.start()
                     p.join()
+                '''
+                poolarg = [ (self.graph.get_graph_dic()[node]['node'], timestep, reb_list, reb_flow) 
+                    for node in self.graph.get_allnodes() ]
+                with multiprocessing.Pool(processes=os.cpu_count()) as pool:
+                    pool.starmap(self.node_task, poolarg)
+                '''
             else:
                 for node in self.graph.get_allnodes():
                     self.node_task( self.graph.get_graph_dic()[node]['node'], timestep, reb_list, reb_flow )
@@ -279,6 +288,8 @@ class Simulator(object):
     def node_task(self, node, timestep, reb_list, reb_flow):
         # n = self.graph.get_graph_dic()[node]['node']
         nid = node.get_id()
+
+        # print(nid, timestep)
         node.syn_time(timestep)
 
         for road in self.road_set[nid]:
