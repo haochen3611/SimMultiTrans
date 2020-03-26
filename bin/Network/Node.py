@@ -213,8 +213,16 @@ class Node(object):
                 # only if more supplies
                 if ( len(self.passenger[mode]) == 0 and len(self.vehicle[mode]) > 0 and reb_flow[mode]['reb']):
                     for v in self.vehicle[mode]:
-                        # print(reb_flow[mode])
+                        if (np.sum(reb_flow[mode]['p']) == 0):
+                            return
+                        
+                        # print(self.id)
+                        # print(reb_flow['nodes'], len(reb_flow['nodes']))
+                        # print(reb_flow[mode]['p'], len(reb_flow[mode]['p']))
+
+
                         dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode]['p'])[0]
+                        
                         if ( mode in self.graph_top[dest]['mode'] and dest != self.id ):
                             v.set_destination(dest)
                             self.vehilce_leave(v)

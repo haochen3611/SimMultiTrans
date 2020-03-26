@@ -573,7 +573,7 @@ class Plot(object):
     def plot_passenger_waittime(self, mode, method='plotly'):
         x = self.graph.get_allnodes()
         # print(self.passenger_waittime)
-        y = [ self.passenger_waittime[node][mode][-1] for node in self.graph.get_allnodes() ]
+        y = [ self.passenger_waittime[node][mode] for node in self.graph.get_allnodes() ]
         fig = go.Figure(data=[go.Bar(x=x, y=y)])
         fig.update_xaxes(type='category')
         
