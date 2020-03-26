@@ -26,12 +26,6 @@ class Graph(object):
         # path ram
         self.graph_path = {}
 
-    def set_graph(self, graph):
-        self.graph_top = graph
-
-    def get_graph_dic(self):
-        return self.graph_top
-
     def import_graph(self, file_name):
         with open(f'conf/{file_name}') as file_data:
             self.graph_top = json.load(file_data)
@@ -39,7 +33,7 @@ class Graph(object):
  
     def generate_node(self, nid):
         n = Node( nid, self.graph_top )
-        # print(n.get_id())
+        # print(n.id)
         self.graph_top[nid].update({'node': n})
         
 
@@ -47,7 +41,7 @@ class Graph(object):
         for node in self.graph_top:
             # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['lon']), self.graph_top[node]['mode'].split(','))
             n = Node( node, self.graph_top )
-            # print(n.get_id())
+            # print(n.id)
             self.graph_top[node].update({'node': n})
 
     def export_graph(self, file_name):
@@ -64,7 +58,7 @@ class Graph(object):
             
 
     def add_edge(self, ori, dest, mode, dist):
-        if ( ori in self.graph_top and dest in self.graph_top ):
+        if ( ori in self.graph_top and dest in self.graph_top and ori != dest ):
             self.graph_top[ori]['nei'][dest] = {'mode': mode, 'dist': dist}
             
 
@@ -76,7 +70,7 @@ class Graph(object):
 
     def get_edge(self, ori, dest):
         '''return (ori, dest) edges'''
-        if (ori in self.graph_top) and (dest in self.graph_top):
+        if (ori in self.graph_top and dest in self.graph_top and ori != dest):
             if dest in self.graph_top[ori]['nei'].keys():
                 return (ori, dest, self.graph_top[ori]['nei'][dest])
 
@@ -88,9 +82,6 @@ class Graph(object):
         return self.edges_set
         
 
-    def get_topology(self):
-        return self.graph_top
-
     def node_exists(self, node):
         return (node in self.graph_top)
 
@@ -100,8 +91,6 @@ class Graph(object):
         else:
             return False
 
-    def get_node_location(self, node):
-        return (self.graph_top[node]['lat'], self.graph_top[node]['lon'])
     
     def get_L1dist(self, ori, dest):
         if ( self.node_exists(ori) and self.node_exists(dest) ):
@@ -171,7 +160,8 @@ class Graph(object):
         # generate local nodes
         for t_node in self.get_allnodes():
             top_matrix = int(np.random.randint(max_localnodes, size=1))
-            (x, y) = self.get_node_location(t_node) 
+            x = self.graph_top[t_node]['lat']
+            y = self.graph_top[t_node]['lon']
 
             for l_node in range(top_matrix):
                 x = x + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)

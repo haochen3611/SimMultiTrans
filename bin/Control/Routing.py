@@ -12,15 +12,21 @@ class Routing(object):
         self.path = {
             'bus_simplex': {},
             'simplex': {},
-            'bus_walk_simplex': {}
+            'bus_walk_simplex': {},
+            'taxi_walk_simplex': {}
         }
         self.vehicle_attri = vehicle_attri
+
+        self.near_nei = {}
+
+    def syn_info(self, info):
+        self.info = info
 
     def get_methods(self):
         return list(self.path.keys())
 
     def get_path(self, ori, dest, method='simplex'):
-        if (ori not in self.graph.get_topology() and dest not in self.graph.get_topology()):
+        if (ori not in self.graph.graph_top and dest not in self.graph.graph_top):
             # print('invalid path')
             return {}
 
@@ -31,7 +37,8 @@ class Routing(object):
             methodset = {
                 'bus_simplex': self.bus_simplex,
                 'simplex': self.simplex,
-                'bus_walk_simplex': self.bus_walk_simplex
+                'bus_walk_simplex': self.bus_walk_simplex,
+                'taxi_walk_simplex': self.taxi_walk_simplex
             }
             # route = Routing(self, ori, dest)
             # print('routing: ', ori, dest)
@@ -41,7 +48,7 @@ class Routing(object):
             return path
 
     def simplex(self, ori, dest):
-        if ( dest in self.graph.get_topology()[ori]['nei'] ):
+        if ( dest in self.graph.graph_top[ori]['nei'] ):
             return {ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}}
         else:
             return {}
@@ -51,12 +58,12 @@ class Routing(object):
         path = {}
         
         # check avialability
-        ori_nei_id = [ node for node in self.graph.get_topology()[ori]['nei'] ]
-        ori_nei_dist = np.array( [ self.graph.get_topology()[ori]['nei'][node]['dist'] for node in self.graph.get_topology()[ori]['nei'] ] )
+        ori_nei_id = [ node for node in self.graph.graph_top[ori]['nei'] ]
+        ori_nei_dist = np.array( [ self.graph.graph_top[ori]['nei'][node]['dist'] for node in self.graph.graph_top[ori]['nei'] ] )
         
         # print(ori_nei)
-        dest_nei_id = [ node for node in self.graph.get_topology()[dest]['nei'] ]
-        dest_nei_dist = np.array( [ self.graph.get_topology()[dest]['nei'][node]['dist'] for node in self.graph.get_topology()[dest]['nei'] ] )
+        dest_nei_id = [ node for node in self.graph.graph_top[dest]['nei'] ]
+        dest_nei_dist = np.array( [ self.graph.graph_top[dest]['nei'][node]['dist'] for node in self.graph.graph_top[dest]['nei'] ] )
 
         # print(dest_nei)
         # print(np.where(ori_nei_dist == np.amin(ori_nei_dist))[0][0])
@@ -74,8 +81,8 @@ class Routing(object):
             ]))[0][0] 
         ]
 
-        ori_trans_modes = self.graph.get_topology()[ori_trans]['mode'].split(',')
-        dest_trans_modes = self.graph.get_topology()[dest_trans]['mode'].split(',')
+        ori_trans_modes = self.graph.graph_top[ori_trans]['mode'].split(',')
+        dest_trans_modes = self.graph.graph_top[dest_trans]['mode'].split(',')
         mode = list(set(ori_trans_modes).intersection(dest_trans_modes))
         # no bus available, take taxi
         # also add some randomness
@@ -103,36 +110,88 @@ class Routing(object):
         # print(path)
         return path
 
+    def taxi_walk_simplex(self, ori, dest):
+        # stops = ori
+        path = {}
+        
+        # check avialability
+        ori_nei_id = np.array([ node for node in self.graph.graph_top[ori]['nei'] ])
+        ori_nei_dist = np.array([ self.graph.graph_top[ori]['nei'][node]['dist'] for node in self.graph.graph_top[ori]['nei'] ])
+        
+        # print(ori_nei)
+        dest_nei_id = np.array([ node for node in self.graph.graph_top[dest]['nei'] ])
+        dest_nei_dist = np.array([ self.graph.graph_top[dest]['nei'][node]['dist'] for node in self.graph.graph_top[dest]['nei'] ])
+
+        # passenger will walk to a node within 400 meters
+        walk_dist = 400
+        if (ori not in self.near_nei):
+            self.near_nei[ori] = ori_nei_id[np.where(ori_nei_dist <= walk_dist)[0]]
+        # print(self.near_nei[ori])
+
+        if (len(self.near_nei[ori]) != 0):
+            # pick the smallest queue length node
+            ori_walk_nei_len = np.array([ 
+                self.info['p_queue'][node]['taxi'][self.info['time']-1] - self.info['v_queue'][node]['taxi'][self.info['time']-1] 
+                for node in self.near_nei[ori] ])
+            # print(self.info)
+            # print(ori_walk_nei_len)
+            ori_trans = self.near_nei[ori][ 
+                np.where(ori_walk_nei_len == np.amin(ori_walk_nei_len))[0][0] 
+            ]
+        else:
+            # no nearby node within 400 meters, then go to the nearest one
+            ori_trans = ori_nei_id[ 
+                np.where(ori_nei_dist == np.amin(ori_nei_dist[
+                    ori_nei_dist != np.amin(ori_nei_dist)
+                ]))[0][0] 
+            ]
+        # the destination will always be the nearest node
+        dest_trans = dest_nei_id[ 
+            np.where(dest_nei_dist == np.amin(dest_nei_dist[
+                dest_nei_dist != np.amin(dest_nei_dist)
+            ]))[0][0] 
+        ]
+
+        path.update({ori: {'dest': ori_trans, 'info': self.pathinfo_generator(ori=ori, dest=ori_trans, method='walk')}})
+        if (ori_trans != dest_trans):
+            # walk to destination
+            path.update({ori_trans: {'dest': dest_trans, 'info': self.pathinfo_generator(ori=ori_trans, dest=dest_trans, method='taxi')}})
+
+        path.update({dest_trans: {'dest': dest, 'info': self.pathinfo_generator(ori=dest_trans, dest=dest, method='walk')}})
+
+        # print(path)
+        return path
+
     def bus_simplex(self, ori, dest):
         stops = ori
         path = {}
         # by scooter
-        if ( dest in self.graph.get_topology()[ori]['nei'] ):
+        if ( dest in self.graph.graph_top[ori]['nei'] ):
             # path.append(self.get_edge(ori, dest))
             # print('dont need transfer')
             path.update({ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}})
             # print(path)
         else:
             # find nearest bus stop
-            if ( 'bus' not in self.graph.get_topology()[ori]['node'].get_mode() ):
+            if ( 'bus' not in self.graph.graph_top[ori]['node'].mode ):
                 # print('find a bus stop')
-                for busstop in self.graph.get_topology()[ori]['nei']:
+                for busstop in self.graph.graph_top[ori]['nei']:
                     # print(self.graph_top[busstop]['mode'])
-                    if ( 'bus' in self.graph.get_topology()[busstop]['node'].get_mode() ):
+                    if ( 'bus' in self.graph.graph_top[busstop]['node'].mode ):
                         # print(busstop)
                         # path.append(self.get_edge(ori, busstop))
                         path.update({ori: {'dest': busstop, 'info': self.pathinfo_generator(ori=ori, dest=busstop, method='simplex')}})
                         stops = busstop
             
             # find transfer bus stop
-            if ( 'bus' in self.graph.get_topology()[dest]['node'].get_mode() ):
+            if ( 'bus' in self.graph.graph_top[dest]['node'].mode ):
                 # path.append(self.get_edge(stops, dest))
                 # print('ready to get off')
                 path.update({stops: {'dest': dest, 'info': self.pathinfo_generator(ori=stops, dest=dest, method='simplex')}})
             else:
                 # travel by bus
-                for busstop in self.graph.get_topology()[dest]['nei']:
-                    if ( 'bus' in self.graph.get_topology()[busstop]['node'].get_mode() ):
+                for busstop in self.graph.graph_top[dest]['nei']:
+                    if ( 'bus' in self.graph.graph_top[busstop]['node'].mode ):
                         # print('ready to transfer')
                         # path.append(self.get_edge(stops, busstop))
                         # path.append(self.get_edge(busstop, dest))

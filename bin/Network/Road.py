@@ -15,22 +15,26 @@ class Road(object):
         self.triptime = time
         
         self.vehicle = []
-    
-    def get_id(self):
-        return (self.ori, self.dest)
+        self.v_count = {}
+        self.v_reb_count = {}
 
-    def get_vehicle(self):
-        return self.vehicle
 
     def arrive(self, v):
-        if (self.triptime == 0):
-            self.triptime = int(self.dist/v.get_velocity('m/s'))
-        leave_time = self.time + self.triptime
+        time = self.triptime
+        if (time == 0 or not v.onroad):
+            time = int(self.dist/v.get_velocity('m/s'))
+        leave_time = self.time + time
         self.vehicle.append( (v, leave_time) )
-        logging.info(f'Time {self.time}: Vel {v.get_id()} arrive at road ({self.ori},{self.dest})')
+        logging.info(f'Time {self.time}: Vel {v.id} arrive at road ({self.ori},{self.dest})')
 
-    def syn_time(self, time):
-        self.time = time
+        if (v.mode in self.v_count):
+            self.v_count[v.mode] += 1
+            if (v.mode in self.v_reb_count and v.reb == 'active' and v.get_occupiedseats() == 0):
+                self.v_reb_count[v.mode] += 1
+        else:
+            self.v_count[v.mode] = 1
+            if (v.mode not in self.v_reb_count and v.reb == 'active' and v.get_occupiedseats() == 0):
+                self.v_reb_count[v.mode] = 1
 
     def leave(self, g):
         # leave_vehicle = []
@@ -40,8 +44,12 @@ class Road(object):
                 self.vehicle.remove( (v, leave_time) )
                 # leave_vehicle.append(v)
                 
-                logging.info(f'Time {self.time}: Vel {v.get_id()} leave road ({self.ori},{self.dest})')
-                g.get_graph_dic()[self.dest]['node'].vehicle_arrive(v)
+                logging.info(f'Time {self.time}: Vel {v.id} leave road ({self.ori},{self.dest})')
+                g.graph_top[self.dest]['node'].vehicle_arrive(v)
 
 
+    def get_total_distance(self, mode):
+        return 0 if (mode not in self.v_count) else self.dist*self.v_count[mode]
     
+    def get_total_reb_distance(self, mode):
+        return 0 if (mode not in self.v_reb_count) else self.dist*self.v_reb_count[mode]

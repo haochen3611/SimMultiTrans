@@ -9,7 +9,8 @@ class Rebalancing(object):
     def __init__(self, graph, vehicle_attri):
         self.graph = graph
         self.vehicle_attri = vehicle_attri
-        self.lazy = 100
+        self.lazy = 10
+        self.near_nei = 1
 
     def MaxWeight(self, node, queue, server):
         if (np.sum(queue) != 0 and len(queue) == len(server)):
@@ -20,9 +21,11 @@ class Rebalancing(object):
             # print(A_eq, b_eq)
             # result = linprog(c=queue, A_eq=A_eq, b_eq=b_eq, bounds=[0, np.inf], method='simplex')
             A_ub = np.eye(len(queue))
-            dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
-                for dest in self.graph.get_topology()[node]['nei'] ] )
-            k = 20
+            dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
+                for dest in self.graph.graph_top[node]['nei'] ] )
+            k = self.near_nei
+            if (k > len(queue)-1):
+                k = len(queue)-1
             # k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]
             b_ub = np.zeros(shape=(len(queue), 1))
@@ -39,9 +42,12 @@ class Rebalancing(object):
 
     def Perposion(self, node, queue, server):
         if (np.sum(queue) != 0 and len(queue) == len(server)):
-            dist_list = np.array( [ self.graph.get_topology()[node]['nei'][dest]['dist']
-                for dest in self.graph.get_topology()[node]['nei'] ] )
-            k = len(queue)-1
+            dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
+                for dest in self.graph.graph_top[node]['nei'] ] )
+            
+            k = self.near_nei
+            if (k > len(queue)-1):
+                k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]
             
             asy = np.array(queue)

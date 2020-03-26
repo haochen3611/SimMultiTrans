@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 
 import os
 import logging
+import json
 from time import time
 from datetime import datetime, timedelta
 
@@ -20,8 +21,8 @@ class Plot(object):
         self.graph = graph
         self.time_horizon = time_horizon
         self.start_time = start_time
-        self.lat = np.asarray([ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ])
-        self.lon = np.asarray([ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ])
+        self.lat = np.asarray([ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ])
+        self.lon = np.asarray([ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ])
 
         self.relativesize = 120
         self.basicsize = 6
@@ -32,6 +33,26 @@ class Plot(object):
         except OSError:
             print('Map Key Error!')
             pass
+    
+    def import_results(self, path_name):
+        with open(f'{path_name}/passegner_queue.json', 'w') as json_file:
+            queue_p = json.load(json_file)
+
+        with open(f'{path_name}/vehicle_queue.json', 'w') as json_file:
+            queue_v = json.load(json_file)
+
+        with open(f'{path_name}/wait_time.json', 'w') as json_file:
+            waittime = json.load(json_file)
+
+        with open(f'{path_name}/total_distance.json', 'w') as json_file:
+            totaldist = json.load(json_file)
+
+        for node in self.graph.graph_top:
+            for mode in self.vehicle_attri:
+                queue_p[node][mode] = np.array(queue_p[node][mode].tolist())
+                queue_v[node][mode] = np.array(queue_v[node][mode].tolist())
+                waittime[node][mode] = np.array(waittime[node][mode].tolist())
+
 
     def import_queuelength(self, queue_p, queue_v):
         self.queue_p = queue_p
@@ -64,7 +85,7 @@ class Plot(object):
             'style': self.map_style
         }
 
-        data = np.array([ self.queue_v[node][mode][ time_step ] for node in self.graph.get_graph_dic() ])
+        data = np.array([ self.queue_v[node][mode][ time_step ] for node in self.graph.graph_top ])
         cmin = np.min(data.min(), 0)
         cmax = np.max(data.max(), 0)
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
@@ -260,10 +281,10 @@ class Plot(object):
     '''
         
     def passenger_queue_animation_matplotlib(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame in range(0, int(frames)):
             queue[:, frame] = [ self.queue_p[node][mode][ int(frame*self.time_horizon/frames) ] 
-                for node in self.graph.get_graph_dic() ]
+                for node in self.graph.graph_top ]
 
         result = np.array([self.queue_p[node][mode] for node in self.queue_p])
 
@@ -293,10 +314,10 @@ class Plot(object):
 
 
     def passenger_queue_animation_plotly(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
             data[:, frame_index] = [ self.queue_p[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.get_graph_dic() ]
+                for node in self.graph.graph_top ]
 
         fig = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         
@@ -330,10 +351,10 @@ class Plot(object):
 
 
     def vehicle_queue_animation_matplotlib(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
             data[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.get_graph_dic() ]
+                for node in self.graph.graph_top ]
 
         norm = mpl.colors.Normalize(vmin=data.max(), vmax=data.max())
 
@@ -361,10 +382,10 @@ class Plot(object):
 
 
     def vehicle_queue_animation_plotly(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
             data[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.get_graph_dic() ]        
+                for node in self.graph.graph_top ]        
 
         fig = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         return fig
@@ -397,13 +418,13 @@ class Plot(object):
         
         
     def combination_queue_animation_matplotlib(self, fig, mode, frames):    
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
 
         # sum all buses
         bus_list = []
         if (mode == 'bus'):
-            for node in self.graph.get_topology():
-                modelist =  self.graph.get_topology()[node]['mode'].split(',')
+            for node in self.graph.graph_top:
+                modelist =  self.graph.graph_top[node]['mode'].split(',')
                 modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
                 print(modelist)
                 bus_list = list(set(bus_list + modelist))
@@ -411,12 +432,12 @@ class Plot(object):
                 for frame_index in range(0, int(frames)):
                     index = int(frame_index*self.time_horizon/frames)
                     data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
-                            for node in self.graph.get_graph_dic() ]
+                            for node in self.graph.graph_top ]
         else:
             for frame_index in range(0, int(frames)):
                 index = int(frame_index*self.time_horizon/frames)
                 data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                    for node in self.graph.get_graph_dic() ]
+                    for node in self.graph.graph_top ]
 
         # norm = mpl.colors.Normalize(vmin=result.min(), vcenter=0, vmax=result.max())
         norm = MidpointNormalize(vmin=data.min(), vcenter=0, vmax=data.max())
@@ -446,12 +467,12 @@ class Plot(object):
 
 
     def combination_queue_animation_plotly(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.get_graph_dic()), frames))
+        data = np.zeros(shape=(len(self.graph.graph_top), frames))
         # sum all buses
         bus_list = []
         if (mode == 'bus'):
-            for node in self.graph.get_topology():
-                modelist =  self.graph.get_topology()[node]['mode'].split(',')
+            for node in self.graph.graph_top:
+                modelist =  self.graph.graph_top[node]['mode'].split(',')
                 modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
                 # print(modelist)
                 bus_list = list(set(bus_list + modelist))
@@ -460,20 +481,20 @@ class Plot(object):
                 for frame_index in range(0, int(frames)):
                     index = int(frame_index*self.time_horizon/frames)
                     data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
-                            for node in self.graph.get_graph_dic() ]
+                            for node in self.graph.graph_top ]
         else:
             for frame_index in range(0, int(frames)):
                 index = int(frame_index*self.time_horizon/frames)
                 data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                    for node in self.graph.get_graph_dic() ]
+                    for node in self.graph.graph_top ]
 
         fig = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         return fig
 
 
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
-        self.lat = [ self.graph.get_node_location(node)[0] for node in self.graph.get_graph_dic() ]
-        self.lon = [ self.graph.get_node_location(node)[1] for node in self.graph.get_graph_dic() ]
+        self.lat = [ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ]
+        self.lon = [ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ]
 
         if (method == 'matplotlib'):
             fig = self.graph.plot_topology_edges(self.lon, self.lat, method)

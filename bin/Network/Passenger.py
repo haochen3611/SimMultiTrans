@@ -44,7 +44,7 @@ class Passenger(object):
 
     def geton(self, loc, v):
         # print(self.path)
-        if ( loc in self.path and self.path[loc]['info']['mode'] == v.get_mode()):
+        if ( loc in self.path and self.path[loc]['info']['mode'] == v.mode):
             # get on the correct vehicle (orientation)
             
             return v.match_route(loc, self.path[loc]['dest'])
