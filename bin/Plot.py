@@ -35,25 +35,43 @@ class Plot(object):
             pass
     
     def import_results(self, path_name):
-        with open(f'{path_name}/passegner_queue.json', 'w') as json_file:
+        self.graph.import_graph('results/city_topology.json')
+        
+        with open('results/simulation_info.json') as json_file:
+            simulation_info = json.load(json_file)
+        
+        self.time_horizon = simulation_info['Time_horizon']
+        self.start_time = datetime.strptime(simulation_info['Start_time'], "%H:%M:%S")
+        self.vehicle_attri = simulation_info['Vehicle'] 
+
+        self.lat = np.asarray([ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ])
+        self.lon = np.asarray([ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ])
+
+        with open(f'{path_name}/passenger_queue.json') as json_file:
             queue_p = json.load(json_file)
 
-        with open(f'{path_name}/vehicle_queue.json', 'w') as json_file:
+        with open(f'{path_name}/passenger_queue.json') as json_file:
+            queue_p = json.load(json_file)
+
+        with open(f'{path_name}/vehicle_queue.json') as json_file:
             queue_v = json.load(json_file)
 
-        with open(f'{path_name}/wait_time.json', 'w') as json_file:
+        with open(f'{path_name}/wait_time.json') as json_file:
             waittime = json.load(json_file)
 
-        with open(f'{path_name}/total_distance.json', 'w') as json_file:
+        with open(f'{path_name}/total_distance.json') as json_file:
             totaldist = json.load(json_file)
 
         for node in self.graph.graph_top:
             for mode in self.vehicle_attri:
-                queue_p[node][mode] = np.array(queue_p[node][mode].tolist())
-                queue_v[node][mode] = np.array(queue_v[node][mode].tolist())
-                waittime[node][mode] = np.array(waittime[node][mode].tolist())
+                queue_p[node][mode] = np.array(queue_p[node][mode])
+                queue_v[node][mode] = np.array(queue_v[node][mode])
+                waittime[node][mode] = np.array(waittime[node][mode])
 
-
+        self.import_queuelength(queue_p, queue_v)
+        self.import_passenger_waittime(waittime)
+        
+        
     def import_queuelength(self, queue_p, queue_v):
         self.queue_p = queue_p
         self.queue_v = queue_v
@@ -324,7 +342,7 @@ class Plot(object):
         return fig
 
 
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         if (method == 'matplotlib'):
             fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
             ani = self.passenger_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
@@ -391,7 +409,7 @@ class Plot(object):
         return fig
 
 
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         if (method == 'matplotlib'):
             fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
             ani = self.vehicle_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
@@ -492,7 +510,7 @@ class Plot(object):
         return fig
 
 
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='matplotlib'):
+    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
         self.lat = [ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ]
         self.lon = [ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ]
 
@@ -624,7 +642,7 @@ class Plot(object):
             pt.offline.plot(fig, filename=file_name+'.html')
 
     
-    def plot_topology_edges(self, x, y, method='matplotlib'):
+    def plot_topology_edges(self, x, y, method='plotly'):
         if (method == 'matplotlib'):
             plt.style.use('dark_background')
             fig, ax = plt.subplots()

@@ -10,7 +10,7 @@ class Rebalancing(object):
         self.graph = graph
         self.vehicle_attri = vehicle_attri
         self.lazy = 10
-        self.near_nei = 1
+        self.range = 1
 
     def MaxWeight(self, node, queue, server):
         if (np.sum(queue) != 0 and len(queue) == len(server)):
@@ -23,7 +23,7 @@ class Rebalancing(object):
             A_ub = np.eye(len(queue))
             dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
                 for dest in self.graph.graph_top[node]['nei'] ] )
-            k = self.near_nei
+            k = self.range
             if (k > len(queue)-1):
                 k = len(queue)-1
             # k = len(queue)-1
@@ -45,7 +45,7 @@ class Rebalancing(object):
             dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
                 for dest in self.graph.graph_top[node]['nei'] ] )
             
-            k = self.near_nei
+            k = self.range
             if (k > len(queue)-1):
                 k = len(queue)-1
             k_near_list = dist_list.argsort()[:k]

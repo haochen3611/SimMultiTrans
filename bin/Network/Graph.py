@@ -27,7 +27,7 @@ class Graph(object):
         self.graph_path = {}
 
     def import_graph(self, file_name):
-        with open(f'conf/{file_name}') as file_data:
+        with open(f'{file_name}') as file_data:
             self.graph_top = json.load(file_data)
         self.generate_nodes()
  

@@ -105,7 +105,7 @@ class Simulator(object):
         else:
             print(f'Rate infomation is imported from {file_name}')
             # import from matrix
-            file_name = f'conf/{file_name}'
+            file_name = f'{file_name}'
             rate_matrix = (1/unit_trans[unit[1]])*np.loadtxt(file_name, delimiter=',')
 
             # print('Node: ', self.graph.get_allnodes())
@@ -131,7 +131,7 @@ class Simulator(object):
         
                 
     def import_vehicle_attribute(self, file_name):
-        with open(f'conf/{file_name}') as file_data:
+        with open(f'{file_name}') as file_data:
             self.vehicle_attri = json.load(file_data)
         '''
         # check the input correctness
@@ -141,7 +141,9 @@ class Simulator(object):
 
         for mode in self.vehicle_attri:
         ''' 
+        # set routing policy and rebalancing policy
         self.routing = Routing(self.graph, self.vehicle_attri)
+        self.rebalance = Rebalancing(self.graph, self.vehicle_attri)
 
         # generate vehicles
         for mode in self.vehicle_attri:
@@ -219,7 +221,6 @@ class Simulator(object):
         start_time = time()
 
         # list of modes that can rebalance
-        self.rebalance = Rebalancing(self.graph, self.vehicle_attri)
         reb_list = [ mode for mode in self.vehicle_attri if ( self.vehicle_attri[mode]['reb'] == 'active' ) ]
         reb_flow = {'nodes': self.graph.get_allnodes()}
 
@@ -292,11 +293,13 @@ class Simulator(object):
         print('\nSimulation ended')
         print(f'Running time: {stop_time-start_time}')
 
+        # print(self.vehicle_attri.keys())
         simulation_info = {
             'Time_horizon': self.time_horizon,
             'Start_time': self.start_time.strftime("%H:%M:%S"),
             'End_time': self.end_time.strftime("%H:%M:%S"),
-            'Duration': stop_time-start_time
+            'Duration': stop_time-start_time,
+            'Vehicle': list(self.vehicle_attri.keys())
         }
         file_path = 'results'
         with open(f'{file_path}/simulation_info.json', 'w') as json_file:
@@ -393,13 +396,11 @@ class Simulator(object):
                 saved_wait_time[node][mode] = saved_wait_time[node][mode].tolist()
 
         # print(saved_q_length)
-        
+        with open(f'{path_name}/passenger_queue.json', 'w') as json_file:
+            json.dump(saved_q_length, json_file)
 
         with open(f'{path_name}/vehicle_queue.json', 'w') as json_file:
             json.dump(saved_v_length, json_file)
-
-        with open(f'{path_name}/passegner_queue.json', 'w') as json_file:
-            json.dump(saved_q_length, json_file)
 
         with open(f'{path_name}/wait_time.json', 'w') as json_file:
             json.dump(saved_wait_time, json_file)
