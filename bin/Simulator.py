@@ -264,8 +264,10 @@ class Simulator(object):
                         # reb_trans = {}
                         for mode in reb_list:
                             reb_trans[mode] = {}
-                            reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
                             reb_trans[mode]['reb'] = reb_flow[mode]['reb']
+                            if (reb_trans[mode]['reb']):
+                                reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
+                            
                     self.node_task( self.graph.graph_top[node]['node'], timestep, reb_flag, reb_trans )
 
             

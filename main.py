@@ -18,7 +18,7 @@ def main():
     for l in lazyset:
         for r in rangeset:
     '''
-    l = 10
+    l = 1
     r = 20
     # create graph
     g = Graph()
