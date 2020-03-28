@@ -35,6 +35,8 @@ class Node(object):
         self.time = 0
 
         self.passenger = {}
+        self.total_p = 0
+        self.total_served_p = 0
         self.vehicle = {}
         self.p_wait ={}
         for mode in self.mode:
@@ -108,6 +110,7 @@ class Node(object):
             if (p.get_odpair()[1] == self.id):
                 # self.passenger_leave(p)
                 logging.info(f'Time {self.time}: Pas {p.id} arrived at destination {self.id} and quit')
+                self.total_served_p += 1
                 del p
                 if (v.mode == 'walk'):
                     # passenger's foot leaves with himself!
@@ -156,21 +159,12 @@ class Node(object):
                 pid = f'{self.id}_{dest}_{self.time}'
                 p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
 
-                # random pick a routing policy
-                # routing_method = np.random.choice(routing.get_methods(), 1)[0]
-                # p.get_schdule(routing, routing_method)
-                # p.get_schdule(routing, 'simplex')
-                # p.get_schdule(routing, 'bus_walk_simplex')
-                p.get_schdule(routing, 'taxi_walk_simplex')
-                
-                # print('new passenger arrived')
-                # print(p.id, p.get_odpair())
-                # print('get sch: ', p.get_schdule(routing))
-                # self.passenger.append(p)
-                # print(pid, p.get_schdule(g))
+                p.get_schdule(routing)
+
                 self.passenger_arrive(p)
 
                 logging.info(f'Time {self.time}: Pas {pid} arrived, ori={self.id}, dest={dest}')
+                self.total_p += 1
 
     def match_demands(self, attri):
         # check if the vehicle leave the park

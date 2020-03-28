@@ -15,12 +15,21 @@ class Rebalancing(object):
         self.k_near_nei = {}
         self.size = len(self.graph.graph_top.keys())
 
+        self.policies = {
+            'MaxWeight': self.MaxWeight,
+            'Simplified_MaxWeight': self.Simplified_MaxWeight,
+            'Perposion': self.Perposion,
+            'CostSensitive': self.CostSensitive,
+            'Simplified_CostSensitive': self.Simplified_CostSensitive
+        }
+        # default policy
+        self.policy = 'Simplified_MaxWeight'
 
         # np.set_printoptions(threshold=10000)
 
         self.costsensi_para = None
 
-    def MaxWeight(self, queue, server):
+    def MaxWeight(self, mode, queue, server):
         # weight
         c = np.kron( np.ones(self.size), -np.array(queue) )
         # print('c',c)
@@ -60,7 +69,7 @@ class Rebalancing(object):
         return result.x.reshape((self.size, self.size))
 
 
-    def Perposion(self, queue, server):
+    def Perposion(self, mode, queue, server):
         result = np.zeros(shape=(self.size,self.size))
         for index, node in enumerate(self.graph.graph_top):
             # b = np.zeros(self.size)
@@ -87,7 +96,7 @@ class Rebalancing(object):
         return result
 
 
-    def MaxWeight_Heuristic(self, queue, server):
+    def Simplified_MaxWeight(self, mode, queue, server):
         result = np.zeros(shape=(self.size,self.size))
         for index, node in enumerate(self.graph.graph_top):
             # b = np.zeros(self.size)
@@ -212,21 +221,25 @@ class Rebalancing(object):
         # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=[0, max(server)], method='simplex')
         return result.x.reshape((self.size, self.size))
 
+    def set_parameters(self, lazy=0, vrange=0):
+        self.lazy = lazy
+        self.range = vrange
+
+    def set_policy(self, policy):
+        if (policy in self.policies):
+            self.policy = policy
+        else:
+            # cur_policy_name = [name for name in self.policies if self.policies[name] == self.policy]
+            print(f'{policy} is unavailable. Will use {self.policy}.')
     
     def Dispatch_active(self, mode, queue_p, queue_v):
         if (self.vehicle_attri[mode]['reb'] == 'active' 
             and np.sum(queue_p) != 0 and len(queue_p) == len(queue_v) ):
 
-            # opt_trans = self.MaxWeight(queue=queue_p, server=queue_v)
-            # opt_trans = self.Perposion(queue=queue_p, server=queue_v)
-            # opt_trans = self.MaxWeight_Heuristic(queue=queue_p, server=queue_v)
-            # opt_trans = self.CostSensitive(mode=mode ,queue=queue_p, server=queue_v)
-            opt_trans = self.Simplified_CostSensitive(mode=mode ,queue=queue_p, server=queue_v)
+            opt_trans = self.policies[self.policy](mode=mode ,queue=queue_p, server=queue_v)
             
             opt_flow = {}
             for index, node in enumerate(self.graph.graph_top):
-                # print(index*len(queue_p), (index+1)*len(queue_p)-1)
-
                 # add lazy
                 opt_trans[index,index] += self.lazy
 

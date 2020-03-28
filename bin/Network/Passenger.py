@@ -20,9 +20,9 @@ class Passenger(object):
     def get_odpair(self):
         return (self.ori, self.dest)
 
-    def get_schdule(self, routing, method):
+    def get_schdule(self, routing):
         # print(self.ori, self.dest)
-        self.path = routing.get_path(self.ori, self.dest, method=method)
+        self.path = routing.get_path(self.ori, self.dest)
         # print(self.path)
         return self.path
 

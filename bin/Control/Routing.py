@@ -17,6 +17,8 @@ class Routing(object):
         }
         self.vehicle_attri = vehicle_attri
 
+        self.routing_method = 'simplex'
+
         self.near_nei = {}
 
     def syn_info(self, info):
@@ -25,14 +27,20 @@ class Routing(object):
     def get_methods(self):
         return list(self.path.keys())
 
-    def get_path(self, ori, dest, method='simplex'):
+    def set_routing_method(self, method):
+        if (method in self.path):
+            self.routing_method = method
+        else:
+            print(f'{method} is unavailable. Will use {self.routing_method}.')
+
+    def get_path(self, ori, dest):
         if (ori not in self.graph.graph_top and dest not in self.graph.graph_top):
             # print('invalid path')
             return {}
 
-        if (ori in self.path[method]) and (dest in self.path[method][ori]):
+        if (ori in self.path[self.routing_method]) and (dest in self.path[self.routing_method][ori]):
             # print('path exists')
-            return self.path[method][ori][dest]
+            return self.path[self.routing_method][ori][dest]
         else:
             methodset = {
                 'bus_simplex': self.bus_simplex,
@@ -42,9 +50,9 @@ class Routing(object):
             }
             # route = Routing(self, ori, dest)
             # print('routing: ', ori, dest)
-            path = methodset[method](ori, dest)
+            path = methodset[self.routing_method](ori, dest)
             # print(path)
-            self.save_path(ori, dest, method, path)
+            self.save_path(ori, dest, self.routing_method, path)
             return path
 
     def simplex(self, ori, dest):

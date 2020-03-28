@@ -56,10 +56,23 @@ class Simulator(object):
         self.passenger_queuelen = {}
         self.vehicle_queuelen = {}
         self.passenger_waittime = {}
-        self.total_dist = {
+        self.total_tripdist = {
             'total': {},
             'reb': {}
         }
+        self.total_triptime = {
+            'total': {},
+            'reb': {}
+        }
+        self.total_trip = {
+            'total': {},
+            'reb': {}
+        }
+        self.total_arrival = {
+            'total': {},
+            'served': {}
+        }
+        
 
         self.vehicle_attri = {}
         self.vehicel_onroad = []
@@ -159,8 +172,10 @@ class Simulator(object):
                     self.graph.graph_top[node]['node'].set_walk(v)
             # for others
             else:
-                self.total_dist['total'][mode] = 0
-                self.total_dist['reb'][mode] = 0
+                self.total_tripdist['total'][mode] = 0
+                self.total_tripdist['reb'][mode] = 0
+                self.total_triptime['total'][mode] = 0
+                self.total_triptime['reb'][mode] = 0
 
                 name_cnt = 0
             
@@ -285,7 +300,9 @@ class Simulator(object):
             'Start_time': self.start_time.strftime("%H:%M:%S"),
             'End_time': self.end_time.strftime("%H:%M:%S"),
             'Duration': stop_time-start_time,
-            'Vehicle': list(self.vehicle_attri.keys())
+            'Vehicle': list(self.vehicle_attri.keys()),
+            'Routing_method': self.routing.routing_method,
+            'Rebalancing_method': self.rebalance.policy
         }
         file_path = 'results'
         with open(f'{file_path}/simulation_info.json', 'w') as json_file:
@@ -297,25 +314,32 @@ class Simulator(object):
         for node in self.graph.get_allnodes():
             logging.info(f'Node {node} history: {self.passenger_queuelen[node]}')
             # print(self.passenger_waittime[node])
+            self.total_arrival['total'][node] = self.graph.graph_top[node]['node'].total_p
+            self.total_arrival['served'][node] = self.graph.graph_top[node]['node'].total_served_p
+
+            self.total_trip['total'][node] = {}
+            self.total_trip['reb'][node] = {}
 
             for mode in self.graph.graph_top[node]['mode'].split(','):
-                if (mode in self.total_dist['total']):
+                self.total_trip['total'][node][mode] = 0
+                self.total_trip['reb'][node][mode] = 0
+
+                if (mode in self.total_tripdist['total']):
                     for dest in self.graph.graph_top[node]['node'].road:
                         road = self.graph.graph_top[node]['node'].road[dest]
-                        self.total_dist['total'][mode] += road.get_total_distance(mode)
-                        if (mode in self.total_dist['reb']):
-                            self.total_dist['reb'][mode] += road.get_total_reb_distance(mode)
-        ''''''
-        # print(self.total_dist)
-        # print(self.total_reb_dist)
-        # self.plot = Plot(self.graph, self.time_horizon)
+                        self.total_tripdist['total'][mode] += road.get_total_distance(mode)
+                        self.total_triptime['total'][mode] += road.get_total_time(mode)
+                        self.total_trip['total'][node][mode] += road.get_total_trip(mode)
 
-        # save data to json
-        # result_path = 'results'
-        # self.save_result(file_path=result_path)
+                        if (mode in self.total_tripdist['reb']):
+                            self.total_tripdist['reb'][mode] += road.get_total_reb_distance(mode)
+                            self.total_triptime['reb'][mode] += road.get_total_reb_time(mode)
+                            self.total_trip['reb'][node][mode] += road.get_total_reb_trip(mode)
 
-        self.plot.import_queuelength(self.passenger_queuelen, self.vehicle_queuelen)
-        self.plot.import_passenger_waittime(self.passenger_waittime)
+
+        self.plot.queue_p = self.passenger_queuelen
+        self.plot.queue_v = self.vehicle_queuelen
+        self.plot.waittime_p = self.passenger_waittime
         # print(self.passenger_waittime)
 
     def node_task(self, node, timestep, isreb, reb_flow):
@@ -365,20 +389,18 @@ class Simulator(object):
             # print("Required directories are created.")
             pass
 
-        saved_total_dist = copy.deepcopy(self.total_dist)
-
         saved_q_length = {}
         saved_v_length = {}
-        saved_wait_time = {}
+        # saved_wait_time = {}
 
         for node in self.graph.graph_top:
             saved_q_length[node] = {}
             saved_v_length[node] = {}
-            saved_wait_time[node] = {}
+            # saved_wait_time[node] = {}
             for mode in self.vehicle_attri:
                 saved_q_length[node][mode] = self.passenger_queuelen[node][mode].tolist()
                 saved_v_length[node][mode] = self.vehicle_queuelen[node][mode].tolist()
-                saved_wait_time[node][mode] = self.passenger_waittime[node][mode]
+                # saved_wait_time[node][mode] = self.passenger_waittime[node][mode]
 
         # print(saved_q_length)
         with open(f'{path_name}/passenger_queue.json', 'w') as json_file:
@@ -388,12 +410,22 @@ class Simulator(object):
             json.dump(saved_v_length, json_file)
 
         with open(f'{path_name}/wait_time.json', 'w') as json_file:
-            json.dump(saved_wait_time, json_file)
+            json.dump(self.passenger_waittime, json_file)
 
-        with open(f'{path_name}/total_distance.json', 'w') as json_file:
-            json.dump(saved_total_dist, json_file) 
+        total_num_arrival = 0
+        for node in self.total_arrival['total']:
+            total_num_arrival += self.total_arrival['total'][node]
+        saved_metrics = {
+            'total_trip': self.total_trip,
+            'total_tripdist': self.total_tripdist,
+            'total_triptime': self.total_triptime,
+            'total_arrival': self.total_arrival,
+            'total_num_arrival': total_num_arrival
+        }
+        with open(f'{path_name}/metrics.json', 'w') as json_file:
+            json.dump(saved_metrics, json_file) 
 
-        del saved_q_length, saved_v_length, saved_wait_time, saved_total_dist
+        del saved_q_length, saved_v_length
 
 
     def plot_topology(self, method='ploty'):
@@ -402,19 +434,19 @@ class Simulator(object):
     def plot_passenger_queuelen(self, mode, time):
         self.plot.plot_passenger_queuelen(mode=mode, time=time)
 
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
-        self.plot.passenger_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)
+    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        self.plot.passenger_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
         
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
-        self.plot.vehicle_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)
+    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        self.plot.vehicle_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
         
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
-        self.plot.combination_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave, method=method)
+    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        self.plot.combination_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
     
-    def passenger_queuelen_time(self, mode, method='plotly'):
-        self.plot.plot_passenger_queuelen_time(mode, method=method)
+    def passenger_queuelen_time(self, mode):
+        self.plot.plot_passenger_queuelen_time(mode)
 
-    def passegner_waittime(self, mode, method='plotly'):
-        self.plot.plot_passenger_waittime(mode, method=method)
+    def passegner_waittime(self, mode):
+        self.plot.plot_passenger_waittime(mode)
 
 

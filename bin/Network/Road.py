@@ -47,8 +47,20 @@ class Road(object):
                 logging.info(f'Time {self.time}: Vel {v.id} leave road ({self.ori},{self.dest})')
                 g.graph_top[self.dest]['node'].vehicle_arrive(v)
 
-    def get_flow(self, mode):
+    def get_flow(self):
         return len(self.vehicle)
+
+    def get_total_trip(self, mode):
+        return 0 if (mode not in self.v_count) else self.v_count[mode]
+    
+    def get_total_reb_trip(self, mode):
+        return 0 if (mode not in self.v_reb_count) else self.v_reb_count[mode]
+
+    def get_total_time(self, mode):
+        return 0 if (mode not in self.v_count) else self.triptime*self.v_count[mode]
+    
+    def get_total_reb_time(self, mode):
+        return 0 if (mode not in self.v_reb_count) else self.triptime*self.v_reb_count[mode]
 
     def get_total_distance(self, mode):
         return 0 if (mode not in self.v_count) else self.dist*self.v_count[mode]

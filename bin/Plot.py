@@ -10,6 +10,7 @@ import plotly as pt
 import plotly.express as px
 import plotly.graph_objects as go
 
+
 import os
 import logging
 import json
@@ -43,6 +44,10 @@ class Plot(object):
         self.time_horizon = simulation_info['Time_horizon']
         self.start_time = datetime.strptime(simulation_info['Start_time'], "%H:%M:%S")
         self.vehicle_attri = simulation_info['Vehicle'] 
+        self.reb_method = simulation_info['Rebalancing_method'] 
+        self.routing_method = simulation_info['Routing_method'] 
+        self.duration = simulation_info['Duration'] 
+
 
         self.lat = np.asarray([ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ])
         self.lon = np.asarray([ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ])
@@ -59,8 +64,15 @@ class Plot(object):
         with open(f'{path_name}/wait_time.json') as json_file:
             waittime = json.load(json_file)
 
-        with open(f'{path_name}/total_distance.json') as json_file:
-            totaldist = json.load(json_file)
+        with open(f'{path_name}/metrics.json') as json_file:
+            metrics = json.load(json_file)
+
+        self.total_trip= metrics['total_trip']
+        self.total_tripdist = metrics['total_tripdist']
+        self.total_triptime = metrics['total_triptime']
+        self.total_arrival = metrics['total_arrival']
+        self.sum_totalarrival = metrics['total_num_arrival']
+
 
         for node in self.graph.graph_top:
             for mode in self.vehicle_attri:
@@ -68,16 +80,16 @@ class Plot(object):
                 queue_v[node][mode] = np.array(queue_v[node][mode])
                 waittime[node][mode] = np.array(waittime[node][mode])
 
-        self.import_queuelength(queue_p, queue_v)
-        self.import_passenger_waittime(waittime)
-        
-        
-    def import_queuelength(self, queue_p, queue_v):
         self.queue_p = queue_p
         self.queue_v = queue_v
-    
-    def import_passenger_waittime(self, waittime):
-        self.passenger_waittime = waittime
+        self.waittime_p = waittime
+
+
+    def set_plot_theme(self, theme):
+        if (theme in ["plotly", "plotly_white", "plotly_dark", "ggplot2", "seaborn", "simple_white", "none"]):
+            pt.io.templates.default = theme
+        else:
+            pt.io.templates.default = 'simple_white'
 
     def plot_passenger_queuelen(self, mode, time):
         time_step = (datetime.strptime(time, '%H:%M:%S')-self.start_time).seconds
@@ -127,7 +139,7 @@ class Plot(object):
         fig = go.Figure(fig_dict)
 
         file_name = f'results/Passenger_{mode}_queue_at_{time}'
-        fig.update_layout(template='plotly_dark')
+        # fig.update_layout(template='plotly_dark')
         pt.offline.plot(fig, filename=file_name+'.html')
 
 
@@ -222,7 +234,7 @@ class Plot(object):
         fig_dict['layout']['sliders'] = [sliders_dict]
 
         fig = go.Figure(fig_dict)
-        fig.update_layout(template='plotly_dark')
+        # fig.update_layout(template='plotly_dark')
         return fig
 
     '''
@@ -297,39 +309,6 @@ class Plot(object):
         fig.update_layout(template='plotly_dark')
         return fig
     '''
-        
-    def passenger_queue_animation_matplotlib(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.graph_top), frames))
-        for frame in range(0, int(frames)):
-            queue[:, frame] = [ self.queue_p[node][mode][ int(frame*self.time_horizon/frames) ] 
-                for node in self.graph.graph_top ]
-
-        result = np.array([self.queue_p[node][mode] for node in self.queue_p])
-
-        norm = mpl.colors.Normalize(vmin=0, vmax=result.max())
-
-        scat = plt.scatter(x=self.lon, y=self.lat, c=data[:, 0], s=np.abs(data[:, 0])+100, cmap='Reds', label=data[:, 0],
-                             norm=norm, zorder=2, alpha=0.8, edgecolors='none')
-        cbar = plt.colorbar()
-
-        # add another axes at the top left corner of the figure
-        axtext = fig.add_axes([0.0,0.95,0.1,0.05])
-        # turn the axis labels/spines/ticks off
-        axtext.axis('off')
-        # place the text to the other axes
-        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
-
-        def update(frame):
-            scat.set_sizes( np.abs(data[:, frame%frames])+100 )
-            scat.set_array( data[:, frame%frames] )
-            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
-            return scat,time,
-
-        print(f'Generate {mode} Passenger queue ......', end='')
-        # Construct the animation, using the update function as the animation director.
-        ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
-        return ani
-
 
     def passenger_queue_animation_plotly(self, fig, mode, frames):
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
@@ -342,61 +321,14 @@ class Plot(object):
         return fig
 
 
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
-        if (method == 'matplotlib'):
-            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
-            ani = self.passenger_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
-        elif (method == 'plotly'):
-            fig = None
-            ani = self.passenger_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
-        
-        file_name = 'results/passenger_queue'
-        try:
-            os.remove(file_name+'.mp4')
-        except OSError:
-            pass
-        
-        if (autosave and method == 'matplotlib'):
-            ani.save(file_name+'.mp4', fps=12, dpi=300)
-
+    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        print(f'Plot queue length of passengers who take {mode} ...', end='')
+        fig = None
+        ani = self.passenger_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
+            
+        pt.offline.plot(ani, filename='results/passenger_queue.html')
         print('Done')
-        # animation.to_html5_video()
-        if (autoplay):
-            if (method == 'matplotlib'):
-                plt.show()
-            elif (method == 'plotly'):
-                pt.offline.plot(ani, filename=file_name+'.html')
-
-
-    def vehicle_queue_animation_matplotlib(self, fig, mode, frames):
-        data = np.zeros(shape=(len(self.graph.graph_top), frames))
-        for frame_index in range(0, int(frames)):
-            data[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.graph_top ]
-
-        norm = mpl.colors.Normalize(vmin=data.max(), vmax=data.max())
-
-        scat = plt.scatter(x=self.lon, y=self.lat, c=data, s=np.abs(data)+100, cmap='Blues', 
-                    label=data, norm=norm, zorder=2, alpha=0.8, edgecolors='none')
-        cbar = plt.colorbar()
-
-        # add another axes at the top left corner of the figure
-        axtext = fig.add_axes([0.0,0.95,0.1,0.05])
-        # turn the axis labels/spines/ticks off
-        axtext.axis('off')
-        # place the text to the other axes
-        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
-
-        def update(frame):
-            scat.set_sizes( np.abs(data[:, frame%frames])+100 )
-            scat.set_array( data[:, frame%frames] )
-            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
-            return scat,time,
-
-        print(f'Generate {mode} queue ......', end='')
-        # Construct the animation, using the update function as the animation director.
-        ani = animation.FuncAnimation(fig=fig, func=update, interval=50, frames=frames, repeat=True)
-        return ani
+            
 
 
     def vehicle_queue_animation_plotly(self, fig, mode, frames):
@@ -409,79 +341,14 @@ class Plot(object):
         return fig
 
 
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
-        if (method == 'matplotlib'):
-            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
-            ani = self.vehicle_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
-        elif (method == 'plotly'):
-            fig = None
-            ani = self.vehicle_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
-
-        file_name = f'results/{mode}_queue'
-        try:
-            os.remove(file_name+'.mp4')
-        except OSError:
-            pass
-
-        if (autosave and method == 'matplotlib'):
-            ani.save(file_name+'.mp4', fps=12, dpi=300)
-
+    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        print(f'Plot queue length of {mode} ...', end='')
+        fig = None
+        ani = self.vehicle_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
+            
+        pt.offline.plot(ani, filename=f'results/{mode}_queue.html')
         print('Done')
-        # animation.to_html5_video()
-        if (autoplay):
-            if (method == 'matplotlib'):
-                plt.show()
-            elif (method == 'plotly'):
-                pt.offline.plot(ani, filename=file_name+'.html')
-        
-        
-    def combination_queue_animation_matplotlib(self, fig, mode, frames):    
-        data = np.zeros(shape=(len(self.graph.graph_top), frames))
-
-        # sum all buses
-        bus_list = []
-        if (mode == 'bus'):
-            for node in self.graph.graph_top:
-                modelist =  self.graph.graph_top[node]['mode'].split(',')
-                modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
-                print(modelist)
-                bus_list = list(set(bus_list + modelist))
-            for bus in bus_list:
-                for frame_index in range(0, int(frames)):
-                    index = int(frame_index*self.time_horizon/frames)
-                    data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
-                            for node in self.graph.graph_top ]
-        else:
-            for frame_index in range(0, int(frames)):
-                index = int(frame_index*self.time_horizon/frames)
-                data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                    for node in self.graph.graph_top ]
-
-        # norm = mpl.colors.Normalize(vmin=result.min(), vcenter=0, vmax=result.max())
-        norm = MidpointNormalize(vmin=data.min(), vcenter=0, vmax=data.max())
-
-        scat = plt.scatter(x=self.lon, y=self.lat, c=data[:, 0], s=np.abs(data[:, 0])+100, cmap='coolwarm', 
-                    label=data[:, 0], norm=norm, zorder=2, alpha=0.8, edgecolors='none')
-        cbar = plt.colorbar()
-        
-
-        # add another axes at the top left corner of the figure
-        axtext = fig.add_axes([0.0,0.95,0.1,0.05])
-        # turn the axis labels/spines/ticks off
-        axtext.axis('off')
-        # place the text to the other axes
-        time = axtext.text(0.5,0.5, f'time step={0}', ha='left', va='top')
-
-        def update(frame):
-            scat.set_sizes( np.abs(data[:, frame%frames])+100 )
-            scat.set_array( data[:, frame%frames] )
-            time.set_text(f'time step={int(frame*self.time_horizon/frames)}')
-            return scat,time,
-
-        print(f'Generate passenger and {mode} queue ......', end='')
-        # Construct the animation, using the update function as the animation director.
-        ani = animation.FuncAnimation(fig=fig, func=update, interval=300, frames=frames, repeat=True)
-        return ani
+                
 
 
     def combination_queue_animation_plotly(self, fig, mode, frames):
@@ -510,158 +377,215 @@ class Plot(object):
         return fig
 
 
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False, method='plotly'):
+    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
+        print(f'Plot combined queue length of passengers and {mode} ...', end='')
+
         self.lat = [ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ]
         self.lon = [ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ]
 
-        if (method == 'matplotlib'):
-            fig = self.graph.plot_topology_edges(self.lon, self.lat, method)
-            ani = self.combination_queue_animation_matplotlib(fig=fig, mode=mode, frames=frames)
-        elif (method == 'plotly'):
-            fig = None
-            ani = self.combination_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
+        fig = None
+        ani = self.combination_queue_animation_plotly(fig=fig, mode=mode, frames=frames)
 
-        file_name = f'results/{mode}_combined_queue'
-        try:
-            os.remove(file_name+'.mp4')
-        except OSError:
-            pass
-        
-        if (autosave and method == 'matplotlib'):
-            ani.save(file_name+'.mp4', fps=12, dpi=300)
+        pt.offline.plot(ani, filename=f'results/{mode}_combined_queue.html')
 
         print('Done')
-        # animation.to_html5_video()
-        if (autoplay):
-            if (method == 'matplotlib'):
-                plt.show()
-            elif (method == 'plotly'):
-                pt.offline.plot(ani, filename=file_name+'.html')
+                
 
 
-    def plot_passenger_queuelen_time(self, mode, method='plotly'):
-        fig = go.Figure()
+    def plot_passenger_queuelen_time(self, mode):
+        fig_dict = {'data': [], 'layout': {}}
+        fig_dict['layout']['xaxis'] = {'title': 'Time'}
+        fig_dict['layout']['xaxis']['ticktext'] = [
+            (timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(0, self.time_horizon, int(self.time_horizon/10))
+        ]
+        fig_dict['layout']['xaxis']['tickvals'] = [ t for t in range(0, self.time_horizon, int(self.time_horizon/10)) ]
+        fig_dict['layout']['yaxis'] = {'title': f'Imbalance: # passengers - # {mode}'}
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['title'] = 'Changing of Imbalance'
+        
+        # fig = go.Figure()
         x = np.arange(start=0, stop=self.time_horizon, step=1)
-        # x = [(timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(self.time_horizon)]
-        # x = range(self.time_horizon)
-        # y = np.zeros(len(x))
-        
-        # cr = (244,67,54)
-        # cb = (33,150,243)
-        # crange = len(self.queue_p.keys())
-        # print(crange)
+
         for index, node in enumerate(self.queue_p):
-            # r = abs(cr[0]-cb[0])*index/crange + min(cr[0],cb[0])
-            # g = abs(cr[1]-cb[2])*index/crange + min(cr[1],cb[1])
-            # b = abs(cr[2]-cb[2])*index/crange + min(cr[2],cb[2])
-            # color = 'rgb({},{},{})'.format(int(r), int(g), int(b))
-            # y = y + self.queue_p[node][mode]
-            y = self.queue_p[node][mode] - self.queue_v[node][mode]
-            # fig.add_trace(go.Scatter(x=x, y=y, name=node, line = {'color': color} ))
-            fig.add_trace(go.Scatter(x=x, y=y, name=node))
+            # does not plot the node only with walk
+            if (self.graph.graph_top[node]['mode'] != 'walk'):
+                y = self.queue_p[node][mode] - self.queue_v[node][mode]
+                data_dict = { 
+                    'type':'scatter', 'x': x, 'y': y, 'name': node
+                }
+                fig_dict['data'].append(data_dict)
 
-
-        fig.update_xaxes(
-            ticktext=[(timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(0, self.time_horizon, int(self.time_horizon/10))],
-            tickvals=[t for t in range(0, self.time_horizon, int(self.time_horizon/10))],
-        )
+        fig = go.Figure(fig_dict)
         
-        fig.update_layout(template='plotly_dark')
+        # fig.update_layout(template='plotly_dark')
         file_name = f'results/{mode}_queue_time'
         pt.offline.plot(fig, filename=file_name+'.html')
             
-    def plot_passenger_waittime(self, mode, method='plotly'):
-        x = self.graph.get_allnodes()
-        # print(self.passenger_waittime)
-        y = [ self.passenger_waittime[node][mode] for node in self.graph.get_allnodes() ]
-        fig = go.Figure(data=[go.Bar(x=x, y=y)])
-        fig.update_xaxes(type='category')
+    def plot_passenger_waittime(self, mode):
+        fig_dict = {'data': [], 'layout': {}}
+        fig_dict['layout']['xaxis'] = {'title': 'Region ID'}
+        fig_dict['layout']['xaxis']['type'] = 'category'
+        fig_dict['layout']['yaxis'] = {'title': 'Waiting Time (s)'}
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['title'] = 'Average Waiting Time'
         
-        fig.update_layout(template='plotly_dark')
+        x = [ node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk') ]
+        # print(self.passenger_waittime)
+        y = [ self.waittime_p[node][mode] for node in x ]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': y, 'marker_color': 'lightsalmon', 'textposition': 'auto'
+        }
+        fig_dict['data'].append(data_dict)
+        fig = go.Figure(fig_dict)        
+
         file_name = f'results/{mode}_waittime'
         pt.offline.plot(fig, filename=file_name+'.html')
 
-    def plot_topology(self, method='matplotlib'):
-        if (method == 'matplotlib'):
-            fig, ax = plt.subplots()
-            fig, ax = self.plot_topology_edges(self.lon, self.lat, method)
+    def plot_metrics(self, mode):
+        # fig = pt.subplots.make_subplots(rows=2, cols=2)
+        fig_dict = {'data': [], 'layout': {}}
 
-            # color = np.random.randint(1, 100, size=len(self.get_allnodes()))
-            color = [ 'steelblue' if (',' in self.graph_top[node]['mode']) else 'skyblue' for node in self.graph_top ]
-            scale = [ 300 if (',' in self.graph_top[node]['mode']) else 100 for node in self.graph_top ]
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['title'] = 'Operational Metrics'
+        fig_dict['layout']['showlegend'] = False
+        
+        # average waiting time
+        x = [ node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk') ]
+        # print(self.passenger_waittime)
+        y = [ self.waittime_p[node][mode]/60.0 for node in x ]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': y, 'name': 'Waiting Time', 'offsetgroup': '0',
+            'marker_color': 'indianred', 'xaxis': 'x', 'yaxis': 'y'
+        }
+        fig_dict['data'].append(data_dict)
+        fig_dict['layout']['xaxis'] = {'title': 'Region ID', 'type': 'category', 'domain': [0, 1]}
+        fig_dict['layout']['yaxis'] = {'title': 'Averaged Waiting Time (min)', 'titlefont' : {'color': 'indianred'},
+            'domain': [0, 0.45], 'anchor': 'x', 'overlaying': 'y2'}
 
-            ax.scatter(self.lon, self.lat, c=color, s=scale, label=color, alpha=0.8, edgecolors='none', zorder=2)
+        # passenger throughtput
+        y = [ (self.total_trip['total'][node][mode]-self.total_trip['reb'][node][mode])/float(self.time_horizon)*3600
+             for node in x ]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': y, 'name': 'Throughput', 'offsetgroup': '1',
+            'marker_color': 'lightsalmon', 'xaxis': 'x', 'yaxis': 'y2'
+        }
+        fig_dict['data'].append(data_dict)
 
-            # ax.legend()
-            plt.grid(False)
-            # plt.legend(loc='lower right', framealpha=1)
-            plt.xlabel('lat1itude')
-            plt.ylabel('Longitude')
-            plt.title('City Topology')
+        fig_dict['layout']['yaxis2'] = {'title': 'Throughput (#/min)', 'titlefont' : {'color': 'lightsalmon'}, 
+            'domain': [0, 0.45], 'anchor': 'x', 'side': 'right'}
+        
+        # trip time/dist
+        # x = ['Trip Time', 'Trip Distance']
+        sum_trip = {'total': 0, 'reb': 0}
+        for node in x:
+            sum_trip['total'] += self.total_trip['total'][node][mode]
+            sum_trip['reb'] += self.total_trip['reb'][node][mode]
+        
+        x = ['Riding Distance', 'Rebalancing Distance']
+        y = np.array([
+            (self.total_tripdist['total'][mode]-self.total_tripdist['reb'][mode])/float(sum_trip['total']-sum_trip['reb']), 
+            self.total_tripdist['reb'][mode]/float(sum_trip['reb'])
+        ])
+        color = ['#81D4FA', '#0288D1']
+        data_dict = { 
+            'type':'pie', 'labels': x, 'values': y, 'textposition': 'inside', 'textinfo': 'percent+label', 'name': 'Total Trip Distance',
+            'marker_colors': color, 'domain':{'x': [0.55, 0.75], 'y': [0.55, 1]},
+        }
+        fig_dict['data'].append(data_dict)
 
-            plt.savefig('City_Topology.pdf', dpi=600)
-            print(self.graph_top)
-            return fig, ax
+        x = ['Riding Time', 'Rebalancing Time']
+        y = np.array([
+            (self.total_triptime['total'][mode]-self.total_triptime['reb'][mode])/float(sum_trip['total']-sum_trip['reb']), 
+            self.total_triptime['reb'][mode]/float(sum_trip['reb'])
+        ])
+        color = ['#81D4FA', '#0288D1']
+        data_dict = { 
+            'type':'pie', 'labels': x, 'values': y, 'textposition': 'inside', 'textinfo': 'percent+label', 'name': 'Total Trip Distance',
+            'marker_colors': color, 'domain':{'x': [0.8, 1], 'y': [0.55, 1]},
+        }
+        fig_dict['data'].append(data_dict)
 
-        elif (method == 'plotly'):
-            fig_dict = {'data': [], 'layout': {}}
+        # general metrics
+        # x = ['Total Trips', 'Total Miles Traveled', 'Total Hours Traveled']
+        # y = [sum_trip['total'], self.total_tripdist['total'][mode], self.total_triptime['total'][mode]]
+        # color = ['#66BB6A', '#9CCC65', '#D4E157']
+        # total trips
+        x = ['Total Trips']
+        y = [sum_trip['total']]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': y, 'name': '', 'text': y, 'textposition': 'outside',
+            'marker_color': '#66BB6A', 'xaxis': 'x2', 'yaxis': 'y3'
+        }
+        fig_dict['data'].append(data_dict)
+        fig_dict['layout']['xaxis2'] = {'title': 'General Metrics', 'type': 'category', 'domain': [0, 0.45], 'anchor': 'y3'}
+        fig_dict['layout']['yaxis3'] = {'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False,
+            'domain': [0.55, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0]*5.4]}
 
-            # fill in most of layout
-            fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
-            fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
-            fig_dict['layout']['hovermode'] = 'closest'
-            fig_dict['layout']['mapbox'] = {
-                'accesstoken': self.mapbox_access_token,
-                'bearing': 0,
-                'center': go.layout.mapbox.Center(
-                    lat = np.mean(self.lat),
-                    lon = np.mean(self.lon)
-                ),
-                'pitch': 60,
-                'zoom': 11,
-                'style': self.map_style
-            }
+        x = ['Total Miles Traveled']
+        y = [self.total_tripdist['total'][mode]/1609.34]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': np.around(y,decimals=2), 'name': '', 'text': y, 'textposition': 'outside',
+            'marker_color': '#9CCC65', 'xaxis': 'x2', 'yaxis': 'y4'
+        }
+        fig_dict['data'].append(data_dict)
+        fig_dict['layout']['yaxis4'] = {'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False,
+            'domain': [0.55, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0]*1.4]}
 
-            size = np.zeros([len(self.lon), 1])+self.relativesize*2
-            color = ['#FAFAFA' for node in self.lon]
+        x = ['Total Hours Traveled']
+        y = [self.total_tripdist['total'][mode]/3600.0]
+        data_dict = { 
+            'type':'bar', 'x': x, 'y': np.around(y,decimals=2), 'name': '', 'text': y, 'textposition': 'outside',
+            'marker_color': '#D4E157', 'xaxis': 'x2', 'yaxis': 'y5'
+        }
+        fig_dict['data'].append(data_dict)
+        fig_dict['layout']['yaxis5'] = {'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False,
+            'domain': [0.55, 1], 'anchor': 'x2', 'range': [0, y[0]*2.7]}
 
-            text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
-            data_dict = { 
-                'type':'scattermapbox', 
-                'lon': self.lon, 'lat': self.lat, 
-                'mode': 'markers', 
-                'name': 'Queue', 
-                'text': text_str,
-                'marker': { 'size': size, 'color': color }
-            }
-            fig_dict['data'].append(data_dict)
-            fig = go.Figure(fig_dict)
+        fig = go.Figure(fig_dict)
+        
+        # fig.update_layout(template='plotly_dark')
+        file_name = f'results/{mode}_waittime'
+        pt.offline.plot(fig, filename=file_name+'.html')
 
-            file_name = 'results/Topology'
-            fig.update_layout(template='plotly_dark')
-            pt.offline.plot(fig, filename=file_name+'.html')
 
-    
-    def plot_topology_edges(self, x, y, method='plotly'):
-        if (method == 'matplotlib'):
-            plt.style.use('dark_background')
-            fig, ax = plt.subplots()
 
-            alledges = self.graph.get_all_edges()
-            # print(alledges)
-            loc = np.zeros(shape=(2,2))
+    def plot_topology(self):
+        fig_dict = {'data': [], 'layout': {}}
 
-            for odlist in alledges:
-                for odpair in odlist:
-                    loc[:,0] = np.array( [self.graph.graph_top[odpair[0]]['lat'], self.graph.graph_top[odpair[0]]['lon']])
-                    loc[:,1] = np.array( [self.graph.graph_top[odpair[1]]['lat'], self.graph.graph_top[odpair[1]]['lon']])
-                    ax.plot(loc[0,:], loc[1,:], c='grey', alpha=0.2, ls='--', lw=2, zorder=1)
-            return fig
-        elif (method == 'plotly'):
-            return fig
-        else:
-            return None
+        # fill in most of layout
+        fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
+        fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
+        fig_dict['layout']['hovermode'] = 'closest'
+        fig_dict['layout']['mapbox'] = {
+            'accesstoken': self.mapbox_access_token,
+            'bearing': 0,
+            'center': go.layout.mapbox.Center(
+                lat = np.mean(self.lat),
+                lon = np.mean(self.lon)
+            ),
+            'pitch': 60,
+            'zoom': 11,
+            'style': self.map_style
+        }
 
+        size = np.zeros([len(self.lon), 1])+self.relativesize*2
+        color = ['#FAFAFA' for node in self.lon]
+
+        text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
+        data_dict = { 
+            'type':'scattermapbox', 
+            'lon': self.lon, 'lat': self.lat, 
+            'mode': 'markers', 
+            'name': 'Queue', 
+            'text': text_str,
+            'marker': { 'size': size, 'color': color }
+        }
+        fig_dict['data'].append(data_dict)
+        fig = go.Figure(fig_dict)
+
+        # fig.update_layout(template='plotly_dark')
+        pt.offline.plot(fig, filename='results/Topology.html')
+            
 
 
 class MidpointNormalize(mpl.colors.Normalize):
