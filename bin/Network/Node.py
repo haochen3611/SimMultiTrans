@@ -59,7 +59,7 @@ class Node(object):
 
     
     def get_average_wait_time(self, mode):
-        return 0 if (len(self.p_wait[mode]) == 0) else sum(self.p_wait[mode])/len(self.p_wait[mode])  
+        return 0 if (mode not in self.p_wait or len(self.p_wait[mode]) == 0) else sum(self.p_wait[mode])/len(self.p_wait[mode])  
 
     def check_accessiblity(self, mode):
         return (mode in self.mode)
@@ -93,6 +93,12 @@ class Node(object):
             waittime = self.time - p.get_stoptime()
             self.p_wait[mode].append(waittime)
             self.passenger[mode].remove(p)
+
+    def passengers_clear(self):
+        for mode in self.passenger:
+            for p in self.passenger[mode]:
+                waittime = self.time - p.get_stoptime()
+                self.p_wait[mode].append(waittime)
 
 
     def vehicle_park(self, v, leavetime):

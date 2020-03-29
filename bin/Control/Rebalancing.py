@@ -18,9 +18,10 @@ class Rebalancing(object):
         self.policies = {
             'MaxWeight': self.MaxWeight,
             'Simplified_MaxWeight': self.Simplified_MaxWeight,
-            'Perposion': self.Perposion,
+            'Proportional': self.Proportional,
             'CostSensitive': self.CostSensitive,
-            'Simplified_CostSensitive': self.Simplified_CostSensitive
+            'Simplified_CostSensitive': self.Simplified_CostSensitive,
+            'None': self.no_rebalance
         }
         # default policy
         self.policy = 'Simplified_MaxWeight'
@@ -69,7 +70,7 @@ class Rebalancing(object):
         return result.x.reshape((self.size, self.size))
 
 
-    def Perposion(self, mode, queue, server):
+    def Proportional(self, mode, queue, server):
         result = np.zeros(shape=(self.size,self.size))
         for index, node in enumerate(self.graph.graph_top):
             # b = np.zeros(self.size)
@@ -87,7 +88,7 @@ class Rebalancing(object):
             asy = np.array(queue)
             sum_rate = np.sum(asy[k_near_list]) 
             if (sum_rate == 0):
-                result[index,idnex] = 1
+                result[index,index] = 1
             else:
                 rate = np.zeros(self.size)
                 for k_near in k_near_list:
@@ -221,13 +222,18 @@ class Rebalancing(object):
         # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=[0, max(server)], method='simplex')
         return result.x.reshape((self.size, self.size))
 
+    def no_rebalance(self, mode, queue, server):
+        return np.zeros(shape=(self.size,self.size))
+
     def set_parameters(self, lazy=0, vrange=0):
         self.lazy = lazy
         self.range = vrange
+        print(f'Rebalancing Policy Parameters: lazy={lazy}, range={vrange}')
 
     def set_policy(self, policy):
         if (policy in self.policies):
             self.policy = policy
+            print(f'Rebalancing Policy: {policy}')
         else:
             # cur_policy_name = [name for name in self.policies if self.policies[name] == self.policy]
             print(f'{policy} is unavailable. Will use {self.policy}.')
@@ -249,7 +255,8 @@ class Rebalancing(object):
                 if (flow_sum != 1 and flow_sum != 0):
                     # print(flow_sum)
                     opt_flow[node] = np.array( [flow/flow_sum for flow in opt_flow[node]] )
-
+                if (flow_sum == 0):
+                    return opt_flow, False
             return opt_flow, True  
         else: 
             return None, False

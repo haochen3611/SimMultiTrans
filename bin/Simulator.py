@@ -249,6 +249,20 @@ class Simulator(object):
         # Time horizon
         for timestep in range(self.time_horizon):
             reb_flag = False
+            # match demands first
+            for node in self.graph.get_allnodes():
+                if ((timestep+1) % self.reb_time == 0):
+                    # reb_trans = {}
+                    for mode in reb_list:
+                        reb_trans[mode] = {}
+                        reb_trans[mode]['reb'] = reb_flow[mode]['reb']
+                        if (reb_trans[mode]['reb']):
+                            reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
+                        
+                self.node_match(node, timestep)
+                # save data for rebalancing
+                self.node_savedata(node, timestep)
+
             # rebalancing
             if ((timestep+1) % self.reb_time == 0):
                 reb_flag = True
@@ -260,6 +274,12 @@ class Simulator(object):
                     reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(mode=mode, queue_p=queue_p, queue_v=queue_v)
                     # print(reb_flow[mode]['p'])
 
+                # dispatch
+                for node in self.graph.get_allnodes():
+                    self.node_rebalance(node, reb_trans)
+                    self.node_savedata(node, timestep)
+
+            '''
             if (self.multiprocessing_flag): 
                 task = []
                 for node in self.graph.get_allnodes():
@@ -274,20 +294,17 @@ class Simulator(object):
                     p.join()
 
             else:
-                for node in self.graph.get_allnodes():
-                    if ((timestep+1) % self.reb_time == 0):
-                        # reb_trans = {}
-                        for mode in reb_list:
-                            reb_trans[mode] = {}
-                            reb_trans[mode]['reb'] = reb_flow[mode]['reb']
-                            if (reb_trans[mode]['reb']):
-                                reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
-                            
-                    self.node_task( self.graph.graph_top[node]['node'], timestep, reb_flag, reb_trans )
+                pass
+            '''
 
-            
             if (timestep % (self.time_horizon/20) == 0):
                 print('-', end='')
+
+        # At the end, count all the waiting time of passegners not served
+        for node in self.graph.get_allnodes():
+            self.graph.graph_top[node]['node'].passengers_clear()
+            for mode in self.vehicle_attri:
+                self.passenger_waittime[node][mode] = self.graph.graph_top[node]['node'].get_average_wait_time(mode)
 
         stop_time = time()
         logging.info(f'Simulation ended at {time()}')
@@ -342,9 +359,9 @@ class Simulator(object):
         self.plot.waittime_p = self.passenger_waittime
         # print(self.passenger_waittime)
 
-    def node_task(self, node, timestep, isreb, reb_flow):
+    def node_match(self, nid, timestep):
         # n = self.graph.graph_top[node]['node']
-        nid = node.id
+        node = self.graph.graph_top[nid]['node']
 
         # print(nid, timestep)
         node.time = timestep
@@ -364,19 +381,19 @@ class Simulator(object):
         self.routing.syn_info(info)
         node.new_passenger_arrive(self.routing)
         node.match_demands(self.vehicle_attri)
-        
-        # dispatch
-        if (isreb):
-            node.dispatch(reb_flow)
 
+    def node_savedata(self, nid, timestep):
+        node = self.graph.graph_top[nid]['node']
         for mode in self.vehicle_attri:
             if (mode in node.mode):
                 self.passenger_queuelen[nid][mode][timestep] = len( node.passenger[mode] )
                 self.vehicle_queuelen[nid][mode][timestep] = len( node.vehicle[mode] )
 
-                self.passenger_waittime[nid][mode] = node.get_average_wait_time(mode)
-                # queuelength_str += 'Time {}: Vel {} queue length: {}'.format(timestep, mode, len( n.get_vehicle_queue(mode) ))
-                # logging.info('Time {}: Vel {} queue length: {}'.format(timestep, mode, qlength))
+                # self.passenger_waittime[nid][mode] = node.get_average_wait_time(mode)
+
+    def node_rebalance(self, node, reb_trans):
+        # dispatch
+        self.graph.graph_top[node]['node'].dispatch(reb_trans)
 
 
     def set_multiprocessing(self, flag=False):

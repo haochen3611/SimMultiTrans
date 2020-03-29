@@ -30,6 +30,7 @@ class Routing(object):
     def set_routing_method(self, method):
         if (method in self.path):
             self.routing_method = method
+            print(f'Routing Method: {method}')
         else:
             print(f'{method} is unavailable. Will use {self.routing_method}.')
 
