@@ -662,7 +662,7 @@ class Plot(object):
             'style': self.map_style
         }
 
-        size = np.zeros([len(self.lon), 1])+self.relativesize*2
+        size = np.zeros([len(self.lon), 1]) + 10
         color = ['#FAFAFA' for node in self.lon]
 
         text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
