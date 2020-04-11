@@ -261,6 +261,7 @@ class Simulator(object):
         Only use this at the end when executed by step
         :return:
         """
+        self._is_running = False
         # At the end, count all the waiting time of passegners not served
         for node in self.graph.get_allnodes():
             self.graph.graph_top[node]['node'].passengers_clear()
