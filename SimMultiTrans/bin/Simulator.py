@@ -77,19 +77,12 @@ class Simulator(object):
 
             self.road_set[node] = self.graph.graph_top[node]['node'].road
 
-        # create results dic
-        figs_path = 'results'
         try:
-            os.mkdir(figs_path)
+            os.remove(os.path.join(RESULTS, 'Simulator.log'))
         except OSError:
             pass
 
-        try:
-            os.remove(f'{figs_path}/Simulator.log')
-        except OSError:
-            pass
-
-        logging.basicConfig(level=logging.INFO, filename=f'{figs_path}/Simulator.log')
+        logging.basicConfig(level=logging.INFO, filename=os.path.join(RESULTS, 'Simulator.log'))
         logging.info('Graph initialized')
 
     def import_arrival_rate(self, file_name=None, unit=(1, 'min')):
