@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from bin.Network.Passenger import Passenger
+from ...bin.Network.Passenger import Passenger
 # from bin.Network.Vehicle import Vehicle
-from bin.Network.Road import Road
+from ...bin.Network.Road import Road
 
 import numpy as np
 

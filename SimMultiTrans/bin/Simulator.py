@@ -11,10 +11,10 @@ from time import time
 
 import numpy as np
 
-from bin.Control import *
-from bin.Network import *
-from bin.Plot import Plot
-from utils import RESULTS, CONFIG
+from ..bin.Control import *
+from ..bin.Network import *
+from ..bin.Plot import Plot
+from ..utils import RESULTS, CONFIG
 
 
 # import matplotlib as mpl
@@ -468,7 +468,7 @@ class Simulator(object):
         info = {
             'p_queue': self.passenger_queuelen,
             'v_queue': self.vehicle_queuelen,
-            'p_wait': self.passegner_waittime,
+            'p_wait': self.passenger_waittime,
             'time': timestep
         }
         # print(info)
@@ -555,5 +555,5 @@ class Simulator(object):
     def passenger_queuelen_time(self, mode):
         self.plot.plot_passenger_queuelen_time(mode)
 
-    def passegner_waittime(self, mode):
+    def passenger_waittime(self, mode):
         self.plot.plot_passenger_waittime(mode)

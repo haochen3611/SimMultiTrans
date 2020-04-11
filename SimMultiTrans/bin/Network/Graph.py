@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from bin.Network.Node import Node
+from ...bin.Network.Node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt

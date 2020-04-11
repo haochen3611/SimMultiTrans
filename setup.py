@@ -1,68 +1,57 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import json
+import warnings
+from setuptools import setup
 
 
-def main():
-    conf_path = 'conf'
-    result_path = 'result'
-    try:
-        os.mkdir(conf_path)
-        os.mkdir(result_path)
-    except OSError:
-        print("Required directories are created.")
-        pass
+ROOT = os.path.join(os.path.dirname(__file__), 'SimMultiTrans')
+CONFIG = os.path.join(ROOT, 'conf')
+RESULTS = os.path.join(ROOT, 'results')
 
-    print('Setting Mapbox...')
-    empty_sts = 0
+try:
+    os.mkdir(CONFIG)
+    os.mkdir(RESULTS)
+except OSError:
+    pass
 
-    try:
-        empty_sts = os.path.getsize(f'{conf_path}/.mapbox_token')
-    except OSError:
-        print('Token file does not exist.')
-        pass
+empty_sts = 0
 
-    if (empty_sts == 0):
-        token = open(f'{conf_path}/.mapbox_token', 'w')
-        token_key = input('Paste your Mapbox public token and press Enter: ')
-        token.write(token_key)
+try:
+    empty_sts = os.path.getsize(os.path.join(CONFIG, '.mapbox_token'))
+except OSError:
+    warnings.warn('Missing token file in ./conf')
 
-    try:
-        empty_sts = os.path.getsize(f'{conf_path}/.mapbox_style')
-    except OSError:
-        print('Style file does not exist.')
-        pass
+if empty_sts == 0:
+    f = open(os.path.join(CONFIG, '.mapbox_token'), 'w')
+    token = input('Paste your Mapbox token and press Enter: ')
+    f.write(token)
+    f.close()
 
-    if (empty_sts == 0):
-        style = open(f'{conf_path}/.mapbox_style', 'w')
-        style_key = input('Paste your Mapbox style URL and press Enter: ')
-        style.write(style_key)
-    
-    print('Complete!')
+try:
+    empty_sts = os.path.getsize(os.path.join(CONFIG, '.mapbox_style'))
+except OSError:
+    warnings.warn('Missing style file in ./conf')
 
-    print('Setting Input Data')
-    try:
-        empty_sts = os.path.getsize(f'{conf_path}/conf.json')
-    except OSError:
-        print('Configureation file does not exist.')
-        pass
+if empty_sts == 0:
+    f = open(os.path.join(CONFIG, '.mapbox_style'), 'w')
+    style_key = input('Paste your Mapbox style URL and press Enter: ')
+    f.write(style_key)
+    f.close()
 
-    if (empty_sts == 0):
-        geo_path = input('Enter your geographic information file path (required): ')
-        arr_rate_path = input('Enter your arrival rate file path (required): ')
-        vehicle_attri_path = input('Enter your vehicle attribute file path (required): ')
 
-    conf = {
-        'geo_path': geo_path,
-        'arr_rate_path': arr_rate_path,
-        'vehicle_attri_path': vehicle_attri_path
-    }
-
-    with open(f'{conf_path}/conf.json', 'w') as json_file:
-        json.dump(conf, json_file)
-
-    print('Setup finished!')
-
-if __name__ == "__main__":
-    main()
+setup(name='SimMultiTrans',
+      version='0.1',
+      description='Simulator',
+      author='momodupi',
+      author_email='momodupi@gmail.com',
+      license='MIT',
+      url='https://github.com/momodupi/SimMultiTrans',
+      packages=['SimMultiTrans', ],
+      install_requires=['numpy',
+                        'pandas',
+                        'matplotlib',
+                        'scipy',
+                        'plotly',
+                        'ipython'],
+      zip_safe=False)

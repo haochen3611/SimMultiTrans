@@ -10,7 +10,7 @@ import numpy as np
 import plotly as pt
 import plotly.graph_objects as go
 
-from utils import CONFIG, RESULTS
+from ..utils import CONFIG, RESULTS
 
 
 class Plot(object):

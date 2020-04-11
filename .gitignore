@@ -2,10 +2,9 @@
 *.pyc
 .DS_Store
 .vscode
-results
+SimMultiTrans/results
 .png
 .jpeg
 .jpg
-.DS_Store
-.mapbox_token
-conf/
+.idea
+venv/

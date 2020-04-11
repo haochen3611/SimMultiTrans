@@ -1,8 +1,15 @@
-from bin.Control import *
-from bin.Network import *
-from bin import *
 import os
-from utils import RESULTS, CONFIG
+
+from .bin import *
+from .bin.Control import *
+from .bin.Network import *
+from .utils import CONFIG
+
+
+__all__ = [
+    "sim",
+    "graph",
+]
 
 graph_file = 'city_nyc.json'
 vehicle_file = 'vehicle_nyc.json'
