@@ -3,6 +3,7 @@
 
 import itertools as itt
 
+
 class Vehicle(object):
     def __init__(self, vid, mode, loc):
         self.id = vid
@@ -24,8 +25,8 @@ class Vehicle(object):
         self.interval = attri['interval']
         interval_str = self.interval.split(' ')
         unit_trans = {
-            'day': 60*60*24,
-            'hour': 60*60,
+            'day': 60 * 60 * 24,
+            'hour': 60 * 60,
             'min': 60,
             'sec': 1
         }
@@ -36,13 +37,12 @@ class Vehicle(object):
 
         self.route_set = []
         # public mode has own schedule
-        if (self.type == 'publ'):
+        if self.type == 'publ':
             self.route_set = self.route.split(',')
             self.loc = self.route_set[0]
             self.nextstop = self.route_set[1]
             # curloc = self.route_set.pop(0)
             # self.route_set.append(curloc)
-
 
     def get_velocity(self, unit):
         unit_trans = {
@@ -50,22 +50,22 @@ class Vehicle(object):
             'mph': 1,
             'km/h': 1.60934,
         }
-        if (unit not in unit_trans):
+        if unit not in unit_trans:
             unit = 'm/s'
-        return (self.vel * unit_trans[unit])
+        return self.vel * unit_trans[unit]
 
     def reverse_route(self, loc):
-        if (loc == self.route_set[-1]):
+        if loc == self.route_set[-1]:
             self.route_set.reverse()
             # print(self.route_set)
             self.nextstop = self.route_set[1]
-    
+
     def set_destination(self, dest):
-        if (self.type == 'priv'):
+        if self.type == 'priv':
             self.nextstop = dest
-        elif (self.type == 'publ'):
+        elif self.type == 'publ':
             loc_index = self.route_set.index(self.loc)
-            self.nextstop = self.route_set[ loc_index+1 ]
+            self.nextstop = self.route_set[loc_index + 1]
             '''
             if (self.loc != self.route_set[-1]):
                 loc_index = self.route_set.index(self.loc)
@@ -79,26 +79,26 @@ class Vehicle(object):
             '''
 
     def finalstop(self, loc):
-        if (self.type == 'publ'):
-            return True if (loc == self.route_set[-1]) else False       
-        return False        
+        if self.type == 'publ':
+            return True if (loc == self.route_set[-1]) else False
+        return False
 
     def get_emptyseats(self):
-        return (self.cap - len(self.seats))
+        return self.cap - len(self.seats)
 
     def get_occupiedseats(self):
         return len(self.seats)
-    
+
     def match_route(self, ori, dest):
-        if (self.type == 'priv'):
+        if self.type == 'priv':
             return True
-        elif (ori == self.loc):
-            bufroute = self.route_set[ self.route_set.index(ori): ]
+        elif ori == self.loc:
+            bufroute = self.route_set[self.route_set.index(ori):]
             return True if dest in bufroute else False
         return False
 
     def pickup(self, p):
-        if (self.get_emptyseats() != 0):
+        if self.get_emptyseats() != 0:
             self.seats.append(p)
             # print(self.seats)
             return True
@@ -108,9 +108,7 @@ class Vehicle(object):
     def dropoff(self):
         drop_list = []
         for p in self.seats:
-            if (p.getoff(self.loc)):
+            if p.getoff(self.loc):
                 drop_list.append(p)
                 self.seats.remove(p)
         return drop_list
-    
-

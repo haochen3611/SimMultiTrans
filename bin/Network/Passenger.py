@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 class Passenger(object):
+
     def __init__(self, pid, ori, dest, arr_time):
         self.id = pid
         self.ori = ori
@@ -18,7 +20,7 @@ class Passenger(object):
         return self.id
     
     def get_odpair(self):
-        return (self.ori, self.dest)
+        return self.ori, self.dest
 
     def get_schdule(self, routing):
         # print(self.ori, self.dest)
@@ -44,7 +46,7 @@ class Passenger(object):
 
     def geton(self, loc, v):
         # print(self.path)
-        if ( loc in self.path and self.path[loc]['info']['mode'] == v.mode):
+        if loc in self.path and self.path[loc]['info']['mode'] == v.mode:
             # get on the correct vehicle (orientation)
             
             return v.match_route(loc, self.path[loc]['dest'])
@@ -54,15 +56,10 @@ class Passenger(object):
     def getoff(self, loc):
         # return True if next((edge for edge in self.path if edge[1] == loc), False) else False
         for node in self.path:
-            if (self.path[node]['dest'] == loc):
+            if self.path[node]['dest'] == loc:
                 del(self.path[node])
                 return True
         return False
 
     def get_nextstop(self, loc):
         return self.path[loc]['dest'] if (loc in self.path and loc != self.dest) else None
-
-
-
-
-        

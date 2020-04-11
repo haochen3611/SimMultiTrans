@@ -17,6 +17,7 @@ import json
 
 
 class Graph(object):
+
     def __init__(self):
         self.graph_top = {}
 
@@ -30,17 +31,16 @@ class Graph(object):
         with open(f'{file_name}') as file_data:
             self.graph_top = json.load(file_data)
         self.generate_nodes()
- 
+
     def generate_node(self, nid):
-        n = Node( nid, self.graph_top )
+        n = Node(nid, self.graph_top)
         # print(n.id)
         self.graph_top[nid].update({'node': n})
-        
 
     def generate_nodes(self):
         for node in self.graph_top:
             # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['lon']), self.graph_top[node]['mode'].split(','))
-            n = Node( node, self.graph_top )
+            n = Node(node, self.graph_top)
             # print(n.id)
             self.graph_top[node].update({'node': n})
 
@@ -49,54 +49,52 @@ class Graph(object):
             json.dump(self.graph_top, file_data)
 
     def add_node(self, nid, lat, lon, mode):
-        if ( nid not in self.graph_top ):
+        if nid not in self.graph_top:
             self.graph_top[nid] = {}
             self.graph_top[nid]['lat'] = lat
             self.graph_top[nid]['lon'] = lon
             self.graph_top[nid]['mode'] = mode
             self.graph_top[nid]['nei'] = {}
-            
 
     def add_edge(self, ori, dest, mode, dist):
-        if ( ori in self.graph_top and dest in self.graph_top and ori != dest ):
+        if ori in self.graph_top and dest in self.graph_top and ori != dest:
             self.graph_top[ori]['nei'][dest] = {'mode': mode, 'dist': dist}
-            
 
     def get_allnodes(self):
         return list(self.graph_top.keys())
-    
+
     def get_size(self):
-        return len( self.graph_top )
+        return len(self.graph_top)
 
     def get_edge(self, ori, dest):
-        '''return (ori, dest) edges'''
-        if (ori in self.graph_top and dest in self.graph_top and ori != dest):
+        """return (ori, dest) edges"""
+        if ori in self.graph_top and dest in self.graph_top and ori != dest:
             if dest in self.graph_top[ori]['nei'].keys():
-                return (ori, dest, self.graph_top[ori]['nei'][dest])
+                return ori, dest, self.graph_top[ori]['nei'][dest]
 
     def get_all_edges(self):
-        '''return all edges'''
-        if ( not self.edges_set ):
+        """return all edges"""
+        if not self.edges_set:
             for ori in self.graph_top:
-                self.edges_set.append( [ (ori ,dest) for dest in self.graph_top[ori]['nei'] ] )
+                self.edges_set.append([(ori, dest) for dest in self.graph_top[ori]['nei']])
         return self.edges_set
-        
 
     def node_exists(self, node):
-        return (node in self.graph_top)
+        return node in self.graph_top
 
     def edge_exists(self, ori, dest):
-        if ( self.node_exists(ori) and self.node_exists(dest) ):
-            return ( dest in self.graph_top[ori]['nei'] )
+        if self.node_exists(ori) and self.node_exists(dest):
+            return dest in self.graph_top[ori]['nei']
         else:
             return False
 
-    
     def get_L1dist(self, ori, dest):
-        if ( self.node_exists(ori) and self.node_exists(dest) ):
-            return np.abs(self.graph_top[ori]['lat']-self.graph_top[dest]['lat']) + np.abs(self.graph_top[ori]['lon']-self.graph_top[dest]['lon'])
+        if self.node_exists(ori) and self.node_exists(dest):
+            return np.abs(self.graph_top[ori]['lat'] - self.graph_top[dest]['lat']) + np.abs(
+                self.graph_top[ori]['lon'] - self.graph_top[dest]['lon'])
         else:
             return 0
+
     '''
     def get_path(self, ori, dest): 
         # print('routing...')
@@ -130,14 +128,14 @@ class Graph(object):
         # top_matrix = np.random.randint(2, size=(msize, msize))
         self.graph_top = {}
         self.graph_path = {}
-        
+
         transfer_mode = ','.join(modeset)
 
-        loc_set = np.random.randint(low=0, high=mapscale*msize, size=(msize, 2))
-        
+        loc_set = np.random.randint(low=0, high=mapscale * msize, size=(msize, 2))
+
         # generage transfer nodes and edges
         for ori in range(msize):
-            self.add_node(nid=chr(65+ori), lat=loc_set[ori][0], lon=loc_set[ori][1], mode=transfer_mode)
+            self.add_node(nid=chr(65 + ori), lat=loc_set[ori][0], lon=loc_set[ori][1], mode=transfer_mode)
             '''
             for dest in self.get_allnodes():
                 if (ori == dest):
@@ -153,7 +151,7 @@ class Graph(object):
             dist = self.get_L1dist(odpair[0], odpair[1])
             self.add_edge(ori=odpair[0], dest=odpair[1], mode=modeset[0], dist=dist)
             self.add_edge(ori=odpair[1], dest=odpair[0], mode=modeset[0], dist=dist)
-        
+
         self.generate_nodes()
 
         print(self.get_allnodes())
@@ -164,11 +162,11 @@ class Graph(object):
             y = self.graph_top[t_node]['lon']
 
             for l_node in range(top_matrix):
-                x = x + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
-                y = y + round(mapscale/np.sqrt(msize) * np.random.normal(1) ,2)
-                nid = t_node+chr(49+l_node)
+                x = x + round(mapscale / np.sqrt(msize) * np.random.normal(1), 2)
+                y = y + round(mapscale / np.sqrt(msize) * np.random.normal(1), 2)
+                nid = t_node + chr(49 + l_node)
                 self.add_node(nid=nid, lat=x, lon=y, mode=modeset[1])
-                
+
                 dist = self.get_L1dist(t_node, nid)
                 self.add_edge(ori=t_node, dest=nid, mode=modeset[1], dist=dist)
                 self.add_edge(ori=nid, dest=t_node, mode=modeset[1], dist=dist)

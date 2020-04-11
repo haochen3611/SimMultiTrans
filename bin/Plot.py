@@ -1,78 +1,70 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import pandas as pd
-import plotly as pt
-import plotly.express as px
-import plotly.graph_objects as go
-
-
-import os
-import logging
 import json
-from time import time
+import os
 from datetime import datetime, timedelta
 
+import matplotlib as mpl
+import numpy as np
+import plotly as pt
+import plotly.graph_objects as go
+
+from utils import CONFIG, RESULTS
+
+
 class Plot(object):
+
     def __init__(self, graph, time_horizon, start_time):
         self.graph = graph
         self.time_horizon = time_horizon
         self.start_time = start_time
-        self.lat = np.asarray([ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ])
-        self.lon = np.asarray([ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ])
+        self.lat = np.asarray([self.graph.graph_top[node]['lat'] for node in self.graph.graph_top])
+        self.lon = np.asarray([self.graph.graph_top[node]['lon'] for node in self.graph.graph_top])
 
         self.relativesize = 120
         self.basicsize = 6
 
         try:
-            self.mapbox_access_token = open("conf/.mapbox_token").read()
-            self.map_style = open("conf/.mapbox_style").read()
+            self.mapbox_access_token = open(os.path.join(CONFIG, '.mapbox_token')).read()
+            self.map_style = open(os.path.join(CONFIG, '.mapbox_style')).read()
         except OSError:
             print('Map Key Error!')
             pass
-    
+
     def import_results(self, path_name):
-        self.graph.import_graph('results/city_topology.json')
-        
-        with open('results/simulation_info.json') as json_file:
+        self.graph.import_graph(os.path.join(RESULTS, 'city_topology.json'))
+
+        with open(os.path.join(RESULTS, 'simulation_info.json')) as json_file:
             simulation_info = json.load(json_file)
-        
+
         self.time_horizon = simulation_info['Time_horizon']
         self.start_time = datetime.strptime(simulation_info['Start_time'], "%H:%M:%S")
-        self.vehicle_attri = simulation_info['Vehicle'] 
-        self.reb_method = simulation_info['Rebalancing_method'] 
-        self.routing_method = simulation_info['Routing_method'] 
-        self.duration = simulation_info['Duration'] 
+        self.vehicle_attri = simulation_info['Vehicle']
+        self.reb_method = simulation_info['Rebalancing_method']
+        self.routing_method = simulation_info['Routing_method']
+        self.duration = simulation_info['Duration']
 
+        self.lat = np.asarray([self.graph.graph_top[node]['lat'] for node in self.graph.graph_top])
+        self.lon = np.asarray([self.graph.graph_top[node]['lon'] for node in self.graph.graph_top])
 
-        self.lat = np.asarray([ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ])
-        self.lon = np.asarray([ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ])
-
-        with open(f'{path_name}/passenger_queue.json') as json_file:
+        with open(os.path.join(path_name, 'passenger_queue.json')) as json_file:
             queue_p = json.load(json_file)
 
-        with open(f'{path_name}/passenger_queue.json') as json_file:
-            queue_p = json.load(json_file)
-
-        with open(f'{path_name}/vehicle_queue.json') as json_file:
+        with open(os.path.join(path_name, 'vehicle_queue.json')) as json_file:
             queue_v = json.load(json_file)
 
-        with open(f'{path_name}/wait_time.json') as json_file:
+        with open(os.path.join(path_name, 'wait_time.json')) as json_file:
             waittime = json.load(json_file)
 
-        with open(f'{path_name}/metrics.json') as json_file:
+        with open(os.path.join(path_name, 'metrics.json')) as json_file:
             metrics = json.load(json_file)
 
-        self.total_trip= metrics['total_trip']
+        self.total_trip = metrics['total_trip']
         self.total_tripdist = metrics['total_tripdist']
         self.total_triptime = metrics['total_triptime']
         self.total_arrival = metrics['total_arrival']
         self.sum_totalarrival = metrics['total_num_arrival']
-
 
         for node in self.graph.graph_top:
             for mode in self.vehicle_attri:
@@ -84,17 +76,16 @@ class Plot(object):
         self.queue_v = queue_v
         self.waittime_p = waittime
 
-
     def set_plot_theme(self, theme):
-        if (theme in ["plotly", "plotly_white", "plotly_dark", "ggplot2", "seaborn", "simple_white", "none"]):
+        if theme in ["plotly", "plotly_white", "plotly_dark", "ggplot2", "seaborn", "simple_white", "none"]:
             pt.io.templates.default = theme
         else:
             pt.io.templates.default = 'plotly'
 
     def plot_passenger_queuelen(self, mode, time):
-        time_step = (datetime.strptime(time, '%H:%M:%S')-self.start_time).seconds
+        time_step = (datetime.strptime(time, '%H:%M:%S') - self.start_time).seconds
 
-        if (time_step < 0 or time_step > self.time_horizon):
+        if time_step < 0 or time_step > self.time_horizon:
             return
 
         fig_dict = {'data': [], 'layout': {}}
@@ -107,41 +98,40 @@ class Plot(object):
             'accesstoken': self.mapbox_access_token,
             'bearing': 0,
             'center': go.layout.mapbox.Center(
-                lat = np.mean(self.lat),
-                lon = np.mean(self.lon)
+                lat=np.mean(self.lat),
+                lon=np.mean(self.lon)
             ),
             'pitch': 60,
             'zoom': 11,
             'style': self.map_style
         }
 
-        data = np.array([ self.queue_v[node][mode][ time_step ] for node in self.graph.graph_top ])
+        data = np.array([self.queue_v[node][mode][time_step] for node in self.graph.graph_top])
         cmin = np.min(data.min(), 0)
         cmax = np.max(data.max(), 0)
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
-        colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
-        sizescale = self.relativesize/np.max( [cmax, np.abs(cmin)] )
+        colorsacle = [[0, '#33691E'], [np.abs(cmin) / (cmax - cmin), '#FAFAFA'], [1, '#FF6F00']]
+        sizescale = self.relativesize / np.max([cmax, np.abs(cmin)])
         text_str = [f'{self.graph.get_allnodes()[index]}: {data[index]}' for index in range(len(data))]
-        data_dict = { 
-            'type':'scattermapbox', 
-            'lon': self.lon, 'lat': self.lat, 
-            'mode': 'markers', 
-            'name': 'Queue', 
+        data_dict = {
+            'type': 'scattermapbox',
+            'lon': self.lon, 'lat': self.lat,
+            'mode': 'markers',
+            'name': 'Queue',
             'text': text_str,
-            'marker': { 
-                'size': data*sizescale + self.basicsize, 
+            'marker': {
+                'size': data * sizescale + self.basicsize,
                 # 'size': np.log(data+self.relativesize), 
                 'color': data, 'colorscale': colorsacle,
-                'cmin': data.min(), 'cmax': data.max(), 'colorbar': dict(title='Queue')  
+                'cmin': data.min(), 'cmax': data.max(), 'colorbar': dict(title='Queue')
             }
         }
         fig_dict['data'].append(data_dict)
         fig = go.Figure(fig_dict)
 
-        file_name = f'results/Passenger_{mode}_queue_at_{time}'
+        # file_name = f'results/Passenger_{mode}_queue_at_{time}'
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=file_name+'.html')
-
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'Passenger_{mode}_queue_at_{time}.html'))
 
     def plotly_sactter_animation_data(self, frames, lon, lat, data):
         ani_dict = {'data': [], 'layout': {}, 'frames': []}
@@ -167,22 +157,23 @@ class Plot(object):
             'initialValue': '0', 'plotlycommand': 'animate', 'values': range(frames), 'visible': True
         }
         '''
-        ani_dict['layout']['updatemenus'] = [ {
-                'buttons': [ 
-                    { 'args': [None, {'frame': {'duration': 500, 'redraw': True},
-                      'fromcurrent': True, 'transition': {'duration': 300, 'easing': 'quadratic-in-out'}}],
-                      'label': 'Play', 'method': 'animate' },
-                    { 'args': [[None], {'frame': {'duration': 0, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 0}}],
-                      'label': 'Pause', 'method': 'animate' }
-                ],
-                'direction': 'left', 'pad': {'r': 10, 't': 87}, 
-                'showactive': False, 'type': 'buttons',  'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
-            }  ]
+        ani_dict['layout']['updatemenus'] = [{
+            'buttons': [
+                {'args': [None, {'frame': {'duration': 500, 'redraw': True},
+                                 'fromcurrent': True, 'transition': {'duration': 300, 'easing': 'quadratic-in-out'}}],
+                 'label': 'Play', 'method': 'animate'},
+                {'args': [[None], {'frame': {'duration': 0, 'redraw': True}, 'mode': 'immediate',
+                                   'transition': {'duration': 0}}],
+                 'label': 'Pause', 'method': 'animate'}
+            ],
+            'direction': 'left', 'pad': {'r': 10, 't': 87},
+            'showactive': False, 'type': 'buttons', 'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
+        }]
 
-        sliders_dict = { 'active': 0, 'yanchor': 'top', 'xanchor': 'left', 
-            'currentvalue': { 'font': {'size': 20}, 'prefix': 'Time:', 'visible': True, 'xanchor': 'right' },
-            'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
-            'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []  }
+        sliders_dict = {'active': 0, 'yanchor': 'top', 'xanchor': 'left',
+                        'currentvalue': {'font': {'size': 20}, 'prefix': 'Time:', 'visible': True, 'xanchor': 'right'},
+                        'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
+                        'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []}
 
         # make data
         time = 0
@@ -191,19 +182,19 @@ class Plot(object):
         cmin = np.min([data.min(), 0])
         cmax = np.max([data.max(), 0])
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
-        colorsacle = [ [0, '#33691E'], [np.abs(cmin)/(cmax - cmin), '#FAFAFA'], [1, '#FF6F00'] ]
-        sizescale = self.relativesize/np.max( [cmax, np.abs(cmin)] )
+        colorsacle = [[0, '#33691E'], [np.abs(cmin) / (cmax - cmin), '#FAFAFA'], [1, '#FF6F00']]
+        sizescale = self.relativesize / np.max([cmax, np.abs(cmin)])
         text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, 0]}' for index in range(len(data))]
-        data_dict = { 
-            'type':'scattermapbox', 
-            'lon': lon, 'lat': lat, 
-            'mode': 'markers', 
-            'name': 'Queue', 
+        data_dict = {
+            'type': 'scattermapbox',
+            'lon': lon, 'lat': lat,
+            'mode': 'markers',
+            'name': 'Queue',
             'text': text_str,
-            'marker': { # 'size': np.abs(data[:, 0])+self.relativesize, 
-                        'size': np.abs(data[:, 0])*sizescale + self.basicsize,
-                        'color': data[:, 0], 'colorscale': colorsacle,
-                        'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
+            'marker': {  # 'size': np.abs(data[:, 0])+self.relativesize,
+                'size': np.abs(data[:, 0]) * sizescale + self.basicsize,
+                'color': data[:, 0], 'colorscale': colorsacle,
+                'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')}
         }
         ani_dict['data'].append(data_dict)
 
@@ -211,25 +202,26 @@ class Plot(object):
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
             text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
-            data_dict = { 
-                'type':'scattermapbox', 
-                'lon': lon, 'lat': lat, 
-                'mode': 'markers', 
-                'name': 'Queue', 
+            data_dict = {
+                'type': 'scattermapbox',
+                'lon': lon, 'lat': lat,
+                'mode': 'markers',
+                'name': 'Queue',
                 'text': text_str,
-                'marker': { 
-                    'size': np.abs(data[:, frame_index])*sizescale + self.basicsize,
+                'marker': {
+                    'size': np.abs(data[:, frame_index]) * sizescale + self.basicsize,
                     # 'size': 5*np.log(np.abs(data[:, frame_index])+self.relativesize), 
                     'color': data[:, frame_index], 'colorscale': colorsacle,
-                    'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')  }
+                    'cmin': cmin, 'cmax': cmax, 'colorbar': dict(title='Queue')}
             }
 
             frame['data'].append(data_dict)
 
             ani_dict['frames'].append(frame)
-            frame_time = timedelta(seconds=frame_index*self.time_horizon/frames) + self.start_time
-            slider_step = {'args': [ 
-                [frame_index], {'frame': {'duration': 300, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
+            frame_time = timedelta(seconds=frame_index * self.time_horizon / frames) + self.start_time
+            slider_step = {'args': [
+                [frame_index],
+                {'frame': {'duration': 300, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 300}}],
                 'label': frame_time.strftime('%H:%M'), 'method': 'animate'}
             sliders_dict['steps'].append(slider_step)
 
@@ -312,99 +304,93 @@ class Plot(object):
         return fig
     '''
 
-
     def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
         print(f'Plot queue length of passengers who take {mode} ...', end='')
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
-            data[:, frame_index] = [ self.queue_p[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.graph_top ]
+            data[:, frame_index] = [self.queue_p[node][mode][int(frame_index * self.time_horizon / frames)]
+                                    for node in self.graph.graph_top]
 
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename='results/passenger_queue.html')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, 'passenger_queue.html'))
         print('Done')
-            
-
 
     def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
         print(f'Plot queue length of {mode} ...', end='')
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
-            data[:, frame_index] = [ self.queue_v[node][mode][ int(frame_index*self.time_horizon/frames) ] 
-                for node in self.graph.graph_top ]        
+            data[:, frame_index] = [self.queue_v[node][mode][int(frame_index * self.time_horizon / frames)]
+                                    for node in self.graph.graph_top]
 
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename=f'results/{mode}_queue.html')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_queue.html'))
         print('Done')
-                
-
 
     def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
         print(f'Plot combined queue length of passengers and {mode} ...', end='')
 
-        self.lat = [ self.graph.graph_top[node]['lat'] for node in self.graph.graph_top ]
-        self.lon = [ self.graph.graph_top[node]['lon'] for node in self.graph.graph_top ]
+        self.lat = [self.graph.graph_top[node]['lat'] for node in self.graph.graph_top]
+        self.lon = [self.graph.graph_top[node]['lon'] for node in self.graph.graph_top]
 
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
         # sum all buses
         bus_list = []
-        if (mode == 'bus'):
+        if mode == 'bus':
             for node in self.graph.graph_top:
-                modelist =  self.graph.graph_top[node]['mode'].split(',')
-                modelist = [ bus for bus in modelist if ( 'BUS' in bus ) ]
+                modelist = self.graph.graph_top[node]['mode'].split(',')
+                modelist = [bus for bus in modelist if ('BUS' in bus)]
                 # print(modelist)
                 bus_list = list(set(bus_list + modelist))
             # print(bus_list)
             for bus in bus_list:
                 for frame_index in range(0, int(frames)):
-                    index = int(frame_index*self.time_horizon/frames)
-                    data[:, frame_index] = data[:, frame_index] + [ (self.queue_p[node][bus][index] - self.queue_v[node][bus][index]) 
-                            for node in self.graph.graph_top ]
+                    index = int(frame_index * self.time_horizon / frames)
+                    data[:, frame_index] = data[:, frame_index] + [
+                        (self.queue_p[node][bus][index] - self.queue_v[node][bus][index])
+                        for node in self.graph.graph_top]
         else:
             for frame_index in range(0, int(frames)):
-                index = int(frame_index*self.time_horizon/frames)
-                data[:, frame_index] = [ (self.queue_p[node][mode][index] - self.queue_v[node][mode][index]) 
-                    for node in self.graph.graph_top ]
+                index = int(frame_index * self.time_horizon / frames)
+                data[:, frame_index] = [(self.queue_p[node][mode][index] - self.queue_v[node][mode][index])
+                                        for node in self.graph.graph_top]
 
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
 
-        pt.offline.plot(ani, filename=f'results/{mode}_combined_queue.html')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_combined_queue.html'))
 
         print('Done')
-                
-
 
     def plot_passenger_queuelen_time(self, mode):
         fig_dict = {'data': [], 'layout': {}}
         fig_dict['layout']['xaxis'] = {'title': 'Time'}
         fig_dict['layout']['xaxis']['ticktext'] = [
-            (timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in range(0, self.time_horizon, int(self.time_horizon/10))
+            (timedelta(seconds=t) + self.start_time).strftime('%H:%M:%S') for t in
+            range(0, self.time_horizon, int(self.time_horizon / 10))
         ]
-        fig_dict['layout']['xaxis']['tickvals'] = [ t for t in range(0, self.time_horizon, int(self.time_horizon/10)) ]
+        fig_dict['layout']['xaxis']['tickvals'] = [t for t in range(0, self.time_horizon, int(self.time_horizon / 10))]
         fig_dict['layout']['yaxis'] = {'title': f'Imbalance: # passengers - # {mode}'}
         fig_dict['layout']['hovermode'] = 'closest'
         fig_dict['layout']['title'] = 'Changing of Imbalance'
-        
+
         # fig = go.Figure()
         x = np.arange(start=0, stop=self.time_horizon, step=1)
 
         for index, node in enumerate(self.queue_p):
             # does not plot the node only with walk
-            if (self.graph.graph_top[node]['mode'] != 'walk'):
+            if self.graph.graph_top[node]['mode'] != 'walk':
                 y = self.queue_p[node][mode] - self.queue_v[node][mode]
-                data_dict = { 
-                    'type':'scatter', 'x': x, 'y': y, 'name': node
+                data_dict = {
+                    'type': 'scatter', 'x': x, 'y': y, 'name': node
                 }
                 fig_dict['data'].append(data_dict)
 
         fig = go.Figure(fig_dict)
-        
+
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=f'results/{mode}_queue_time.html')
-            
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_queue_time.html'))
 
     def plot_passenger_waittime(self, mode):
         fig_dict = {'data': [], 'layout': {}}
@@ -413,18 +399,17 @@ class Plot(object):
         fig_dict['layout']['yaxis'] = {'title': 'Waiting Time (s)'}
         fig_dict['layout']['hovermode'] = 'closest'
         fig_dict['layout']['title'] = 'Average Waiting Time'
-        
-        x = [ node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk') ]
+
+        x = [node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
         # print(self.passenger_waittime)
-        y = [ self.waittime_p[node][mode] for node in x ]
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 'marker_color': 'lightsalmon', 'text': [f'{m} min' for m in y],
+        y = [self.waittime_p[node][mode] for node in x]
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y, 'marker_color': 'lightsalmon', 'text': [f'{m} min' for m in y],
         }
         fig_dict['data'].append(data_dict)
-        fig = go.Figure(fig_dict)        
+        fig = go.Figure(fig_dict)
 
-        pt.offline.plot(fig, filename=f'results/{mode}_waittime.html')
-
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_waittime.html'))
 
     def plotly_metrics_data(self, mode):
         # fig = pt.subplots.make_subplots(rows=2, cols=2)
@@ -434,15 +419,15 @@ class Plot(object):
         fig_dict['layout']['title'] = f'Operational Metrics of {mode}'
         fig_dict['layout']['titlefont'] = {'size': 24}
         fig_dict['layout']['legend'] = {'x': 0, 'y': 0.4}
-        
+
         # average waiting time
-        x = [ node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk') ]
+        x = [node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
         # print(self.passenger_waittime)
-        y = np.around([ self.waittime_p[node][mode]/60.0 for node in x ], decimals=2)
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 
+        y = np.around([self.waittime_p[node][mode] / 60.0 for node in x], decimals=2)
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y,
             'name': 'Waiting Time', 'offsetgroup': '0', 'text': [f'{m} min' for m in y],
-            'hovertemplate': 'Region ID: %{x}'+'<br>Waiting Time: %{text}<br>'+'<extra></extra>',
+            'hovertemplate': 'Region ID: %{x}' + '<br>Waiting Time: %{text}<br>' + '<extra></extra>',
             'marker_color': 'indianred', 'xaxis': 'x', 'yaxis': 'y'
         }
         fig_dict['data'].append(data_dict)
@@ -457,13 +442,14 @@ class Plot(object):
 
         # passenger throughtput
         y = np.around([
-            (self.total_trip['total'][node][mode]-self.total_trip['reb'][node][mode])/float(self.time_horizon)*3600
-            for node in x 
+            (self.total_trip['total'][node][mode] - self.total_trip['reb'][node][mode]) / float(
+                self.time_horizon) * 3600
+            for node in x
         ], decimals=2)
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y,
             'name': 'Throughput', 'offsetgroup': '1', 'text': [f'{m} {mode} per min' for m in y],
-            'hovertemplate': 'Region ID: %{x}'+'<br>Throughput: %{text}<br>'+'<extra></extra>',
+            'hovertemplate': 'Region ID: %{x}' + '<br>Throughput: %{text}<br>' + '<extra></extra>',
             'marker_color': 'lightsalmon', 'xaxis': 'x', 'yaxis': 'y2'
         }
         fig_dict['data'].append(data_dict)
@@ -473,53 +459,55 @@ class Plot(object):
             'titlefont': {'size': 16, 'color': 'lightsalmon'}, 'tickfont': {'color': 'lightsalmon'},
             'domain': [0, 0.45], 'anchor': 'x', 'side': 'right', 'zerolinecolor': '#E0E0E0'
         }
-        
+
         # trip time/dist
         # x = ['Trip Time', 'Trip Distance']
         sum_trip = {'total': 0, 'reb': 0}
         for node in x:
             sum_trip['total'] += self.total_trip['total'][node][mode]
             sum_trip['reb'] += self.total_trip['reb'][node][mode]
-        
+
         x = ['Riding', 'Rebalancing']
-        if (sum_trip['reb'] == 0):
+        if sum_trip['reb'] == 0:
             y = np.around([
-                self.total_tripdist['total'][mode]/float(sum_trip['total'])/1609.34, 0], decimals=2)
+                self.total_tripdist['total'][mode] / float(sum_trip['total']) / 1609.34, 0], decimals=2)
         else:
             y = np.around([
-                (self.total_tripdist['total'][mode]-self.total_tripdist['reb'][mode])/float(sum_trip['total']-sum_trip['reb'])/1609.34, 
-                self.total_tripdist['reb'][mode]/float(sum_trip['reb'])/1609.34
+                (self.total_tripdist['total'][mode] - self.total_tripdist['reb'][mode]) / float(
+                    sum_trip['total'] - sum_trip['reb']) / 1609.34,
+                self.total_tripdist['reb'][mode] / float(sum_trip['reb']) / 1609.34
             ], decimals=2)
         color = ['#80DEEA', '#0097A7']
-        data_dict = { 
+        data_dict = {
             'title': 'Average Trip Distance (mile)', 'titlefont': {'size': 16}, 'titleposition': 'bottom center',
-            'type':'pie', 'labels': x, 'values': y, 
+            'type': 'pie', 'labels': x, 'values': y,
             'textposition': 'inside', 'textinfo': 'percent+label', 'textfont_size': 16,
             'name': 'Total Trip Distance',
-            'hovertemplate': 'Averaged %{label} Distance: '+ '%{value} miles'+'<extra></extra>', 
-            'marker_colors': color, 
-            'domain':{'x': [0.55, 0.75], 'y': [0.55, 1]}, 'showlegend': False
+            'hovertemplate': 'Averaged %{label} Distance: ' + '%{value} miles' + '<extra></extra>',
+            'marker_colors': color,
+            'domain': {'x': [0.55, 0.75], 'y': [0.55, 1]}, 'showlegend': False
         }
         fig_dict['data'].append(data_dict)
 
         x = ['Riding', 'Rebalancing']
-        if (sum_trip['reb'] == 0):
+        if sum_trip['reb'] == 0:
             y = np.around([
-                self.total_triptime['total'][mode]/float(sum_trip['total'])/1609.34, 0], decimals=2)
+                self.total_triptime['total'][mode] / float(sum_trip['total']) / 1609.34, 0], decimals=2)
         else:
             y = np.around([
-                (self.total_triptime['total'][mode]-self.total_triptime['reb'][mode])/float(sum_trip['total']-sum_trip['reb'])/3600.0, 
-                self.total_triptime['reb'][mode]/float(sum_trip['reb'])/3600.0
+                (self.total_triptime['total'][mode] - self.total_triptime['reb'][mode]) / float(
+                    sum_trip['total'] - sum_trip['reb']) / 3600.0,
+                self.total_triptime['reb'][mode] / float(sum_trip['reb']) / 3600.0
             ], decimals=2)
         color = ['#81D4FA', '#0288D1']
-        data_dict = { 
+        data_dict = {
             'title': 'Average Trip Time (hour)', 'titlefont': {'size': 16}, 'titleposition': 'bottom center',
-            'type':'pie', 'labels': x, 'values': y, 
+            'type': 'pie', 'labels': x, 'values': y,
             'textposition': 'inside', 'textinfo': 'percent+label', 'textfont_size': 16,
-            'name': 'Total Trip Time', 
-            'hovertemplate': 'Averaged %{label} Time: '+ '%{value} hours'+'<extra></extra>',
-            'marker_colors': color, 
-            'domain':{'x': [0.8, 1], 'y': [0.55, 1]}, 'showlegend': False
+            'name': 'Total Trip Time',
+            'hovertemplate': 'Averaged %{label} Time: ' + '%{value} hours' + '<extra></extra>',
+            'marker_colors': color,
+            'domain': {'x': [0.8, 1], 'y': [0.55, 1]}, 'showlegend': False
         }
         fig_dict['data'].append(data_dict)
 
@@ -527,10 +515,10 @@ class Plot(object):
         # total trips
         x = ['Total Trips']
         y = [sum_trip['total']]
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 'name': 'Total Trips', 'text': y,
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y, 'name': 'Total Trips', 'text': y,
             'textposition': 'outside',
-            'hovertemplate': 'Total %{y} Trips'+'<extra></extra>',
+            'hovertemplate': 'Total %{y} Trips' + '<extra></extra>',
             'marker_color': '#D4E157', 'xaxis': 'x2', 'yaxis': 'y3', 'showlegend': False
         }
         fig_dict['data'].append(data_dict)
@@ -540,45 +528,44 @@ class Plot(object):
         }
         fig_dict['layout']['yaxis3'] = {
             'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False, 'showline': False,
-            'domain': [0.6, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0]*5.4], 'zerolinecolor': '#E0E0E0'
+            'domain': [0.6, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0] * 5.4], 'zerolinecolor': '#E0E0E0'
         }
 
         x = ['Total Miles Traveled']
-        y = np.around([self.total_tripdist['total'][mode]/1609.34], decimals=2)
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 'name': 'Total Miles Traveled', 'text': [f'{m} miles' for m in y], 
+        y = np.around([self.total_tripdist['total'][mode] / 1609.34], decimals=2)
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y, 'name': 'Total Miles Traveled', 'text': [f'{m} miles' for m in y],
             'textposition': 'outside',
-            'hovertemplate': 'Total %{y} Miles Traveled'+'<extra></extra>',
+            'hovertemplate': 'Total %{y} Miles Traveled' + '<extra></extra>',
             'marker_color': '#9CCC65', 'xaxis': 'x2', 'yaxis': 'y4', 'showlegend': False
         }
         fig_dict['data'].append(data_dict)
         fig_dict['layout']['yaxis4'] = {
             'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False, 'showline': False,
-            'domain': [0.6, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0]*1.4], 'zerolinecolor': '#E0E0E0'
+            'domain': [0.6, 1], 'anchor': 'x2', 'overlaying': 'y5', 'range': [0, y[0] * 1.4], 'zerolinecolor': '#E0E0E0'
         }
 
         x = ['Total Hours Traveled']
-        y = np.around([self.total_tripdist['total'][mode]/3600.0],decimals=2)
-        data_dict = { 
-            'type':'bar', 'x': x, 'y': y, 'name': 'Total Hours Traveled', 'text': [f'{m} hours' for m in y],  
+        y = np.around([self.total_tripdist['total'][mode] / 3600.0], decimals=2)
+        data_dict = {
+            'type': 'bar', 'x': x, 'y': y, 'name': 'Total Hours Traveled', 'text': [f'{m} hours' for m in y],
             'textposition': 'outside',
-            'hovertemplate': 'Total %{y} Hours Traveled'+'<extra></extra>',
+            'hovertemplate': 'Total %{y} Hours Traveled' + '<extra></extra>',
             'marker_color': '#66BB6A', 'xaxis': 'x2', 'yaxis': 'y5', 'showlegend': False
         }
         fig_dict['data'].append(data_dict)
         fig_dict['layout']['yaxis5'] = {
             'title': '', 'showgrid': False, 'ticks': '', 'showticklabels': False, 'showline': False,
-            'domain': [0.6, 1], 'anchor': 'x2', 'range': [0, y[0]*2.7], 'zerolinecolor': '#E0E0E0'
+            'domain': [0.6, 1], 'anchor': 'x2', 'range': [0, y[0] * 2.7], 'zerolinecolor': '#E0E0E0'
         }
         return fig_dict
-
 
     def plot_metrics(self, mode):
         fig_dict = self.plotly_metrics_data(mode)
         fig = go.Figure(fig_dict)
-        
+
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=f'results/{mode}_metrics.html')
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_metrics.html'))
 
     def plotly_metrics_animation_data(self, mode, policies):
         ani_dict = {'data': [], 'layout': {}, 'frames': []}
@@ -588,32 +575,33 @@ class Plot(object):
             self.import_results(f'results/{policy}')
             fig_dict = self.plotly_metrics_data(mode)
             fig_dict_set.append(fig_dict)
-        
+
         ani_dict['data'] = fig_dict_set[0]['data']
         ani_dict['layout'] = fig_dict_set[0]['layout']
 
-        ani_dict['layout']['updatemenus'] = [ {
-                'direction': 'left', 'pad': {'r': 10, 't': 87}, 
-                'showactive': False, 'type': 'buttons',  'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
-            }  ]
+        ani_dict['layout']['updatemenus'] = [{
+            'direction': 'left', 'pad': {'r': 10, 't': 87},
+            'showactive': False, 'type': 'buttons', 'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
+        }]
 
-        sliders_dict = { 'active': 0, 'yanchor': 'top', 'xanchor': 'left', 
-            'currentvalue': { 'font': {'size': 20}, 'prefix': 'Rebalancing Policy: ', 'visible': True, 'xanchor': 'right' },
-            'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
-            'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []  }
-        
+        sliders_dict = {'active': 0, 'yanchor': 'top', 'xanchor': 'left',
+                        'currentvalue': {'font': {'size': 20}, 'prefix': 'Rebalancing Policy: ', 'visible': True,
+                                         'xanchor': 'right'},
+                        'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
+                        'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []}
+
         v_max = {
-            'Waiting Time': [0,'yaxis'],
-            'Throughput': [0,'yaxis2'],
-            'Total Trips': [0,'yaxis3'],
-            'Total Miles Traveled': [0,'yaxis4'],
-            'Total Hours Traveled': [0,'yaxis5'],
+            'Waiting Time': [0, 'yaxis'],
+            'Throughput': [0, 'yaxis2'],
+            'Total Trips': [0, 'yaxis3'],
+            'Total Miles Traveled': [0, 'yaxis4'],
+            'Total Hours Traveled': [0, 'yaxis5'],
         }
 
         # uniform yaxis
         for frame_index, fig_dict in enumerate(fig_dict_set):
             for data_dict in fig_dict['data']:
-                if (data_dict['name'] in v_max):
+                if data_dict['name'] in v_max:
                     v_max[data_dict['name']][0] = max(v_max[data_dict['name']][0], max(data_dict['y']))
 
         # make frames
@@ -621,27 +609,27 @@ class Plot(object):
             frame = {'data': [], 'name': str(frame_index)}
             # text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
             for data_dict in fig_dict['data']:
-                if (data_dict['name'] in v_max):
-                    fig_dict['layout'][ v_max[data_dict['name']][1] ]['range'] = [0, v_max[data_dict['name']][0]*1.1]
+                if data_dict['name'] in v_max:
+                    fig_dict['layout'][v_max[data_dict['name']][1]]['range'] = [0, v_max[data_dict['name']][0] * 1.1]
 
             frame['data'] = fig_dict['data']
 
             ani_dict['frames'].append(frame)
 
-            slider_step = {'args': [ 
-                [frame_index], {'frame': {'duration': 300, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
+            slider_step = {'args': [
+                [frame_index],
+                {'frame': {'duration': 300, 'redraw': True}, 'mode': 'immediate', 'transition': {'duration': 300}}],
                 'label': policies[frame_index].split('__')[0], 'method': 'animate'}
             sliders_dict['steps'].append(slider_step)
 
         ani_dict['layout']['sliders'] = [sliders_dict]
-        
-        return ani_dict
 
+        return ani_dict
 
     def plot_metrics_animation(self, mode, policies):
         ani_dict = self.plotly_metrics_animation_data(mode, policies)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename=f'results/{mode}_metrics_comparison.html')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_metrics_comparison.html'))
 
     def plot_topology(self):
         fig_dict = {'data': [], 'layout': {}}
@@ -654,8 +642,8 @@ class Plot(object):
             'accesstoken': self.mapbox_access_token,
             'bearing': 0,
             'center': go.layout.mapbox.Center(
-                lat = np.mean(self.lat),
-                lon = np.mean(self.lon)
+                lat=np.mean(self.lat),
+                lon=np.mean(self.lon)
             ),
             'pitch': 60,
             'zoom': 11,
@@ -666,20 +654,19 @@ class Plot(object):
         color = ['#FAFAFA' for node in self.lon]
 
         text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
-        data_dict = { 
-            'type':'scattermapbox', 
-            'lon': self.lon, 'lat': self.lat, 
-            'mode': 'markers', 
-            'name': 'Queue', 
+        data_dict = {
+            'type': 'scattermapbox',
+            'lon': self.lon, 'lat': self.lat,
+            'mode': 'markers',
+            'name': 'Queue',
             'text': text_str,
-            'marker': { 'size': size, 'color': color }
+            'marker': {'size': size, 'color': color}
         }
         fig_dict['data'].append(data_dict)
         fig = go.Figure(fig_dict)
 
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename='results/Topology.html')
-            
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, 'Topology.html'))
 
 
 class MidpointNormalize(mpl.colors.Normalize):
