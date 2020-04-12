@@ -11,9 +11,9 @@ from time import time
 
 import numpy as np
 
-from ..bin.Control import *
-from ..bin.Network import *
-from ..bin.Plot import Plot
+from .Control import *
+from .Network import *
+from .Plot import Plot
 from ..utils import RESULTS, CONFIG
 
 
@@ -45,6 +45,7 @@ class Simulator(object):
         self.multiprocessing_flag = False
         self.reb_time = 120
         self._is_running = False
+        self._memory = None  # only use in step running mode
 
         # saved data
         self.passenger_queuelen = {}
@@ -213,7 +214,10 @@ class Simulator(object):
             dest = random.choice(nodes_set)
             return ori, dest
 
-    def step(self, action, step_length, curr_time, memory):
+    def reset(self):
+        raise NotImplementedError
+
+    def step(self, action, step_length, curr_time):
         if not self._is_running:
             logging.info(f'Simulation started at {time()}')
             self._is_running = True
@@ -225,7 +229,7 @@ class Simulator(object):
             reb_flow[mode] = {'p': [], 'reb': False}
             reb_trans[mode] = {'p': [], 'reb': False}
         else:
-            reb_flow, reb_trans, mode = memory
+            reb_flow, reb_trans, mode = self._memory
         queue_p, queue_v = None, None
         for timestep in range(step_length):
             timestep += curr_time
@@ -253,8 +257,8 @@ class Simulator(object):
                 for node in self.graph.get_allnodes():
                     self.node_rebalance(node, reb_trans)
                     self.node_savedata(node, timestep)
-
-        return queue_p, queue_v, (reb_flow, reb_trans, mode)
+        self._memory = (reb_flow, reb_trans, mode)
+        return queue_p, queue_v
 
     def finishing_touch(self):
         """
@@ -490,7 +494,6 @@ class Simulator(object):
         try:
             os.mkdir(path_name)
         except OSError:
-            # print("Required directories are created.")
             pass
 
         saved_q_length = {}

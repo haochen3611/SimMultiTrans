@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from bin.Control import *
-from bin.Network import *
-from bin import *
+from SimMultiTrans.bin.Control import *
+from SimMultiTrans.bin.Network import *
+from SimMultiTrans.bin import *
 
 
 def main():

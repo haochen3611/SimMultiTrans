@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from ...bin.Network.Node import Node
+from .Node import Node
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ import json
 
 class Graph(object):
 
-    def __init__(self):
+    def __init__(self, file_name=None):
         self.graph_top = {}
 
         # all edges
@@ -26,6 +26,9 @@ class Graph(object):
 
         # path ram
         self.graph_path = {}
+
+        if file_name is not None:
+            self.import_graph(file_name)
 
     def import_graph(self, file_name):
         with open(f'{file_name}') as file_data:
@@ -39,7 +42,9 @@ class Graph(object):
 
     def generate_nodes(self):
         for node in self.graph_top:
-            # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['lon']), self.graph_top[node]['mode'].split(','))
+            # print(node, (self.graph_top[node]['lat'],
+            #              self.graph_top[node]['lon']),
+            #       self.graph_top[node]['mode'].split(','))
             n = Node(node, self.graph_top)
             # print(n.id)
             self.graph_top[node].update({'node': n})
