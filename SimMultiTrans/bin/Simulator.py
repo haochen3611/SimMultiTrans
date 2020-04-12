@@ -11,10 +11,10 @@ from time import time
 
 import numpy as np
 
-from .Control import *
-from .Network import *
-from .Plot import Plot
-from ..utils import RESULTS, CONFIG
+from SimMultiTrans.bin.Control import *
+from SimMultiTrans.bin.Network import *
+from SimMultiTrans.bin.Plot import Plot
+from SimMultiTrans.utils import RESULTS, CONFIG
 
 
 # import matplotlib as mpl

@@ -1,9 +1,9 @@
 import os
 
-from .bin import *
-from .bin.Control import *
-from .bin.Network import *
-from .utils import CONFIG
+from SimMultiTrans.bin import *
+from SimMultiTrans.bin.Control import *
+from SimMultiTrans.bin.Network import *
+from SimMultiTrans.utils import CONFIG
 
 
 __all__ = [

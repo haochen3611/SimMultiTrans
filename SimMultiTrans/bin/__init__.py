@@ -1,2 +1,2 @@
-from .Simulator import Simulator
-from .Plot import Plot
+from SimMultiTrans.bin.Simulator import Simulator
+from SimMultiTrans.bin.Plot import Plot
