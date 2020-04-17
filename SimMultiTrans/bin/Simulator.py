@@ -236,18 +236,12 @@ class Simulator(object):
             reb_flag = False
             # match demands first
             for node in self.graph.get_allnodes():
-                if (timestep + 1) == step_length:
-                    # for mode in reb_list:
-                    reb_trans[mode] = {}
-                    reb_trans[mode]['reb'] = reb_flow[mode]['reb']
-                    if reb_trans[mode]['reb']:
-                        reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
                 self.node_match(node, timestep)
                 # save data for rebalancing
                 self.node_savedata(node, timestep)
 
             # rebalancing
-            if (timestep + 1) == step_length:
+            if (timestep + 1) % step_length == 0:
                 reb_flag = True
                 # for mode in reb_list:
                 queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_allnodes()]
@@ -255,6 +249,10 @@ class Simulator(object):
                 reb_flow[mode]['p'], reb_flow[mode]['reb'] = action, True
                 # dispatch
                 for node in self.graph.get_allnodes():
+                    reb_trans[mode] = {}
+                    reb_trans[mode]['reb'] = reb_flow[mode]['reb']
+                    if reb_trans[mode]['reb']:
+                        reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
                     self.node_rebalance(node, reb_trans)
                     self.node_savedata(node, timestep)
         self._memory = (reb_flow, reb_trans, mode)
