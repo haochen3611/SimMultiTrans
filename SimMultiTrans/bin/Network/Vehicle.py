@@ -107,8 +107,13 @@ class Vehicle(object):
 
     def dropoff(self):
         drop_list = []
+        stay_list = []
         for p in self.seats:
-            if p.getoff(self.loc):
+            if p.dest == self.loc:
                 drop_list.append(p)
-                self.seats.remove(p)
+            elif p.getoff(self.loc):
+                drop_list.append(p)
+            else:
+                stay_list.append(p)
+        self.seats = stay_list
         return drop_list

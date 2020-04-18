@@ -24,7 +24,8 @@ class Road(object):
             time = int(self.dist / v.get_velocity('m/s'))
         leave_time = self.time + time
         self.vehicle.append((v, leave_time))
-        logging.info(f'Time {self.time}: Vel {v.id} arrive at road ({self.ori},{self.dest})')
+        if v.mode != 'walk':
+            logging.info(f'Time {self.time}: Vel {v.id} arrive at road ({self.ori},{self.dest})')
 
         if v.mode in self.v_count:
             self.v_count[v.mode] += 1
@@ -42,8 +43,8 @@ class Road(object):
             if leave_time == self.time:
                 self.vehicle.remove((v, leave_time))
                 # leave_vehicle.append(v)
-
-                logging.info(f'Time {self.time}: Vel {v.id} leave road ({self.ori},{self.dest})')
+                if v.mode != 'walk':
+                    logging.info(f'Time {self.time}: Vel {v.id} leave road ({self.ori},{self.dest})')
                 g.graph_top[self.dest]['node'].vehicle_arrive(v)
 
     def get_flow(self):

@@ -18,7 +18,7 @@ class Passenger(object):
 
     def get_id(self):
         return self.id
-    
+
     def get_odpair(self):
         return self.ori, self.dest
 
@@ -26,14 +26,15 @@ class Passenger(object):
         # print(self.ori, self.dest)
         self.path = routing.get_path(self.ori, self.dest)
         # print(self.path)
+        # print(self.path)
         return self.path
 
     def set_location(self, loc):
         self.loc = loc
-    
+
     def set_stoptime(self, time):
         self.stop_time = time
-    
+
     def get_stoptime(self):
         return self.stop_time
 
@@ -48,7 +49,7 @@ class Passenger(object):
         # print(self.path)
         if loc in self.path and self.path[loc]['info']['mode'] == v.mode:
             # get on the correct vehicle (orientation)
-            
+
             return v.match_route(loc, self.path[loc]['dest'])
         return False
         # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
@@ -57,7 +58,7 @@ class Passenger(object):
         # return True if next((edge for edge in self.path if edge[1] == loc), False) else False
         for node in self.path:
             if self.path[node]['dest'] == loc:
-                del(self.path[node])
+                del (self.path[node])
                 return True
         return False
 

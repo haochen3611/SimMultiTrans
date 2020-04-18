@@ -8,25 +8,25 @@
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "161": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "186": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "246": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             }
         }
     },
@@ -39,25 +39,25 @@
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "161": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "186": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "246": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             }
         }
     },
@@ -70,25 +70,25 @@
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "137": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "186": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "246": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             }
         }
     },
@@ -101,25 +101,25 @@
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "137": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "161": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "246": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             }
         }
     },
@@ -132,25 +132,25 @@
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "137": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "161": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             },
             "186": {
                 "mode": "taxi",
                 "dist": 0,
                 "time": 0,
-                "rate": 0.0001
+                "rate": 0.01
             }
         }
     }

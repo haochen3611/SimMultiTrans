@@ -1,3 +1,4 @@
+import time
 from abc import ABC
 
 from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, r_name, p_name
@@ -28,6 +29,7 @@ class TaxiRebalance(gym.Env, ABC):
         self.sim.routing.set_routing_method(r_name)
         self.sim.rebalance.set_parameters(lazy=config['lazy'], vrange=config['range'])
         self.sim.rebalance.set_policy(p_name)
+        self.sim.initialize(seed=0)
 
         self.total_vehicle = config['total_vehicle']
         self.reb_interval = config['reb_interval']
@@ -47,10 +49,14 @@ class TaxiRebalance(gym.Env, ABC):
 
         self._is_running = False
         self._done = False
+        self._start_time = time.time()
+        self._alpha = 0
+        self._step = 0
+        self._total_steps = self._config["timesteps_total"]
 
     def reset(self):
         if self._is_running:
-            self.sim.finishing_touch()
+            self.sim.finishing_touch(self._start_time)
         self.__init__(config=self._config)
 
         with open(vehicle_file, 'r') as file:
@@ -61,7 +67,11 @@ class TaxiRebalance(gym.Env, ABC):
 
     def step(self, action):
         assert isinstance(action, np.ndarray)
+        self._step += 1
         action = action.reshape((self.near_neighbor+1, self.num_nodes))
+        action = action / np.sum(action, axis=1, keepdims=True)
+        action = self._alpha*action + (1 - self._alpha) * np.eye(5)
+        self._alpha += self._step/self._total_steps
 
         if not self._is_running:
             self._is_running = True
@@ -69,6 +79,7 @@ class TaxiRebalance(gym.Env, ABC):
         sim_action = dict()
         for idx, node in enumerate(self._config['nodes_list']):
             sim_action[node] = np.squeeze(action[idx, :]/np.sum(action[idx, :]))
+        # print(sim_action)
         p_queue, v_queue = self.sim.step(action=sim_action,
                                          step_length=self.reb_interval,
                                          curr_time=self.curr_time)
@@ -77,7 +88,9 @@ class TaxiRebalance(gym.Env, ABC):
         v_queue = np.array(v_queue)
         reward = -(p_queue.sum() + np.maximum((v_queue-p_queue) * (1 - np.array([action[i, i] for i in range(action.shape[1])])), 0).sum())
         print(reward)
-        if self.curr_time > self._config['time_horizon']*3600:
+        print('passenger', p_queue)
+        print('vehicle', v_queue)
+        if self.curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return dict({'p_queue': p_queue, 'v_queue': v_queue}), reward, self._done, {}
 
@@ -88,14 +101,15 @@ if __name__ == '__main__':
     with open(graph_file, 'r') as f:
         node_list = json.load(f)
     node_list = [x for x in node_list]
+    stop_condition = {
+            "timesteps_total": 1e4,
+        }
     tune.run(
         "SAC",
-        stop={
-            "timesteps_total": 10e4,
-        },
+        stop=stop_condition,
         config={
             "env": TaxiRebalance,
-            "lr": 1e-4,
+            "lr": 1e-6,
             "num_workers": 1,
             "env_config": {
                 "start_time": '08:00:00',
@@ -103,11 +117,12 @@ if __name__ == '__main__':
                 "lazy": 1,
                 "range": 20,
                 "total_vehicle": 1000,
-                "reb_interval": 120,
+                "reb_interval": 600,
                 "max_travel_time": 1000,
                 "max_passenger": 1e6,
                 "nodes_list": node_list,
                 "near_neighbor": 4,
+                "timesteps_total": stop_condition["timesteps_total"]
             }
         }
     )

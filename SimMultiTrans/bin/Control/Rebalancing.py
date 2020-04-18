@@ -5,6 +5,9 @@
 import numpy as np
 from scipy.optimize import linprog
 
+import warnings
+import sys
+
 
 class Rebalancing(object):
     def __init__(self, graph, vehicle_attri):
@@ -30,14 +33,17 @@ class Rebalancing(object):
         # np.set_printoptions(threshold=10000)
 
         self.costsensi_para = None
+        warnings.filterwarnings('ignore')
+        np.set_printoptions(threshold=sys.maxsize)
 
     def MaxWeight(self, mode, queue, server):
+        '''
         # weight
-        c = np.kron(np.ones(self.size), -np.array(queue))
+        c = np.kron( np.ones(self.size), -np.array(queue) )
         # print('c',c)
 
         # eq constraints
-        A_eq = np.kron(np.eye(self.size), np.ones(self.size))
+        A_eq = np.kron( np.eye(self.size), np.ones(self.size) )
         # b_eq = np.ones(shape=(self.size,1))
         b_eq = server
 
@@ -46,42 +52,71 @@ class Rebalancing(object):
         for index, node in enumerate(self.graph.graph_top):
             b = np.zeros(self.size)
             if node not in self.k_near_nei:
-                dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
-                                      for dest in self.graph.graph_top[node]['nei']])
+                dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
+                    for dest in self.graph.graph_top[node]['nei'] ] )
+
                 k = self.range
-                if k > self.size - 1:
-                    k = self.size - 1
-                # k = self.size-1
+                if k > self.size-1:
+                    k = self.size-1
+                #
                 k_near_list = dist_list.argsort()[:k]
             else:
                 k_near_list = self.k_near_nei[node]
             b[k_near_list] = server[index]
-            b_ub[[index], :] = b.T
+            b_ub[[index],:] = b.T
             # print(b.T)
 
-        b_ub = b_ub.reshape((self.size ** 2, 1))
-        A_ub = np.eye(len(b_ub))
+        b_ub = b_ub.reshape((self.size**2, 1))
+        A_ub = np.eye( len(b_ub) )
         # print(b_ub)
 
         # print('b',b_ub.T)
         # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, 1], method='simplex')
         result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, max(server)],
-                         method='interior-point', options={'lstsq': True, 'presolve': True})
+            method='interior-point', options={'lstsq': True, 'presolve': True})
         # print(result.x.reshape((self.size, self.size)))
-        return result.x.reshape((self.size, self.size))
+        '''
+        result = np.zeros(shape=(self.size, self.size))
+        for index, node in enumerate(self.graph.graph_top):
+            k = self.range
+            if k > self.size - 1:
+                k = self.size - 1
+            if node not in self.k_near_nei:
+                dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
+                                      for dest in self.graph.graph_top[node]['nei']])
+
+                # k = self.size-1
+                self.k_near_nei[node] = dist_list.argsort()[:k]
+                # print(self.k_near_nei[node])
+
+        # for di, dest in enumerate(self.graph.graph_top):
+        asy = np.array(server)
+        for di, dest in enumerate(self.graph.graph_top):
+            while queue[di] > 0:
+                queue[di] -= 1
+                maxnei = np.argmax(asy[self.k_near_nei[dest]])
+                ori = [oi for oi, ori in enumerate(asy)
+                       if asy[oi] == asy[self.k_near_nei[dest]][maxnei] and oi in self.k_near_nei[dest]]
+                # print(ori,dest)
+                result[ori[0]][di] += 1
+                asy[ori[0]] -= 1
+        # print(result)
+        return result
 
     def Proportional(self, mode, queue, server):
         result = np.zeros(shape=(self.size, self.size))
         for index, node in enumerate(self.graph.graph_top):
             # b = np.zeros(self.size)
+            k = self.range
+            if k > self.size - 1:
+                k = self.size - 1
             if node not in self.k_near_nei:
                 dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
                                       for dest in self.graph.graph_top[node]['nei']])
-                k = self.range
-                if k > self.size - 1:
-                    k = self.size - 1
+
                 # k = self.size-1
                 k_near_list = dist_list.argsort()[:k]
+                self.k_near_nei[node] = k_near_list
             else:
                 k_near_list = self.k_near_nei[node]
 
@@ -100,15 +135,16 @@ class Rebalancing(object):
         result = np.zeros(shape=(self.size, self.size))
         for index, node in enumerate(self.graph.graph_top):
             # b = np.zeros(self.size)
-            k = 1
+            k = self.range
+            if k > self.size - 1:
+                k = self.size - 1
             if node not in self.k_near_nei:
                 dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
                                       for dest in self.graph.graph_top[node]['nei']])
-                k = self.range
-                if k > self.size - 1:
-                    k = self.size - 1
+
                 # k = self.size-1
                 k_near_list = dist_list.argsort()[:k]
+                self.k_near_nei[node] = k_near_list
             else:
                 k_near_list = self.k_near_nei[node]
 
@@ -164,33 +200,64 @@ class Rebalancing(object):
 
     def Simplified_CostSensitive(self, mode, queue, server):
         result = np.zeros(shape=(self.size, self.size))
-
+        '''
         # eq constraints
-        A_eq = np.kron(np.eye(self.size), np.ones(self.size))
-        # b_eq = np.ones(shape=(self.size,1))
-        b_eq = server
+        A_eq = np.kron( np.eye(self.size), np.ones(self.size) )
+        b_eq = np.ones(shape=(self.size,1))
+        # b_eq = server
 
         # ineq constraints
         b_ub = np.zeros(shape=(self.size, self.size))
         for index, node in enumerate(self.graph.graph_top):
             b = np.zeros(self.size)
-            if node not in self.k_near_nei:
-                dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
-                                      for dest in self.graph.graph_top[node]['nei']])
+            if (node not in self.k_near_nei):
+                dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
+                for dest in self.graph.graph_top[node]['nei'] ] )
                 k = self.range
-                if k > self.size - 1:
-                    k = self.size - 1
+                if (k > self.size-1):
+                    k = self.size-1
                 # k = self.size-1
                 k_near_list = dist_list.argsort()[:k]
             else:
                 k_near_list = self.k_near_nei[node]
             b[k_near_list] = server[index]
-            b_ub[[index], :] = b.T
+            b_ub[[index],:] = b.T
             # print(b.T)
 
-        b_ub = b_ub.reshape((self.size ** 2, 1))
-        A_ub = np.eye(len(b_ub))
+        b_ub = b_ub.reshape((self.size**2, 1))
+        A_ub = np.eye( len(b_ub) )
 
+        # set linear parameter (c, A_ub)
+        if (self.costsensi_para == None):
+            self.costsensi_para = {}
+            T = np.zeros(shape=(self.size,self.size))
+            for oi, ori in enumerate(self.graph.graph_top):
+
+                # T[index, :] = np.array( 
+                #     [ self.graph.graph_top[node]['nei'][dest]['dist']
+                #         for dest in self.graph.graph_top if (dest in self.graph.graph_top[node]['nei']) else 0 ] 
+                #     )
+
+                for di, dest in enumerate(self.graph.graph_top):
+                    T[oi, di] = self.graph.graph_top[ori]['nei'][dest]['dist'] if (dest in self.graph.graph_top[ori]['nei']) else 0
+            c = T.reshape(self.size**2, 1)
+            self.costsensi_para['c'] = c
+        else:
+            c = self.costsensi_para['c']            
+            # A_ub = self.costsensi_para['Aub']
+
+        # make the constraints be part of objective function
+        # print(c)
+        c = c.T/np.max(c) + np.kron( np.ones(self.size), np.array(server)-np.array(queue) )
+        # print(c)
+
+        # b_ub = np.array(server) - float(self.vehicle_attri[mode]['total'] - sum(queue))/self.size
+        # print(c,A_ub)
+        result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, 
+            method='simplex', options={'lstsq': True, 'presolve': True})
+        # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=[0, max(server)], method='simplex')
+        # print(result.x)
+        '''
         # set linear parameter (c, A_ub)
         if self.costsensi_para is None:
             self.costsensi_para = {}
@@ -206,19 +273,25 @@ class Rebalancing(object):
                     T[oi, di] = self.graph.graph_top[ori]['nei'][dest]['dist'] if (
                                 dest in self.graph.graph_top[ori]['nei']) else 0
             c = T.reshape(self.size ** 2, 1)
+
+            # A_ub = np.zeros(shape=(self.size, self.size**2))
+            for row in range(self.size):
+                r = np.zeros(self.size)
+                r[row] = -1
+                # A_ub[row,:] = np.kron( np.ones(self.size), r )
+                nr = np.ones(self.size)
+                nr[row] = 0
+                # A_ub[row,row*self.size:(row+1)*self.size] = nr
             self.costsensi_para['c'] = c
+            # self.costsensi_para['Aub'] = A_ub
         else:
             c = self.costsensi_para['c']
             # A_ub = self.costsensi_para['Aub']
-
-        # make the constraints be part of objective function
-        # print(c)
-        c = c.T * 10 / np.max(c) + np.kron(np.ones(self.size), np.array(server) - np.array(queue))
+        c = c.T / np.max(c) + np.kron(np.ones(self.size), np.array(server) - np.array(queue))
         # b_ub = np.array(server) - float(self.vehicle_attri[mode]['total'] - sum(queue))/self.size
         # print(c,A_ub)
-        result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, max(server)],
-                         method='interior-point', options={'lstsq': True, 'presolve': True})
-        # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=[0, max(server)], method='simplex')
+        result = linprog(c=c, bounds=[0, max(server)],
+                         method='interior-point')
         return result.x.reshape((self.size, self.size))
 
     def no_rebalance(self, mode, queue, server):
@@ -253,9 +326,11 @@ class Rebalancing(object):
 
                 if flow_sum != 1 and flow_sum != 0:
                     # print(flow_sum)
-                    opt_flow[node] = np.array([flow / flow_sum for flow in opt_flow[node]])
+                    opt_flow[node] = np.array([flow / float(flow_sum) for flow in opt_flow[node]])
+
                 if flow_sum == 0:
                     return opt_flow, False
+            # print(opt_flow)
             return opt_flow, True
         else:
             return None, False

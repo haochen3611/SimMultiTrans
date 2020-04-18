@@ -5,6 +5,7 @@
 import numpy as np
 
 import random
+import copy
 
 
 class Routing(object):
@@ -37,30 +38,38 @@ class Routing(object):
 
     def get_path(self, ori, dest):
         if ori not in self.graph.graph_top and dest not in self.graph.graph_top:
-            # print('invalid path')
+            print('invalid path')
             return {}
 
         if (ori in self.path[self.routing_method]) and (dest in self.path[self.routing_method][ori]):
-            # print('path exists')
-            return self.path[self.routing_method][ori][dest]
-        else:
-            methodset = {
-                'bus_simplex': self.bus_simplex,
-                'simplex': self.simplex,
-                'bus_walk_simplex': self.bus_walk_simplex,
-                'taxi_walk_simplex': self.taxi_walk_simplex
-            }
-            # route = Routing(self, ori, dest)
-            # print('routing: ', ori, dest)
-            path = methodset[self.routing_method](ori, dest)
-            # print(path)
-            self.save_path(ori, dest, self.routing_method, path)
-            return path
+            # print('path exists: ', ori, dest)
+            # print(self.path[self.routing_method])
+
+            if self.path[self.routing_method][ori][dest]:
+                # print(self.path[self.routing_method][ori][dest])
+                path = self.path[self.routing_method][ori][dest]
+                # print(path)
+                return path
+
+        methodset = {
+            'bus_simplex': self.bus_simplex,
+            'simplex': self.simplex,
+            'bus_walk_simplex': self.bus_walk_simplex,
+            'taxi_walk_simplex': self.taxi_walk_simplex
+        }
+        # route = Routing(self, ori, dest)
+        # print('routing: ', ori, dest)
+        path = methodset[self.routing_method](ori, dest)
+        # print(path)
+        self.save_path(ori, dest, self.routing_method, path)
+        return path
 
     def simplex(self, ori, dest):
+        # print(ori, dest)
         if dest in self.graph.graph_top[ori]['nei']:
             return {ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}}
         else:
+            # print('problem')
             return {}
 
     def bus_walk_simplex(self, ori, dest):
@@ -232,6 +241,7 @@ class Routing(object):
         edge = self.graph.get_edge(ori, dest)
         info = edge[2]
         mode = info['mode'].split(',')
+        # print(mode)
         if len(mode) == 1:
             return info
         else:
@@ -248,16 +258,24 @@ class Routing(object):
                                                                                         'dist': info['dist']}
 
     def save_path(self, ori, dest, method, path):
+        # print(path)
+        if not path:
+            # print(path)
+            return
         if ori not in self.path[method]:
             self.path[method][ori] = {}
             self.path[method][ori][dest] = path
-        elif dest not in self.path[method]:
+            # print(path)
+        elif dest not in self.path[method][ori]:
             self.path[method][ori][dest] = path
+            # print(path)
         else:
+            # print(path)
             return
 
-    # the follows are algorithms
-    # quick sort
+# the follows are algorithms
+# quick sort
+
     def partition(self, array, start, end):
         pivot = array[start]
         low = start + 1
@@ -281,6 +299,6 @@ class Routing(object):
         if start >= end:
             return
 
-        p = partition(array, start, end)
-        quick_sort(array, start, p - 1)
-        quick_sort(array, p + 1, end)
+        p = self.partition(array, start, end)
+        self.quick_sort(array, start, p - 1)
+        self.quick_sort(array, p + 1, end)
