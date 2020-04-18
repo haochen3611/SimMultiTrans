@@ -43,9 +43,10 @@ class TaxiRebalance(gym.Env, ABC):
         self.observation_space = Dict({'p_queue': Box(0, self.max_passenger, shape=(self.num_nodes, ),
                                                       dtype=np.int32),
                                        'v_queue': Box(0, self.total_vehicle, shape=(self.num_nodes, ),
-                                                      dtype=np.int32)})
-                                       # 'reb_hist': Tuple([MultiDiscrete([self.near_neighbor+1]*self.num_nodes)]
-                                       #                   * self.max_lookback_steps)})
+                                                      dtype=np.int32),})
+                                       # 'reb_hist': Tuple([MultiDiscrete([self.near_neighbor + 1] * self.num_nodes)]
+                                       #                   * self.max_lookback_steps)
+                                       # })
 
         self._is_running = False
         self._done = False
@@ -71,6 +72,7 @@ class TaxiRebalance(gym.Env, ABC):
         action = action.reshape((self.near_neighbor+1, self.num_nodes))
         action = action / np.sum(action, axis=1, keepdims=True)
         action = self._alpha*action + (1 - self._alpha) * np.eye(5)
+        print(action)
         self._alpha += self._step/self._total_steps
 
         if not self._is_running:
@@ -88,8 +90,8 @@ class TaxiRebalance(gym.Env, ABC):
         v_queue = np.array(v_queue)
         reward = -(p_queue.sum() + np.maximum((v_queue-p_queue) * (1 - np.array([action[i, i] for i in range(action.shape[1])])), 0).sum())
         print(reward)
-        print('passenger', p_queue)
-        print('vehicle', v_queue)
+        # print('passenger', p_queue)
+        # print('vehicle', v_queue)
         if self.curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return dict({'p_queue': p_queue, 'v_queue': v_queue}), reward, self._done, {}
