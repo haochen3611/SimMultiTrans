@@ -1,7 +1,7 @@
 import time
 from abc import ABC
 
-from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, r_name, p_name, RESULTS
+from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, r_name, p_name, RESULTS, Plot
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
@@ -55,11 +55,22 @@ class TaxiRebalance(gym.Env, ABC):
         self._alpha = 0
         self._step = 0
         self._total_steps = self._config["timesteps_total"]
+        self._total_vehicle = self.sim.vehicle_attri['taxi']['total']
+
+        self._travel_time = np.zeros((self.num_nodes, self.num_nodes))
+        for i, node in enumerate(self.graph.graph_top):
+            for j, road in enumerate(self.graph.graph_top):
+                if i != j:
+                    self._travel_time[i, j] = self.graph.graph_top[node]['node'].road[road].dist
+        self._travel_time /= np.linalg.norm(self._travel_time, ord=np.inf)
 
     def reset(self):
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
             self.sim.save_result(RESULTS)
+            self.sim.plot.combination_queue_animation(mode='taxi', frames=100, autoplay=True)
+            self.sim.plot.plot_passenger_queuelen_time(mode='taxi')
+            self.sim.plot.plot_passenger_waittime(mode='taxi')
         self.__init__(config=self._config)
 
         with open(vehicle_file, 'r') as file:
@@ -73,9 +84,9 @@ class TaxiRebalance(gym.Env, ABC):
         self._step += 1
         action = action.reshape((self.near_neighbor+1, self.num_nodes))
         action = action / np.sum(action, axis=1, keepdims=True)
-        action = self._alpha*action + (1 - self._alpha) * np.eye(5)
-        print(action)
-        self._alpha += self._step/self._total_steps
+        # action = self._alpha*action + (1 - self._alpha) * np.eye(5)
+        # print(action)
+        # self._alpha += self._step/self._total_steps
 
         if not self._is_running:
             self._is_running = True
@@ -90,10 +101,13 @@ class TaxiRebalance(gym.Env, ABC):
         self.curr_time += self.reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -(p_queue.sum() + np.maximum((v_queue-p_queue) * (1 - np.array([action[i, i] for i in range(action.shape[1])])), 0).sum())
+
+        reward = -(p_queue.sum() +
+                   np.maximum(np.array(v_queue-p_queue, ndmin=2).T*action*self._travel_time, 0).sum())
         print(reward)
         print('passenger', p_queue)
         print('vehicle', v_queue)
+        print(f'at node {v_queue.sum()}, on road {self._total_vehicle - v_queue.sum()}')
         if self.curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return dict({'p_queue': p_queue, 'v_queue': v_queue}), reward, self._done, {}
@@ -117,15 +131,15 @@ if __name__ == '__main__':
             "num_workers": 1,
             "env_config": {
                 "start_time": '08:00:00',
-                "time_horizon": 10,
+                "time_horizon": 100,
                 "lazy": 1,
                 "range": 20,
-                "total_vehicle": 1000,
+                "total_vehicle": 500000,
                 "reb_interval": 600,
                 "max_travel_time": 1000,
                 "max_passenger": 1e6,
                 "nodes_list": node_list,
-                "near_neighbor": 4,
+                "near_neighbor": len(node_list)-1,
                 "timesteps_total": stop_condition["timesteps_total"]
             }
         }

@@ -14,7 +14,8 @@ __all__ = [
     "p_name",
     "r_name",
     "RESULTS",
-    "CONFIG"
+    "CONFIG",
+    "Plot"
 ]
 
 graph_file = 'city_nyc.json'
