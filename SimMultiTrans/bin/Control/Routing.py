@@ -41,15 +41,12 @@ class Routing(object):
             print('invalid path')
             return {}
 
-        if (ori in self.path[self.routing_method]) and (dest in self.path[self.routing_method][ori]):
-            # print('path exists: ', ori, dest)
-            # print(self.path[self.routing_method])
-
+        if ori in self.path[self.routing_method] and dest in self.path[self.routing_method][ori]:
             if self.path[self.routing_method][ori][dest]:
                 # print(self.path[self.routing_method][ori][dest])
-                path = self.path[self.routing_method][ori][dest]
+                # path = self.path[self.routing_method][ori][dest]
                 # print(path)
-                return path
+                return self.path[self.routing_method][ori][dest]
 
         methodset = {
             'bus_simplex': self.bus_simplex,
@@ -273,9 +270,8 @@ class Routing(object):
             # print(path)
             return
 
-# the follows are algorithms
-# quick sort
-
+    # the follows are algorithms
+    # quick sort
     def partition(self, array, start, end):
         pivot = array[start]
         low = start + 1

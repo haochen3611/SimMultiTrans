@@ -5,6 +5,17 @@ import itertools as itt
 
 
 class Vehicle(object):
+    """
+    Use Vehicle class to simulate the behaviors of vehicles\\
+    methods:\\
+        set_attri(attri): set the attribution to a vehicle\\
+        set_destination(dest): set the destination\\
+        match_route(ori, dest): if the o-d pair match the vehicle\\
+        vehicle_leave(v): a passenger left\\
+        pickup(p): pick up a passenger\\
+        dropoff(): drop off all the passengers who want to get off
+    """
+
     def __init__(self, vid, mode, loc):
         self.id = vid
         self.mode = mode
@@ -55,12 +66,20 @@ class Vehicle(object):
         return self.vel * unit_trans[unit]
 
     def reverse_route(self, loc):
+        """
+        Reverse the route for public modes
+        """
         if loc == self.route_set[-1]:
             self.route_set.reverse()
             # print(self.route_set)
             self.nextstop = self.route_set[1]
 
     def set_destination(self, dest):
+        """
+        Set destination to vehicle:\\
+        Private vehicle's destination is oriented by the passenger\\
+        Public vehicle's destination is oriented by its route
+        """
         if self.type == 'priv':
             self.nextstop = dest
         elif self.type == 'publ':
@@ -79,6 +98,9 @@ class Vehicle(object):
             '''
 
     def finalstop(self, loc):
+        """
+        If it is the final stop of a public vehicle
+        """
         if self.type == 'publ':
             return True if (loc == self.route_set[-1]) else False
         return False
@@ -90,6 +112,9 @@ class Vehicle(object):
         return len(self.seats)
 
     def match_route(self, ori, dest):
+        """
+        If the route of the vehicle is approperiate to the o-d pair
+        """
         if self.type == 'priv':
             return True
         elif ori == self.loc:
@@ -98,6 +123,9 @@ class Vehicle(object):
         return False
 
     def pickup(self, p):
+        """
+        Pick up a passenger (return False if the passenger takes a wrong vehicle)
+        """
         if self.get_emptyseats() != 0:
             self.seats.append(p)
             # print(self.seats)
@@ -106,14 +134,25 @@ class Vehicle(object):
             return False
 
     def dropoff(self):
-        drop_list = []
-        stay_list = []
-        for p in self.seats:
-            if p.dest == self.loc:
-                drop_list.append(p)
-            elif p.getoff(self.loc):
-                drop_list.append(p)
-            else:
-                stay_list.append(p)
-        self.seats = stay_list
+        """
+        Drop off passengers (return a list of passengers)\\
+        If this is walk, then drop off the only one passenger\\
+        If the vehicle type is private, then drop off all passengers\\
+        If the vehicle type is public, then drop off the passengers who want to get off
+        """
+        if self.type == 'priv' or self.mode == 'walk':
+            drop_list = self.seats
+            self.seats = []
+        else:
+            drop_list = []
+            stay_list = []
+            for p in self.seats:
+                if p.dest == self.loc:
+                    drop_list.append(p)
+                elif p.getoff(self.loc):
+                    drop_list.append(p)
+                else:
+                    stay_list.append(p)
+            self.seats = stay_list
         return drop_list
+

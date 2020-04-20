@@ -3,7 +3,7 @@ import os
 from SimMultiTrans.bin import *
 from SimMultiTrans.bin.Control import *
 from SimMultiTrans.bin.Network import *
-from SimMultiTrans.utils import CONFIG
+from SimMultiTrans.utils import CONFIG, RESULTS
 
 
 __all__ = [
@@ -13,6 +13,8 @@ __all__ = [
     "vehicle_file",
     "p_name",
     "r_name",
+    "RESULTS",
+    "CONFIG"
 ]
 
 graph_file = 'city_nyc.json'

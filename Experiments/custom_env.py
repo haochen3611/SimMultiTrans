@@ -1,7 +1,7 @@
 import time
 from abc import ABC
 
-from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, r_name, p_name
+from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, r_name, p_name, RESULTS
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
@@ -19,7 +19,8 @@ class TaxiRebalance(gym.Env, ABC):
     def __init__(self, config):
         self._config = config
         self.curr_time = 0
-        self.graph = Graph(graph_file)
+        self.graph = Graph()
+        self.graph.import_graph(graph_file)
         self.sim = Simulator(self.graph)
         self.sim.import_arrival_rate(unit=(1, 'sec'))
         self.sim.import_vehicle_attribute(file_name=vehicle_file)
@@ -58,6 +59,7 @@ class TaxiRebalance(gym.Env, ABC):
     def reset(self):
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
+            self.sim.save_result(RESULTS)
         self.__init__(config=self._config)
 
         with open(vehicle_file, 'r') as file:
@@ -90,8 +92,8 @@ class TaxiRebalance(gym.Env, ABC):
         v_queue = np.array(v_queue)
         reward = -(p_queue.sum() + np.maximum((v_queue-p_queue) * (1 - np.array([action[i, i] for i in range(action.shape[1])])), 0).sum())
         print(reward)
-        # print('passenger', p_queue)
-        # print('vehicle', v_queue)
+        print('passenger', p_queue)
+        print('vehicle', v_queue)
         if self.curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return dict({'p_queue': p_queue, 'v_queue': v_queue}), reward, self._done, {}
@@ -111,11 +113,11 @@ if __name__ == '__main__':
         stop=stop_condition,
         config={
             "env": TaxiRebalance,
-            "lr": 1e-6,
+            "lr": 1e-4,
             "num_workers": 1,
             "env_config": {
                 "start_time": '08:00:00',
-                "time_horizon": 40,
+                "time_horizon": 10,
                 "lazy": 1,
                 "range": 20,
                 "total_vehicle": 1000,

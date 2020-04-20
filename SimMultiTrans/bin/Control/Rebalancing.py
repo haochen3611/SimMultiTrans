@@ -34,10 +34,10 @@ class Rebalancing(object):
 
         self.costsensi_para = None
         warnings.filterwarnings('ignore')
-        np.set_printoptions(threshold=sys.maxsize)
+        # np.set_printoptions(threshold=sys.maxsize)
 
     def MaxWeight(self, mode, queue, server):
-        '''
+        """
         # weight
         c = np.kron( np.ones(self.size), -np.array(queue) )
         # print('c',c)
@@ -75,7 +75,7 @@ class Rebalancing(object):
         result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, max(server)],
             method='interior-point', options={'lstsq': True, 'presolve': True})
         # print(result.x.reshape((self.size, self.size)))
-        '''
+        """
         result = np.zeros(shape=(self.size, self.size))
         for index, node in enumerate(self.graph.graph_top):
             k = self.range
@@ -298,6 +298,12 @@ class Rebalancing(object):
         return np.zeros(shape=(self.size, self.size))
 
     def set_parameters(self, lazy=0, vrange=0):
+        '''
+        Set the parameters for the rebalancing policy\\
+        arge:\\
+            lazy: weight the probability that a vehicle stays at current node\\
+            vrange: the number of nearest neighbourhoods that a vehicle can be dispathced
+        '''
         self.lazy = lazy
         self.range = vrange
         print(f'Rebalancing Policy Parameters: lazy={lazy}, range={vrange}')
@@ -311,8 +317,7 @@ class Rebalancing(object):
             print(f'{policy} is unavailable. Will use {self.policy}.')
 
     def Dispatch_active(self, mode, queue_p, queue_v):
-        if (self.vehicle_attri[mode]['reb'] == 'active'
-                and np.sum(queue_p) != 0 and len(queue_p) == len(queue_v)):
+        if self.vehicle_attri[mode]['reb'] == 'active' and np.sum(queue_p) != 0 and len(queue_p) == len(queue_v):
 
             opt_trans = self.policies[self.policy](mode=mode, queue=queue_p, server=queue_v)
 

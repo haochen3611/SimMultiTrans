@@ -17,8 +17,7 @@ import json
 
 
 class Graph(object):
-
-    def __init__(self, file_name=None):
+    def __init__(self):
         self.graph_top = {}
 
         # all edges
@@ -26,9 +25,6 @@ class Graph(object):
 
         # path ram
         self.graph_path = {}
-
-        if file_name is not None:
-            self.import_graph(file_name)
 
     def import_graph(self, file_name):
         with open(f'{file_name}') as file_data:
@@ -42,9 +38,7 @@ class Graph(object):
 
     def generate_nodes(self):
         for node in self.graph_top:
-            # print(node, (self.graph_top[node]['lat'],
-            #              self.graph_top[node]['lon']),
-            #       self.graph_top[node]['mode'].split(','))
+            # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['lon']), self.graph_top[node]['mode'].split(','))
             n = Node(node, self.graph_top)
             # print(n.id)
             self.graph_top[node].update({'node': n})
@@ -74,7 +68,8 @@ class Graph(object):
     def get_edge(self, ori, dest):
         """return (ori, dest) edges"""
         if ori in self.graph_top and dest in self.graph_top and ori != dest:
-            if dest in self.graph_top[ori]['nei'].keys():
+            # if dest in self.graph_top[ori]['nei'].keys():
+            if dest in self.graph_top[ori]['nei']:
                 return ori, dest, self.graph_top[ori]['nei'][dest]
 
     def get_all_edges(self):
@@ -88,10 +83,13 @@ class Graph(object):
         return node in self.graph_top
 
     def edge_exists(self, ori, dest):
+        """
         if self.node_exists(ori) and self.node_exists(dest):
-            return dest in self.graph_top[ori]['nei']
+            return ( dest in self.graph_top[ori]['nei'] )
         else:
             return False
+        """
+        return (dest in self.graph_top[ori]['nei']) if self.node_exists(ori) and self.node_exists(dest) else False
 
     def get_L1dist(self, ori, dest):
         if self.node_exists(ori) and self.node_exists(dest):
@@ -116,7 +114,7 @@ class Graph(object):
             self.save_path(ori, dest, path)
             return path
 
-        
+
     def save_path(self, ori, dest, path):
         if (ori not in self.graph_path):
             self.graph_path[ori] = {dest: []}

@@ -17,6 +17,9 @@ from SimMultiTrans.bin.Plot import Plot
 from SimMultiTrans.utils import RESULTS, CONFIG
 
 
+logging.basicConfig(level=logging.INFO, filename=os.path.join(RESULTS, 'Simulator.log'))
+
+
 class Simulator(object):
 
     def __init__(self, graph):
@@ -70,12 +73,11 @@ class Simulator(object):
 
             self.road_set[node] = self.graph.graph_top[node]['node'].road
 
-        try:
-            os.remove(os.path.join(RESULTS, 'Simulator.log'))
-        except OSError:
-            pass
+        # try:
+        #     os.remove(os.path.join(RESULTS, 'Simulator.log'))
+        # except OSError:
+        #     pass
 
-        logging.basicConfig(level=logging.INFO, filename=os.path.join(RESULTS, 'Simulator.log'))
         logging.info('Graph initialized')
 
     def import_arrival_rate(self, file_name=None, unit=(1, 'min')):
@@ -459,13 +461,13 @@ class Simulator(object):
                 # saved_wait_time[node][mode] = self.passenger_waittime[node][mode]
 
         # print(saved_q_length)
-        with open(f'{path_name}/passenger_queue.json', 'w') as json_file:
+        with open(os.path.join(path_name, 'passenger_queue.json'), 'w') as json_file:
             json.dump(saved_q_length, json_file)
 
-        with open(f'{path_name}/vehicle_queue.json', 'w') as json_file:
+        with open(os.path.join(path_name, 'vehicle_queue.json'), 'w') as json_file:
             json.dump(saved_v_length, json_file)
 
-        with open(f'{path_name}/wait_time.json', 'w') as json_file:
+        with open(os.path.join(path_name, 'wait_time.json'), 'w') as json_file:
             json.dump(self.passenger_waittime, json_file)
 
         total_num_arrival = 0
@@ -478,7 +480,7 @@ class Simulator(object):
             'total_arrival': self.total_arrival,
             'total_num_arrival': total_num_arrival
         }
-        with open(f'{path_name}/metrics.json', 'w') as json_file:
+        with open(os.path.join(path_name, 'metrics.json'), 'w') as json_file:
             json.dump(saved_metrics, json_file)
 
         del saved_q_length, saved_v_length

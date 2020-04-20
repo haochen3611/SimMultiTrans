@@ -3,7 +3,6 @@
 
 
 class Passenger(object):
-
     def __init__(self, pid, ori, dest, arr_time):
         self.id = pid
         self.ori = ori
@@ -16,11 +15,13 @@ class Passenger(object):
 
         self.path = []
 
+    '''
     def get_id(self):
         return self.id
 
     def get_odpair(self):
-        return self.ori, self.dest
+        return (self.ori, self.dest)
+    '''
 
     def get_schdule(self, routing):
         # print(self.ori, self.dest)
@@ -29,6 +30,7 @@ class Passenger(object):
         # print(self.path)
         return self.path
 
+    '''
     def set_location(self, loc):
         self.loc = loc
 
@@ -37,21 +39,26 @@ class Passenger(object):
 
     def get_stoptime(self):
         return self.stop_time
+    '''
 
     def get_waitingmode(self, loc):
         # print(self.id, loc)
         # print(self.id, self.path)
-        mode = self.path[loc]['info']['mode'] if (loc in self.path and loc != self.dest) else None
+        # mode = self.path[loc]['info']['mode'] if (loc in self.path and loc != self.dest) else None
         # print(self.id, mode)
-        return mode
+        return self.path[loc]['info']['mode'] if loc in self.path and loc != self.dest else None
 
     def geton(self, loc, v):
         # print(self.path)
-        if loc in self.path and self.path[loc]['info']['mode'] == v.mode:
+        """
+        if ( loc in self.path and self.path[loc]['info']['mode'] == v.mode):
             # get on the correct vehicle (orientation)
 
             return v.match_route(loc, self.path[loc]['dest'])
         return False
+        """
+        return v.match_route(loc, self.path[loc]['dest']) if loc in self.path and self.path[loc]['info'][
+            'mode'] == v.mode else False
         # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
 
     def getoff(self, loc):
@@ -64,3 +71,7 @@ class Passenger(object):
 
     def get_nextstop(self, loc):
         return self.path[loc]['dest'] if (loc in self.path and loc != self.dest) else None
+
+
+
+

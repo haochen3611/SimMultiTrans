@@ -14,6 +14,7 @@ from SimMultiTrans.utils import CONFIG, RESULTS
 
 
 class Plot(object):
+
     def __init__(self, graph, time_horizon, start_time):
         self.graph = graph
         self.time_horizon = time_horizon

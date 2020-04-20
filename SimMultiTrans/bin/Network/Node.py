@@ -11,6 +11,17 @@ import copy
 
 
 class Node(object):
+    """
+    Use Node class to simulate the behaviors of passengers and vehicles in a node\\
+    methods:\\
+        passenger_arrive(p): a passenger arrived\\
+        passenger_leave(p): a passenger left\\
+        vehicle_arrive(v): a vehicle arrived\\
+        vehicle_leave(v): a passenger left\\
+        match_demands(attri): match demands and supplies based on attri(json)\\
+        dispatch(reb_flow): rebalance vehicles based on reb_flow(np.arry)
+    """
+
     def __init__(self, nid, graph_top):
         self.id = nid
         self.graph_top = graph_top
@@ -63,7 +74,7 @@ class Node(object):
         # print(self.arr_rate_set, np.sum(self.arr_rate_set))
 
     def get_average_wait_time(self, mode):
-        return 0 if (mode not in self.p_wait or len(self.p_wait[mode]) == 0) else sum(self.p_wait[mode]) / len(
+        return 0 if mode not in self.p_wait or len(self.p_wait[mode]) == 0 else sum(self.p_wait[mode]) / len(
             self.p_wait[mode])
 
     def check_accessiblity(self, mode):
@@ -83,9 +94,10 @@ class Node(object):
         # self.passenger.append(p)
         mode = p.get_waitingmode(self.id)
         # print(mode)
-        if mode is not None:
+        if mode != None:
             self.passenger[mode].append(p)
-            p.set_stoptime(self.time)
+            # p.set_stoptime(self.time)
+            p.stoptime = self.time
             # walk always available
             if mode == 'walk':
                 v_walk = copy.deepcopy(self.walk)
@@ -95,14 +107,16 @@ class Node(object):
         # self.passenger.remove(p)
         mode = p.get_waitingmode(self.id)
         if mode:
-            waittime = self.time - p.get_stoptime()
+            # waittime = self.time - p.get_stoptime()
+            waittime = self.time - p.stoptime
             self.p_wait[mode].append(waittime)
             self.passenger[mode].remove(p)
 
     def passengers_clear(self):
         for mode in self.passenger:
             for p in self.passenger[mode]:
-                waittime = self.time - p.get_stoptime()
+                # waittime = self.time - p.get_stoptime()
+                waittime = self.time - p.stoptime
                 self.p_wait[mode].append(waittime)
 
     def vehicle_park(self, v, leavetime):
@@ -118,7 +132,7 @@ class Node(object):
         isVwalk = False
 
         for p in p_list:
-            if p.get_odpair()[1] == self.id:
+            if p.dest == self.id:
                 # self.passenger_leave(p)
                 logging.info(f'Time {self.time}: Pas {p.id} arrived at destination {self.id} and quit')
                 self.total_served_p += 1
@@ -159,8 +173,13 @@ class Node(object):
         return prob
 
     def random_exp_arrival_prob(self, range, size):
-        # default: exponential distribution
-        # rate = ln(1-p) => p = 1-exp(-rate)
+        """
+        default: exponential distribution\\
+        rate = ln(1-p) => p = 1-exp(-rate)\\
+        args:\\
+            range: np.array\\
+            size: int
+        """
         rd = np.random.uniform(0, range, size)
         return 1 - np.exp(- self.arr_rate * rd / np.sum(rd))
 
@@ -170,9 +189,9 @@ class Node(object):
         for time in range(timehorizon):
             self.child_passenger[time] = []
             randomness = np.random.uniform(low=0, high=1, size=(len(self.dest)))
-            pp_toss = np.greater(self.arr_prob_set, randomness)
-            for index, res in enumerate(pp_toss):
-                if res:
+            toss = np.greater(self.arr_prob_set, randomness)
+            for index, p_arrive in enumerate(toss):
+                if p_arrive:
                     dest = self.dest[index]
 
                     pid = f'{self.id}_{dest}_{time}'
@@ -180,24 +199,6 @@ class Node(object):
                     self.total_p += 1
 
     def new_passenger_arrive(self, routing):
-        """
-        randomness = np.random.uniform(low=0, high=1, size=(len(self.dest)))
-
-        pp_toss = np.greater(self.arr_prob_set, randomness)
-        for index, res in enumerate(pp_toss):
-            if (res):
-                dest = self.dest[index]
-
-                pid = f'{self.id}_{dest}_{self.time}'
-                p = Passenger(pid=pid, ori=self.id, dest=dest, arr_time=self.time)
-
-                p.get_schdule(routing)
-
-                self.passenger_arrive(p)
-
-                logging.info(f'Time {self.time}: Pas {pid} arrived, ori={self.id}, dest={dest}')
-                self.total_p += 1
-        """
         if self.child_passenger[self.time]:
             for p in self.child_passenger[self.time]:
                 p.get_schdule(routing)
@@ -207,37 +208,41 @@ class Node(object):
 
     def match_demands(self, attri):
         # check if the vehicle leave the park
-        for (v, time) in self.park:
+        while len(self.park) > 0:
+            (v, time) = self.park[0]
             if time <= self.time:
                 v.reverse_route(self.id)
                 self.park.remove((v, time))
                 self.vehicle_arrive(v)
 
-        if len(self.passenger.keys()) != 0:
+        # if len(self.passenger.keys()) != 0:
 
-            for mode in self.passenger:
-                # for p in self.passenger[mode]:
-                while len(self.passenger[mode]) != 0:
-                    p = self.passenger[mode][0]
-                    if len(self.vehicle[mode]) != 0:
-                        # print(self.id, 'vehicle exist')
-                        v = self.vehicle[mode][0]
+        for mode in self.passenger:
+            # for p in self.passenger[mode]:
+            # while len(self.passenger[mode]) != 0:
+            while self.passenger[mode]:
+                p = self.passenger[mode][0]
+                # if len(self.vehicle[mode]) == 0:
+                if not self.vehicle[mode]:
+                    break
+                else:
+                    # print(self.id, 'vehicle exist')
+                    v = self.vehicle[mode][0]
 
-                        if p.geton(self.id, v) and v.pickup(p):
-                            v.set_destination(p.get_nextstop(self.id))
-                            self.passenger_leave(p)
+                    if p.geton(self.id, v) and v.pickup(p):
+                        v.set_destination(p.get_nextstop(self.id))
+                        self.passenger_leave(p)
 
-                            logging.info(f'Time {self.time}: Pas {p.id} takes {v.id} at node {self.id}')
-                            # if vehicle is full, then move to road
-                            if v.get_emptyseats() == 0 or v.type == 'priv':
-                                self.vehilce_leave(v)
-                                self.road[v.nextstop].arrive(v)
-                    else:
-                        break
+                        logging.info(f'Time {self.time}: Pas {p.id} takes {v.id} at node {self.id}')
+                        # if vehicle is full, then move to road
+                        if v.get_emptyseats() == 0 or v.type == 'priv':
+                            self.vehilce_leave(v)
+                            self.road[v.nextstop].arrive(v)
 
-        # all public trans will leave
+                            # all public trans will leave
         for mode in self.vehicle:
-            if attri[mode]['type'] == 'publ' and len(self.vehicle[mode]) != 0:
+            # if ( attri[mode]['type'] == 'publ' and len(self.vehicle[mode]) != 0):
+            if attri[mode]['type'] == 'publ' and self.vehicle[mode]:
                 for v in self.vehicle[mode]:
                     v.set_destination(None)
                     self.vehilce_leave(v)
@@ -245,23 +250,37 @@ class Node(object):
 
     def dispatch(self, reb_flow):
         # print(reb_flow)
-        if len(reb_flow) == 0:
+        if not reb_flow:
             return
         for mode in reb_flow:
-            if mode in self.vehicle and np.sum(reb_flow[mode]) != 0:
+            if mode in self.vehicle and np.sum(reb_flow[mode]) != 0 and mode != 'walk':
                 # only if more supplies
-                if len(self.passenger[mode]) == 0 and len(self.vehicle[mode]) > 0 and reb_flow[mode]['reb']:
+                # if len(self.passenger[mode]) == 0 and len(self.vehicle[mode]) > 0 and reb_flow[mode]['reb']:
+                if not self.passenger[mode] and self.vehicle[mode] and reb_flow[mode]['reb']:
+                    leave_list = []
+                    stay_list = []
+
+                    # set destination for all vehicles that will be dispatched
                     for v in self.vehicle[mode]:
                         if np.sum(reb_flow[mode]['p']) == 0:
                             return
-                        # print(reb_flow[mode]['p'])
-                        dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode]['p'])[0]
 
-                        if mode in self.graph_top[dest]['mode'] and dest != self.id:
+                        dest = np.random.choice(reb_flow['nodes'], 1, p=reb_flow[mode]['p'])[0]
+                        '''
+                        if ( mode in self.graph_top[dest]['mode'] and dest != self.id ):
                             v.set_destination(dest)
                             self.vehilce_leave(v)
                             self.road[v.nextstop].arrive(v)
                             # logging.info(f'Time {self.time}: Vel {v.id} is dispatched from {self.id} to {dest}')
+                        '''
+                        if mode in self.graph_top[dest]['mode'] and dest != self.id:
+                            v.set_destination(dest)
+                            leave_list.append(v)
+
+                    # dispatch vehicles
+                    for v in leave_list:
+                        self.vehilce_leave(v)
+                        self.road[v.nextstop].arrive(v)
 
 
 class Haversine:
