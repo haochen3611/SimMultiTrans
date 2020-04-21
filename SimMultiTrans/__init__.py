@@ -18,6 +18,8 @@ __all__ = [
     "Plot"
 ]
 
+os.makedirs(RESULTS, exist_ok=True)
+
 graph_file = 'city_nyc.json'
 vehicle_file = 'vehicle_nyc.json'
 p_name = 'Simplified_MaxWeight'
