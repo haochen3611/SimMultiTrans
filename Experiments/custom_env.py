@@ -63,6 +63,7 @@ class TaxiRebalance(gym.Env, ABC):
                 if i != j:
                     self._travel_time[i, j] = self.graph.graph_top[node]['node'].road[road].dist
         self._travel_time /= np.linalg.norm(self._travel_time, ord=np.inf)
+        self._pre_action = np.zeros((self.near_neighbor+1, self.num_nodes))
 
     def reset(self):
         if self._is_running:
@@ -108,6 +109,8 @@ class TaxiRebalance(gym.Env, ABC):
         print('passenger', p_queue)
         print('vehicle', v_queue)
         print(f'at node {v_queue.sum()}, on road {self._total_vehicle - v_queue.sum()}')
+        print(f'action diff {np.linalg.norm(self._pre_action-action)}')
+        self._pre_action = action
         if self.curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return dict({'p_queue': p_queue, 'v_queue': v_queue}), reward, self._done, {}
@@ -120,11 +123,12 @@ if __name__ == '__main__':
         node_list = json.load(f)
     node_list = [x for x in node_list]
     stop_condition = {
-            "timesteps_total": 1e4,
+            "timesteps_total": 600,
         }
-    tune.run(
+    analysis = tune.run(
         "SAC",
         stop=stop_condition,
+        reuse_actors=True,
         config={
             "env": TaxiRebalance,
             "lr": 1e-4,
@@ -144,3 +148,5 @@ if __name__ == '__main__':
             }
         }
     )
+
+    print(analysis)
