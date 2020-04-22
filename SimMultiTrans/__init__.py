@@ -4,7 +4,6 @@ import logging
 from SimMultiTrans.bin import *
 from SimMultiTrans.bin.Control import *
 from SimMultiTrans.bin.Network import *
-from SimMultiTrans.utils import CONFIG, RESULTS
 
 
 __all__ = [
@@ -19,9 +18,18 @@ __all__ = [
     "Plot"
 ]
 
+ROOT = os.path.dirname(os.path.abspath(__file__))
+CONFIG = os.path.join(ROOT, 'conf')
+RESULTS = os.path.join(ROOT, 'results')
+
 os.makedirs(RESULTS, exist_ok=True)
 logging.basicConfig(level=logging.WARNING, filename=os.path.join(RESULTS, 'Simulator.log'))
 
+logger = logging.getLogger(__name__)
+
+if not os.path.exists(CONFIG):
+    logger.warning(f'{CONFIG} not exist')
+    os.makedirs(CONFIG, exist_ok=True)
 
 graph_file = 'city_nyc.json'
 vehicle_file = 'vehicle_nyc.json'
@@ -32,15 +40,3 @@ NEIGHBORS = 20
 
 graph_file = os.path.join(CONFIG, graph_file)
 vehicle_file = os.path.join(CONFIG, vehicle_file)
-
-# graph = Graph()
-# graph.import_graph(graph_file)
-
-# sim = Simulator(graph=graph)
-# sim.import_arrival_rate(unit=(1, 'sec'))
-# sim.import_vehicle_attribute(file_name=vehicle_file)
-# sim.set_multiprocessing(False)
-#
-# sim.routing.set_routing_method(r_name)
-# sim.rebalance.set_parameters(lazy=lazy, vrange=radius)
-# sim.rebalance.set_policy(p_name)
