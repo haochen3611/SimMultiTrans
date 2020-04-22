@@ -1,7 +1,8 @@
 import time
 from abc import ABC
 
-from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, RESULTS
+from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file
+from SimMultiTrans.utils import RESULTS
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np

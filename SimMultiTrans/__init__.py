@@ -3,7 +3,7 @@ import logging
 
 from SimMultiTrans.bin import Simulator
 from SimMultiTrans.bin.Network import Graph
-from .utils import *
+import SimMultiTrans.utils as utils
 
 __all__ = [
     "Simulator",
@@ -12,18 +12,17 @@ __all__ = [
     "vehicle_file",
     "REBALANCE_POLICY",
     "ROUTING_POLICY",
-    "RESULTS",
-    "CONFIG",
+    "utils",
 ]
 
-os.makedirs(RESULTS, exist_ok=True)
-logging.basicConfig(level=logging.WARNING, filename=os.path.join(RESULTS, 'Simulator.log'))
+os.makedirs(utils.RESULTS, exist_ok=True)
+logging.basicConfig(level=logging.WARNING, filename=os.path.join(utils.RESULTS, 'Simulator.log'))
 
 logger = logging.getLogger(__name__)
 
-if not os.path.exists(CONFIG):
-    logger.warning(f'{CONFIG} not exist')
-    os.makedirs(CONFIG, exist_ok=True)
+if not os.path.exists(utils.CONFIG):
+    logger.warning(f'{utils.CONFIG} not exist')
+    os.makedirs(utils.CONFIG, exist_ok=True)
 
 graph_file = 'city_nyc.json'
 vehicle_file = 'vehicle_nyc.json'
@@ -32,5 +31,5 @@ ROUTING_POLICY = 'simplex'
 LAZINESS = 0
 NEIGHBORS = 20
 
-graph_file = os.path.join(CONFIG, graph_file)
-vehicle_file = os.path.join(CONFIG, vehicle_file)
+graph_file = os.path.join(utils.CONFIG, graph_file)
+vehicle_file = os.path.join(utils.CONFIG, vehicle_file)
