@@ -7,6 +7,7 @@ import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
 import json
+import argparse as ap
 
 import ray
 from ray import tune
@@ -135,20 +136,29 @@ class TaxiRebalance(gym.Env, ABC):
 
 if __name__ == '__main__':
 
+    parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
+    parser.add_argument('--num_cpu', nargs='?', metavar='<Number of CPU workers>', type=int, default=1)
+    parser.add_argument('--num_gpu', nargs='?', metavar='<Number of GPU workers>', type=int, default=0)
+    parser.add_argument('--iter', nargs='?', metavar='<Number of iterations>', type=int, default=1)
+    parser.add_argument('--a_lr', nargs='?', metavar='<Actor learning rate>', type=float, default=3e-3)
+    parser.add_argument('--c_lr', nargs='?', metavar='<Critic learning rate>', type=float, default=3e-3)
+    parser.add_argument('--e_lr', nargs='?', metavar='<entropy learning rate>', type=float, default=3e-3)
+    args = parser.parse_args()
+
     ray.init()
     with open(graph_file, 'r') as f:
         node_list = json.load(f)
     node_list = [x for x in node_list]
 
     configure = sac.DEFAULT_CONFIG.copy()
-    configure['num_workers'] = 1
-    configure['num_gpus'] = 1
+    configure['num_workers'] = args.num_cpu
+    configure['num_gpus'] = args.num_gpu
     configure['env'] = TaxiRebalance
     configure['timesteps_per_iteration'] = 300  # MDP steps per iteration
     configure['optimization'] = {
-        "actor_learning_rate": 3e-3,
-        "critic_learning_rate": 3e-3,
-        "entropy_learning_rate": 3e-3,
+        "actor_learning_rate": args.a_lr,
+        "critic_learning_rate": args.c_lr,
+        "entropy_learning_rate": args.e_lr,
     }
     configure['env_config'] = {
                 "start_time": '08:00:00',
@@ -166,10 +176,11 @@ if __name__ == '__main__':
 
     trainer = sac.SACTrainer(config=configure)
     # trainer = ppo.PPOTrainer(config=configure)
-    for i in range(1000):
+    for _ in range(args.iter):
         # print('Iteration:', i)
         results = trainer.train()
-    print(pretty_print(results))
+        if _ % 100 == 0:
+            print(pretty_print(results))
 
     # analysis = tune.run(
     #     "SAC",
