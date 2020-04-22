@@ -1,10 +1,9 @@
 import os
 import logging
 
-from SimMultiTrans.bin import *
-from SimMultiTrans.bin.Control import *
-from SimMultiTrans.bin.Network import *
-
+from SimMultiTrans.bin import Simulator
+from SimMultiTrans.bin.Network import Graph
+from .utils import *
 
 __all__ = [
     "Simulator",
@@ -15,12 +14,7 @@ __all__ = [
     "ROUTING_POLICY",
     "RESULTS",
     "CONFIG",
-    "Plot"
 ]
-
-ROOT = os.path.dirname(os.path.abspath(__file__))
-CONFIG = os.path.join(ROOT, 'conf')
-RESULTS = os.path.join(ROOT, 'results')
 
 os.makedirs(RESULTS, exist_ok=True)
 logging.basicConfig(level=logging.WARNING, filename=os.path.join(RESULTS, 'Simulator.log'))

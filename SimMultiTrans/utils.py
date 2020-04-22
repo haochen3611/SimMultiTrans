@@ -3,6 +3,10 @@ import json
 import pandas as pd
 import numpy as np
 
+ROOT = os.path.dirname(os.path.abspath(__file__))
+CONFIG = os.path.join(ROOT, 'conf')
+RESULTS = os.path.join(ROOT, 'results')
+
 
 def generate_graph_file(gps_file, aam_file):
 
