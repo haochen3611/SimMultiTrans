@@ -10,8 +10,8 @@ CONFIG = os.path.join(ROOT, 'conf')
 RESULTS = os.path.join(ROOT, 'results')
 
 try:
-    os.mkdir(CONFIG)
-    os.mkdir(RESULTS)
+    os.makedirs(CONFIG, exist_ok=True)
+    os.makedirs(RESULTS, exist_ok=True)
 except OSError:
     pass
 
@@ -46,7 +46,7 @@ setup(name='SimMultiTrans',
       author='momodupi',
       author_email='momodupi@gmail.com',
       license='MIT',
-      url='https://github.com/momodupi/SimMultiTrans',
+      url='https://github.com/haochen3611/SimMultiTrans',
       packages=['SimMultiTrans', ],
       install_requires=['numpy',
                         'pandas',
