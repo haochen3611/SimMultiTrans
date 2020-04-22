@@ -1,7 +1,7 @@
 import time
 from abc import ABC
 
-from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, ROUTING_POLICY, REBALANCE_POLICY, RESULTS, Plot
+from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file, RESULTS
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
@@ -75,7 +75,7 @@ class TaxiRebalance(gym.Env, ABC):
         self.sim.set_running_time(start_time=self._config['start_time'],
                                   time_horizon=self._config['time_horizon'],
                                   unit='hour')
-        self.sim.routing.set_routing_method(ROUTING_POLICY)
+        self.sim.routing.set_routing_method('simplex')
         self.sim.initialize(seed=0)
         self._total_vehicle = self.sim.vehicle_attri['taxi']['total']
 
