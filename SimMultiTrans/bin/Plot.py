@@ -4,6 +4,7 @@
 import json
 import os
 from datetime import datetime, timedelta
+import logging
 
 import matplotlib as mpl
 import numpy as np
@@ -11,6 +12,9 @@ import plotly as pt
 import plotly.graph_objects as go
 
 from SimMultiTrans.utils import CONFIG, RESULTS
+
+
+logger = logging.getLogger(__name__)
 
 
 class Plot(object):
@@ -29,8 +33,8 @@ class Plot(object):
             self.mapbox_access_token = open(os.path.join(CONFIG, '.mapbox_token')).read()
             self.map_style = open(os.path.join(CONFIG, '.mapbox_style')).read()
         except OSError:
-            print('Map Key Error!')
-            pass
+            logger.error('Map Key Error!')
+            raise
 
     def import_results(self, path_name):
         self.graph.import_graph(os.path.join(RESULTS, 'city_topology.json'))
@@ -131,7 +135,7 @@ class Plot(object):
 
         file_name = os.path.join(RESULTS, f'Passenger_{mode}_queue_at_{time}')
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=file_name + '.html')
+        pt.offline.plot(fig, filename=file_name + '.html', auto_open=False)
 
     def plotly_sactter_animation_data(self, frames, lon, lat, data):
         ani_dict = {'data': [], 'layout': {}, 'frames': []}
@@ -231,81 +235,8 @@ class Plot(object):
         # fig.update_layout(template='plotly_dark')
         return ani_dict
 
-    '''
-    def plotly_3d_animation_data(self, frames, data):
-
-        fig_dict = {'data': [], 'layout': {}, 'frames': []}
-
-        # fill in most of layout
-        fig_dict['layout']['xaxis'] = {'title': 'Latitude'}
-        fig_dict['layout']['yaxis'] = {'title': 'Longitude'}
-        # fig_dict['layout']['hovermode'] = 'closest'
-        fig_dict['layout']['sliders'] = {
-            'args': [ 'transition', { 'duration': 400, 'easing': 'cubic-in-out' } ],
-            'initialValue': '0', 'plotlycommand': 'animate', 'values': range(frames), 'visible': True
-        }
-        fig_dict['layout']['updatemenus'] = [ {
-                'buttons': [ 
-                    { 'args': [None, {'frame': {'duration': 500, 'redraw': False},
-                      'fromcurrent': True, 'transition': {'duration': 300, 'easing': 'quadratic-in-out'}}],
-                      'label': 'Play', 'method': 'animate' },
-                    { 'args': [[None], {'frame': {'duration': 0, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 0}}],
-                      'label': 'Pause', 'method': 'animate' }
-                ],
-                'direction': 'left', 'pad': {'r': 10, 't': 87}, 
-                'showactive': False, 'type': 'buttons',  'x': 0.1, 'xanchor': 'right', 'y': 0, 'yanchor': 'top'
-            }  ]
-
-        sliders_dict = { 'active': 0, 'yanchor': 'top', 'xanchor': 'left', 
-            'currentvalue': { 'font': {'size': 20}, 'prefix': 'Time:', 'visible': True, 'xanchor': 'right' },
-            'transition': {'duration': 300, 'easing': 'cubic-in-out'}, 'pad': {'b': 10, 't': 50},
-            'len': 0.9, 'x': 0.1, 'y': 0, 'steps': []  }
-
-        # make data
-        time = 0
-        # colorsacle = 'OrRd' if (result.min() == 0) else 'balance'
-        # set 0 be white
-        # zp = np.abs(result.min())/(result.max() - result.min())
-        # print(scale[:, 0])
-        # colorsacle = [ [0, '#33691E'], [zp, '#FAFAFA'], [1, '#FF6F00'] ]
-
-        data_dict = { 'x': x, 'y': y, 'mode': 'markers', 'name': 'Queue', 'text': self.graph.get_allnodes(),
-            'marker': { 'sizemode': 'area', 'size': scale[:, 0], 'sizeref': 2.*max(scale[:, 0])/(40.**2),
-                        'color': color[:, 0], 'colorscale': colorsacle,
-                        'cmin': result.min(), 'cmax': result.max(), 'colorbar': dict(title='Queue')  }
-                        }
-
-        # data_dict = data[0]
-        # fig_dict['data'].append(data[0])
-        f = go.Mesh3d(x=data[0]['X'], y=data[0]['Y'], z=data[0]['Z'], 
-                i=data[0]['I'], j=data[0]['J'], k=data[0]['K'], color="#ba2461", flatshading=True)
-        fig_dict['data'].append(f)
-
-        # make frames
-        for frame_index in range(frames):
-            frame = {'data': [], 'name': str(frame_index)}
-            f = go.Mesh3d(x=data[frame_index]['X'], y=data[frame_index]['Y'], z=data[frame_index]['Z'], 
-                i=data[frame_index]['I'], j=data[frame_index]['J'], k=data[frame_index]['K'], color="#ba2461", flatshading=True)
-            frame['data'].append( f )
-
-            fig_dict['frames'].append(frame)
-            frame_time = timedelta(seconds=frame_index*self.time_horizon/frames) + self.start_time
-
-            slider_step = {'args': [ 
-                [frame_index], {'frame': {'duration': 300, 'redraw': False}, 'mode': 'immediate', 'transition': {'duration': 300}} ],
-                'label': frame_time.strftime('%H:%M'), 'method': 'animate'}
-            sliders_dict['steps'].append(slider_step)
-            # print(sliders_dict['steps'][frame_index])
-
-        fig_dict['layout']['sliders'] = [sliders_dict]
-
-        fig = go.Figure(fig_dict)
-        fig.update_layout(template='plotly_dark')
-        return fig
-    '''
-
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        print(f'Plot queue length of passengers who take {mode} ...', end='')
+    def passenger_queue_animation(self, mode, frames):
+        logger.info(f'Plot queue length of passengers who take {mode}')
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
             data[:, frame_index] = [self.queue_p[node][mode][int(frame_index * self.time_horizon / frames)]
@@ -313,11 +244,10 @@ class Plot(object):
 
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename=os.path.join(RESULTS, 'passenger_queue.html'))
-        print('Done')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, 'passenger_queue.html'), auto_open=False)
 
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        print(f'Plot queue length of {mode} ...', end='')
+    def vehicle_queue_animation(self, mode, frames):
+        logger.info(f'Plot queue length of {mode}')
         data = np.zeros(shape=(len(self.graph.graph_top), frames))
         for frame_index in range(0, int(frames)):
             data[:, frame_index] = [self.queue_v[node][mode][int(frame_index * self.time_horizon / frames)]
@@ -325,11 +255,14 @@ class Plot(object):
 
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_queue.html'))
-        print('Done')
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_queue.html'), auto_open=False)
 
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        print(f'Plot combined queue length of passengers and {mode} ...', end='')
+    def combination_queue_animation(self, mode, frames, suffix):
+        logger.info(f'Plot combined queue length of passengers and {mode}')
+        if suffix is None:
+            suffix = ''
+        else:
+            suffix = "_" + suffix
 
         self.lat = [self.graph.graph_top[node]['lat'] for node in self.graph.graph_top]
         self.lon = [self.graph.graph_top[node]['lon'] for node in self.graph.graph_top]
@@ -359,11 +292,13 @@ class Plot(object):
         ani_dict = self.plotly_sactter_animation_data(frames=frames, lon=self.lon, lat=self.lat, data=data)
         ani = go.Figure(ani_dict)
 
-        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_combined_queue.html'))
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_combined_queue{suffix}.html'), auto_open=False)
 
-        print('Done')
-
-    def plot_passenger_queuelen_time(self, mode):
+    def plot_passenger_queuelen_time(self, mode, suffix):
+        if suffix is None:
+            suffix = ''
+        else:
+            suffix = "_"+suffix
         fig_dict = {'data': [], 'layout': {}}
         fig_dict['layout']['xaxis'] = {'title': 'Time'}
         fig_dict['layout']['xaxis']['ticktext'] = [
@@ -390,9 +325,13 @@ class Plot(object):
         fig = go.Figure(fig_dict)
 
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_queue_time.html'))
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_queue_time{suffix}.html'), auto_open=False)
 
-    def plot_passenger_waittime(self, mode):
+    def plot_passenger_waittime(self, mode, suffix):
+        if suffix is None:
+            suffix = ''
+        else:
+            suffix = "_"+suffix
         fig_dict = {'data': [], 'layout': {}}
         fig_dict['layout']['xaxis'] = {'title': 'Region ID'}
         fig_dict['layout']['xaxis']['type'] = 'category'
@@ -409,7 +348,7 @@ class Plot(object):
         fig_dict['data'].append(data_dict)
         fig = go.Figure(fig_dict)
 
-        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_waittime.html'))
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_waittime{suffix}.html'), auto_open=False)
 
     def plotly_metrics_data(self, mode):
         # fig = pt.subplots.make_subplots(rows=2, cols=2)
@@ -628,7 +567,7 @@ class Plot(object):
         fig = go.Figure(fig_dict)
 
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_metrics.html'))
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_metrics.html'), auto_open=False)
 
     def plotly_metrics_animation_data(self, mode, policies):
         ani_dict = {'data': [], 'layout': {}, 'frames': []}
@@ -689,7 +628,7 @@ class Plot(object):
     def plot_metrics_animation(self, mode, policies):
         ani_dict = self.plotly_metrics_animation_data(mode, policies)
         ani = go.Figure(ani_dict)
-        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_metrics_comparison.html'))
+        pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_metrics_comparison.html'), auto_open=False)
 
     def plot_topology(self):
         fig_dict = {'data': [], 'layout': {}}
@@ -726,7 +665,7 @@ class Plot(object):
         fig = go.Figure(fig_dict)
 
         # fig.update_layout(template='plotly_dark')
-        pt.offline.plot(fig, filename=os.path.join(RESULTS, 'Topology.html'))
+        pt.offline.plot(fig, filename=os.path.join(RESULTS, 'Topology.html'), auto_open=False)
 
 
 class MidpointNormalize(mpl.colors.Normalize):

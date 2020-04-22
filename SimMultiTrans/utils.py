@@ -46,8 +46,8 @@ def update_vehicle_initial_distribution(dist):
 if __name__ == '__main__':
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    # NODES = sorted([236, 237, 186, 170, 141])
+    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    NODES = sorted([236, 237, 186, 170, 141])
 
     j = json.dumps(generate_graph_file(os.path.join(CONFIG, 'gps.csv'),
                                        os.path.join(CONFIG, 'aam.csv')),
@@ -57,4 +57,4 @@ if __name__ == '__main__':
                   ff,
                   indent=4)
 
-    update_vehicle_initial_distribution([int(50) for i in range(len(NODES))])
+    update_vehicle_initial_distribution([int(20) for i in range(len(NODES))])

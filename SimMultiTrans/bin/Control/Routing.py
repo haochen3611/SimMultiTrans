@@ -6,6 +6,10 @@ import numpy as np
 
 import random
 import copy
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Routing(object):
@@ -18,10 +22,9 @@ class Routing(object):
             'taxi_walk_simplex': {}
         }
         self.vehicle_attri = vehicle_attri
-
         self.routing_method = 'simplex'
-
         self.near_nei = {}
+        self.info = None
 
     def syn_info(self, info):
         self.info = info
@@ -32,13 +35,13 @@ class Routing(object):
     def set_routing_method(self, method):
         if method in self.path:
             self.routing_method = method
-            print(f'Routing Method: {method}')
+            logger.info(f'Routing Method: {method}')
         else:
-            print(f'{method} is unavailable. Will use {self.routing_method}.')
+            logger.info(f'{method} is unavailable. Will use {self.routing_method}.')
 
     def get_path(self, ori, dest):
         if ori not in self.graph.graph_top and dest not in self.graph.graph_top:
-            print('invalid path')
+            logger.warning('invalid path')
             return {}
 
         if ori in self.path[self.routing_method] and dest in self.path[self.routing_method][ori]:

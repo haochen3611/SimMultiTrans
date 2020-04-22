@@ -7,6 +7,10 @@ from scipy.optimize import linprog
 
 import warnings
 import sys
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Rebalancing(object):
@@ -306,15 +310,15 @@ class Rebalancing(object):
         '''
         self.lazy = lazy
         self.range = vrange
-        print(f'Rebalancing Policy Parameters: lazy={lazy}, range={vrange}')
+        logger.info(f'Rebalancing Policy Parameters: lazy={lazy}, range={vrange}')
 
     def set_policy(self, policy):
         if policy in self.policies:
             self.policy = policy
-            print(f'Rebalancing Policy: {policy}')
+            logger.info(f'Rebalancing Policy: {policy}')
         else:
             # cur_policy_name = [name for name in self.policies if self.policies[name] == self.policy]
-            print(f'{policy} is unavailable. Will use {self.policy}.')
+            logger.info(f'{policy} is unavailable. Will use {self.policy}.')
 
     def Dispatch_active(self, mode, queue_p, queue_v):
         if self.vehicle_attri[mode]['reb'] == 'active' and np.sum(queue_p) != 0 and len(queue_p) == len(queue_v):

@@ -1,4 +1,5 @@
 import os
+import logging
 
 from SimMultiTrans.bin import *
 from SimMultiTrans.bin.Control import *
@@ -11,21 +12,23 @@ __all__ = [
     "Graph",
     "graph_file",
     "vehicle_file",
-    "p_name",
-    "r_name",
+    "REBALANCE_POLICY",
+    "ROUTING_POLICY",
     "RESULTS",
     "CONFIG",
     "Plot"
 ]
 
 os.makedirs(RESULTS, exist_ok=True)
+logging.basicConfig(level=logging.WARNING, filename=os.path.join(RESULTS, 'Simulator.log'))
+
 
 graph_file = 'city_nyc.json'
 vehicle_file = 'vehicle_nyc.json'
-p_name = 'Simplified_MaxWeight'
-r_name = 'simplex'
-lazy = 0
-radius = 20
+REBALANCE_POLICY = 'Simplified_MaxWeight'
+ROUTING_POLICY = 'simplex'
+LAZINESS = 0
+NEIGHBORS = 20
 
 graph_file = os.path.join(CONFIG, graph_file)
 vehicle_file = os.path.join(CONFIG, vehicle_file)

@@ -17,7 +17,7 @@ from SimMultiTrans.bin.Plot import Plot
 from SimMultiTrans.utils import RESULTS, CONFIG
 
 
-logging.basicConfig(level=logging.INFO, filename=os.path.join(RESULTS, 'Simulator.log'))
+logger = logging.getLogger(__name__)
 
 
 class Simulator(object):
@@ -78,7 +78,7 @@ class Simulator(object):
         # except OSError:
         #     pass
 
-        logging.info('Graph initialized')
+        logger.info('Graph initialized')
 
     def import_arrival_rate(self, file_name=None, unit=(1, 'min')):
         unit_trans = {
@@ -90,29 +90,29 @@ class Simulator(object):
 
         (tn1, tn2) = (self.graph.get_allnodes()[0], self.graph.get_allnodes()[1])
         if 'rate' in self.graph.graph_top[tn1]['nei'][tn2].keys():
-            print(f'Rate infomation is embedded in city.json')
+            logger.debug(f'Rate infomation is embedded in city.json')
             for index, node in enumerate(self.graph.get_allnodes()):
                 rate = np.asarray([self.graph.graph_top[node]['nei'][dest]['rate'] / unit_trans[unit[1]]
                                    if (dest != node) else 0 for dest in self.graph.get_allnodes()])
                 self.graph.graph_top[node]['node'].set_arrival_rate(rate)
         elif file_name is None:
-            print('No input data!')
+            logger.warning('No input data!')
         else:
-            print(f'Rate infomation is imported from {file_name}')
+            logger.info(f'Rate infomation is imported from {file_name}')
             # import from matrix
             file_name = f'{file_name}'
             rate_matrix = (1 / unit_trans[unit[1]]) * np.loadtxt(file_name, delimiter=',')
 
-            # print('Node: ', self.graph.get_allnodes())
+            # logger.info('Node: ', self.graph.get_allnodes())
             (row, col) = rate_matrix.shape
             if (row != col) or (row != self.graph.get_size()):
-                logging.error('Different dimensions of matrix and nodes')
-                print('Error input matirx!')
+                logger.error('Different dimensions of matrix and nodes')
+                logger.warning('Error input matirx!')
             else:
                 for index, node in enumerate(self.graph.get_allnodes()):
                     rate_matrix[index][index] = 0
                     self.graph.graph_top[node]['node'].set_arrival_rate(rate_matrix[:, index])
-                    # print(self.graph.graph_top[node]['node'].arr_prob_set)
+                    # logger.info(self.graph.graph_top[node]['node'].arr_prob_set)
 
     def import_vehicle_attribute(self, file_name):
         with open(f'{file_name}') as file_data:
@@ -145,8 +145,8 @@ class Simulator(object):
         self.time_horizon = int(time_horizon * unit_trans[unit])
 
         self.end_time = self.start_time + timedelta(seconds=self.time_horizon)
-        print(f'Time horizon: {self.time_horizon}')
-        print(f'From {self.start_time.strftime("%H:%M:%S")} to {self.end_time.strftime("%H:%M:%S")}')
+        logger.info(f'Time horizon: {self.time_horizon}')
+        logger.info(f'From {self.start_time.strftime("%H:%M:%S")} to {self.end_time.strftime("%H:%M:%S")}')
 
     def ori_dest_generator(self, method):
         if method.equal('uniform'):
@@ -160,7 +160,7 @@ class Simulator(object):
             return ori, dest
 
     def initialize(self, seed=0):
-        print('Initializing .', end='')
+        # print('Simulation starts')
 
         # save graph structure
         # file_path = 'results'
@@ -171,7 +171,7 @@ class Simulator(object):
         with open(os.path.join(RESULTS, 'city_topology.json'), 'w') as json_file:
             json.dump(saved_graph.graph_top, json_file)
         del saved_graph
-        print('.', end='')
+        # print('.', end='')
 
         cnt = len(self.graph.get_allnodes())
         # reset data set length
@@ -180,15 +180,11 @@ class Simulator(object):
                 self.vehicle_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_waittime[node][mode] = 0
-            if index % (cnt / 2) == 0:
-                print('.', end='')
 
         # generate passengers
         np.random.seed(seed)
         for index, node in enumerate(self.graph.get_allnodes()):
             self.graph.graph_top[node]['node'].passenger_generator(timehorizon=self.time_horizon)
-            if index % (cnt / 2) == 0:
-                print('.', end='')
 
         # generate vehicles
         for mode in self.vehicle_attri:
@@ -228,16 +224,14 @@ class Simulator(object):
                         elif v.type == 'priv':
                             # private vehicle wait at node
                             self.graph.graph_top[node]['node'].vehicle_arrive(v)
-                    if index % (cnt / 4) == 0:
-                        print('.', end='')
-        print('Done!')
+        # print('Done!')
 
     def reset(self):
         raise NotImplementedError
 
     def step(self, action, step_length, curr_time):
         if not self._is_running:
-            logging.info(f'Simulation started at {time()}')
+            logger.info(f'Simulation started at {time()}')
             self._is_running = True
             # reb_list = [mode for mode in self.vehicle_attri if (self.vehicle_attri[mode]['reb'] == 'active')]
             mode = 'taxi'
@@ -290,9 +284,9 @@ class Simulator(object):
                 self.passenger_waittime[node][mode] = self.graph.graph_top[node]['node'].get_average_wait_time(mode)
 
         stop_time = time()
-        logging.info(f'Simulation ended at {time()}')
-        print('\nSimulation ended')
-        print(f'Running time: {stop_time - start_time}')
+        logger.info(f'Simulation ended at {time()}')
+        # print('\nSimulation ended')
+        logger.info(f'Running time: {stop_time - start_time}')
 
         # print(self.vehicle_attri.keys())
         simulation_info = {
@@ -310,7 +304,7 @@ class Simulator(object):
         self.plot = Plot(self.graph, self.time_horizon, self.start_time)
 
         for node in self.graph.get_allnodes():
-            logging.info(f'Node {node} history: {self.passenger_queuelen[node]}')
+            logger.info(f'Node {node} history: {self.passenger_queuelen[node]}')
             # print(self.passenger_waittime[node])
             self.total_arrival['total'][node] = self.graph.graph_top[node]['node'].total_p
             self.total_arrival['served'][node] = self.graph.graph_top[node]['node'].total_served_p
@@ -340,8 +334,8 @@ class Simulator(object):
         # print(self.passenger_waittime)
 
     def run(self):
-        print('Simulation started: ')
-        logging.info(f'Simulation started at {time()}')
+        # print('Simulation started: ')
+        logger.info(f'Simulation started at {time()}')
         start_time = time()
 
         # list of modes that can rebalance
@@ -393,8 +387,8 @@ class Simulator(object):
                 for node in self.graph.get_allnodes():
                     self.node_savedata(node, timestep)
 
-            if timestep % (self.time_horizon / 20) == 0:
-                print('-', end='')
+            # if timestep % (self.time_horizon / 20) == 0:
+            #     logger.info('-', end='')
 
         self.finishing_touch(start_time)
 
@@ -416,7 +410,7 @@ class Simulator(object):
         info = {
             'p_queue': self.passenger_queuelen,
             'v_queue': self.vehicle_queuelen,
-            'p_wait': self.passegner_waittime,
+            'p_wait': self.passenger_waittime,
             'time': timestep
         }
         # print(info)
@@ -488,20 +482,20 @@ class Simulator(object):
     def plot_topology(self, method='ploty'):
         self.plot.plot_topology(method='plotly')
 
-    def plot_passenger_queuelen(self, mode, time):
+    def plot_pass_queue_len_at_time(self, mode, time):
         self.plot.plot_passenger_queuelen(mode=mode, time=time)
 
-    def passenger_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        self.plot.passenger_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
+    def plot_pass_queue_anim(self, mode, frames):
+        self.plot.passenger_queue_animation(mode, frames)
 
-    def vehicle_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        self.plot.vehicle_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
+    def plot_veh_queue_anim(self, mode, frames):
+        self.plot.vehicle_queue_animation(mode, frames)
 
-    def combination_queue_animation(self, mode, frames, autoplay=False, autosave=False):
-        self.plot.combination_queue_animation(mode, frames, autoplay=autoplay, autosave=autosave)
+    def plot_combo_queue_anim(self, mode, frames, suffix: str = None):
+        self.plot.combination_queue_animation(mode, frames, suffix)
 
-    def passenger_queuelen_time(self, mode):
-        self.plot.plot_passenger_queuelen_time(mode)
+    def plot_pass_queue_len(self, mode, suffix: str = None):
+        self.plot.plot_passenger_queuelen_time(mode, suffix)
 
-    def passegner_waittime(self, mode):
-        self.plot.plot_passenger_waittime(mode)
+    def plot_pass_wait_time(self, mode, suffix: str = None):
+        self.plot.plot_passenger_waittime(mode, suffix)
