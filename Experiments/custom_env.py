@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
     parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
     parser.add_argument('--config', nargs='?', metavar='<Configuration file path>',
-                        type=str, default='taxi_reb_sac.json')
+                        type=str, default='None')
     parser.add_argument('--init_veh', nargs='?', metavar='<Initial vehicle per node>', type=int, default=10)
     parser.add_argument('--num_cpu', nargs='?', metavar='<Number of CPU workers>', type=int, default=1)
     parser.add_argument('--num_gpu', nargs='?', metavar='<Number of GPU workers>', type=int, default=0)
