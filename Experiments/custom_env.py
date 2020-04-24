@@ -177,7 +177,7 @@ if __name__ == '__main__':
             "hidden_layer_sizes": (256, 256)}
         configure["policy_model"] = {
             "hidden_activation": "relu",
-            "hidden_layer_sizes": (128, 128),
+            "hidden_layer_sizes": (256, ),
         }
         configure["grad_norm_clipping"] = 10
         configure["tau"] = 1e-3
