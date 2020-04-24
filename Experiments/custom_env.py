@@ -205,6 +205,8 @@ if __name__ == '__main__':
         results = trainer.train()
         if _ % 100 == 0:
             print(pretty_print(results))
+    check_pt = trainer.save()
+    print(f"Model saved at {check_pt}")
 
     # analysis = tune.run(
     #     "SAC",
