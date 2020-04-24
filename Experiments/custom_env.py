@@ -51,7 +51,6 @@ class TaxiRebalance(gym.Env, ABC):
         self._travel_time = None
         self._pre_action = None
         self._episode = 0
-        self._pre_total_cost = 0
 
     def reset(self):
         if self._done:
@@ -69,7 +68,6 @@ class TaxiRebalance(gym.Env, ABC):
             self._is_running = False
 
         self.curr_time = 0
-        self._pre_total_cost = 0
         self._alpha = 0
         self._step = 0
 
@@ -123,10 +121,7 @@ class TaxiRebalance(gym.Env, ABC):
         self.curr_time += self.reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        curr_total_cost = (p_queue.sum() + np.maximum(np.array(v_queue-p_queue,
-                                                               ndmin=2).T*action*self._travel_time, 0).sum())
-        reward = self._pre_total_cost - curr_total_cost
-        self._pre_total_cost = curr_total_cost
+        reward = -(p_queue.sum() + np.maximum(np.array(v_queue-p_queue, ndmin=2).T*action*self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
