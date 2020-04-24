@@ -62,7 +62,7 @@ class TaxiRebalance(gym.Env, ABC):
             self.sim.finishing_touch(self._start_time)
             self.sim.save_result(RESULTS)
             if self._config['plot_queue_len']:
-                # self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
+                self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
                 self.sim.plot_pass_queue_len(mode='taxi', suffix=f'ep_{self._episode}')
                 self.sim.plot_pass_wait_time(mode='taxi', suffix=f'ep_{self._episode}')
             self._is_running = False
@@ -171,6 +171,17 @@ if __name__ == '__main__':
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
         configure['timesteps_per_iteration'] = 300  # MDP steps per iteration
+
+        configure["Q_model"] = {
+            "hidden_activation": "relu",
+            "hidden_layer_sizes": (256, 256)}
+        configure["policy_model"] = {
+            "hidden_activation": "relu",
+            "hidden_layer_sizes": (128, 128),
+        }
+        configure["grad_norm_clipping"] = 10
+        configure["tau"] = 1e-3
+        configure["target_network_update_freq"] = 30
         configure['optimization'] = {
             "actor_learning_rate": args.a_lr,
             "critic_learning_rate": args.c_lr,
@@ -187,7 +198,7 @@ if __name__ == '__main__':
                     "max_passenger": 1e6,
                     "nodes_list": node_list,
                     "near_neighbor": len(node_list)-1,
-                    "plot_queue_len": True
+                    "plot_queue_len": False
                 }
     else:
         for conf in file_conf:

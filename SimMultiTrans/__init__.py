@@ -16,7 +16,10 @@ __all__ = [
 ]
 
 os.makedirs(utils.RESULTS, exist_ok=True)
-logging.basicConfig(level=logging.WARNING, filename=os.path.join(utils.RESULTS, 'Simulator.log'))
+logging.basicConfig(level=logging.WARNING,
+                    filename=os.path.join(utils.RESULTS, 'Simulator.log'),
+                    filemode='w',
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 
