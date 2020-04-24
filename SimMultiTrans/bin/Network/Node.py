@@ -113,11 +113,14 @@ class Node(object):
             self.passenger[mode].remove(p)
 
     def passengers_clear(self):
+        not_served_p = 0
         for mode in self.passenger:
             for p in self.passenger[mode]:
                 # waittime = self.time - p.get_stoptime()
                 waittime = self.time - p.stoptime
                 self.p_wait[mode].append(waittime)
+                not_served_p += 1
+        return not_served_p
 
     def vehicle_park(self, v, leavetime):
         self.park.append((v, leavetime))

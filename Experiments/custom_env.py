@@ -121,7 +121,7 @@ class TaxiRebalance(gym.Env, ABC):
         self.curr_time += self.reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -(p_queue.sum() + np.maximum(np.array(v_queue-p_queue, ndmin=2).T*action*self._travel_time, 0).sum())
+        reward = -(p_queue.sum() + 16*np.maximum(np.array(v_queue-p_queue, ndmin=2).T*action*self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)

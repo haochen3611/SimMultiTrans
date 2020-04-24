@@ -25,6 +25,9 @@ class Road(object):
         self.v_count = {}
         self.v_reb_count = {}
 
+        self.v_total_time = {}
+        self.v_reb_time = {}
+
     def arrive(self, v):
         """
         A vehicle arrived on the road
@@ -33,18 +36,25 @@ class Road(object):
         if time == 0 or not v.onroad:
             time = int(self.dist / v.get_velocity('m/s'))
         leave_time = self.time + time
+
         self.vehicle.append((v, leave_time))
         if v.mode != 'walk':
             logging.info(f'Time {self.time}: Vel {v.id} arrive at road ({self.ori},{self.dest})')
 
         if v.mode in self.v_count:
             self.v_count[v.mode] += 1
+            self.v_total_time[v.mode] += time
+
             if v.mode in self.v_reb_count and v.reb == 'active' and v.get_occupiedseats() == 0:
                 self.v_reb_count[v.mode] += 1
+                self.v_reb_time[v.mode] += time
         else:
             self.v_count[v.mode] = 1
-            if v.mode not in self.v_reb_count and v.reb == 'active' and v.get_occupiedseats() == 0:
-                self.v_reb_count[v.mode] = 1
+            self.v_total_time[v.mode] = time
+
+        if v.mode not in self.v_reb_count and v.reb == 'active' and v.get_occupiedseats() == 0:
+            self.v_reb_count[v.mode] = 1
+            self.v_reb_time[v.mode] = time
 
     def leave(self, g):
         """
@@ -84,10 +94,12 @@ class Road(object):
         return 0 if (mode not in self.v_reb_count) else self.v_reb_count[mode]
 
     def get_total_time(self, mode):
-        return 0 if (mode not in self.v_count) else self.triptime * self.v_count[mode]
+        # return 0 if (mode not in self.v_count) else self.triptime*self.v_count[mode]
+        return 0 if (mode not in self.v_total_time) else self.v_total_time[mode]
 
     def get_total_reb_time(self, mode):
-        return 0 if (mode not in self.v_reb_count) else self.triptime * self.v_reb_count[mode]
+        # return 0 if (mode not in self.v_reb_count) else self.triptime*self.v_reb_count[mode]
+        return 0 if (mode not in self.v_reb_time) else self.v_reb_time[mode]
 
     def get_total_distance(self, mode):
         return 0 if (mode not in self.v_count) else self.dist * self.v_count[mode]

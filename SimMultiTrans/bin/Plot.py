@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 
 from SimMultiTrans.utils import CONFIG, RESULTS
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -69,6 +68,9 @@ class Plot(object):
         self.total_triptime = metrics['total_triptime']
         self.total_arrival = metrics['total_arrival']
         self.sum_totalarrival = metrics['total_num_arrival']
+        self.not_served = metrics['not_served']
+        # self.not_served = 0
+
 
         for node in self.graph.graph_top:
             for mode in self.vehicle_attri:
@@ -298,7 +300,7 @@ class Plot(object):
         if suffix is None:
             suffix = ''
         else:
-            suffix = "_"+suffix
+            suffix = "_" + suffix
         fig_dict = {'data': [], 'layout': {}}
         fig_dict['layout']['xaxis'] = {'title': 'Time'}
         fig_dict['layout']['xaxis']['ticktext'] = [
@@ -331,7 +333,7 @@ class Plot(object):
         if suffix is None:
             suffix = ''
         else:
-            suffix = "_"+suffix
+            suffix = "_" + suffix
         fig_dict = {'data': [], 'layout': {}}
         fig_dict['layout']['xaxis'] = {'title': 'Region ID'}
         fig_dict['layout']['xaxis']['type'] = 'category'
@@ -382,7 +384,7 @@ class Plot(object):
         # passenger throughtput
         thrpt_y = np.around([
             (self.total_trip['total'][node][mode] - self.total_trip['reb'][node][mode]) / float(
-                self.time_horizon) * 3600
+                self.time_horizon) * 60
             for node in x
         ], decimals=2)
         data_dict = {
@@ -528,7 +530,7 @@ class Plot(object):
                 ['Arrivals', 'Trips', 'Averaged Miles Traveled', 'Averaged Minutes Traveled', 'Averaged Waiting Time',
                  'Average Throughput'],
                 [
-                    self.sum_totalarrival,
+                    f'{self.sum_totalarrival} ({self.not_served})',
                     sum_trip['total'],
                     np.around(self.total_tripdist['total'][mode] / float(sum_trip['total']) / 1609.34, decimals=2),
                     np.around(self.total_triptime['total'][mode] / float(sum_trip['total']) / 60.0, decimals=2),

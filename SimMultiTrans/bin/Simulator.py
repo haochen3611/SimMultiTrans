@@ -62,9 +62,10 @@ class Simulator(object):
             'total': {},
             'served': {}
         }
+        self.not_served = 0
 
         self.vehicle_attri = {}
-        self.vehicel_onroad = []
+        self.vehicle_onroad = []
 
         for node in self.graph.graph_top:
             self.passenger_queuelen[node] = {}
@@ -279,7 +280,7 @@ class Simulator(object):
         self._is_running = False
         # At the end, count all the waiting time of passegners not served
         for node in self.graph.get_allnodes():
-            self.graph.graph_top[node]['node'].passengers_clear()
+            self.not_served += self.graph.graph_top[node]['node'].passengers_clear()
             for mode in self.vehicle_attri:
                 self.passenger_waittime[node][mode] = self.graph.graph_top[node]['node'].get_average_wait_time(mode)
 
@@ -472,10 +473,21 @@ class Simulator(object):
             'total_tripdist': self.total_tripdist,
             'total_triptime': self.total_triptime,
             'total_arrival': self.total_arrival,
-            'total_num_arrival': total_num_arrival
+            'total_num_arrival': total_num_arrival,
+            'not_served': self.not_served
         }
         with open(os.path.join(path_name, 'metrics.json'), 'w') as json_file:
             json.dump(saved_metrics, json_file)
+
+        self.plot.queue_p = self.passenger_queuelen
+        self.plot.queue_v = self.vehicle_queuelen
+        self.plot.waittime_p = self.passenger_waittime
+        self.plot.total_trip = self.total_trip
+        self.plot.total_tripdist = self.total_tripdist
+        self.plot.total_triptime = self.total_triptime
+        self.plot.total_arrival = self.total_arrival
+        self.plot.sum_totalarrival = total_num_arrival
+        self.plot.not_served = self.not_served
 
         del saved_q_length, saved_v_length
 
