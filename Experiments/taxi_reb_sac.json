@@ -1,0 +1,21 @@
+{
+    "num_workers": 2,
+    "num_gpus": 0,
+    "timesteps_per_iteration": 300,
+    "optimization": {
+        "actor_learning_rate": 0.003,
+        "critic_learning_rate": 0.003,
+        "entropy_learning_rate": 0.003
+    },
+    "env_config": {
+        "start_time": "08:00:00",
+        "time_horizon": 10,
+        "lazy": 1,
+        "range": 20,
+        "max_vehicle": 500000,
+        "reb_interval": 600,
+        "max_travel_time": 1000,
+        "max_passenger": 1000000.0,
+        "plot_queue_len": true
+    }
+}

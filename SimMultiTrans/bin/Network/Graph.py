@@ -38,9 +38,7 @@ class Graph(object):
 
     def generate_nodes(self):
         for node in self.graph_top:
-            # print(node, (self.graph_top[node]['lat'], self.graph_top[node]['lon']), self.graph_top[node]['mode'].split(','))
             n = Node(node, self.graph_top)
-            # print(n.id)
             self.graph_top[node].update({'node': n})
 
     def export_graph(self, file_name):

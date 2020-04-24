@@ -1,8 +1,9 @@
 import time
 from abc import ABC
+import os
 
 from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file
-from SimMultiTrans.utils import RESULTS
+from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
@@ -72,6 +73,9 @@ class TaxiRebalance(gym.Env, ABC):
         self._alpha = 0
         self._step = 0
 
+        self.graph = Graph()
+        self.graph.import_graph(graph_file)
+        self.sim = Simulator(self.graph)
         self.sim.import_arrival_rate(unit=(1, 'sec'))
         self.sim.import_vehicle_attribute(file_name=vehicle_file)
         self.sim.set_running_time(start_time=self._config['start_time'],
@@ -137,6 +141,9 @@ class TaxiRebalance(gym.Env, ABC):
 if __name__ == '__main__':
 
     parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
+    parser.add_argument('--config', nargs='?', metavar='<Configuration file path>',
+                        type=str, default='taxi_reb_sac.json')
+    parser.add_argument('--init_veh', nargs='?', metavar='<Initial vehicle per node>', type=int, default=10)
     parser.add_argument('--num_cpu', nargs='?', metavar='<Number of CPU workers>', type=int, default=1)
     parser.add_argument('--num_gpu', nargs='?', metavar='<Number of GPU workers>', type=int, default=0)
     parser.add_argument('--iter', nargs='?', metavar='<Number of iterations>', type=int, default=1)
@@ -145,34 +152,56 @@ if __name__ == '__main__':
     parser.add_argument('--e_lr', nargs='?', metavar='<entropy learning rate>', type=float, default=3e-3)
     args = parser.parse_args()
 
+    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    NODES = sorted([236, 237, 186, 170, 141])
+
+    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
+                      os.path.join(CONFIG, 'aam.csv'),
+                      NODES)
+    update_vehicle_initial_distribution([int(args.init_veh) for i in range(len(NODES))],
+                                        nodes=NODES)
+
     ray.init()
     with open(graph_file, 'r') as f:
         node_list = json.load(f)
     node_list = [x for x in node_list]
 
     configure = sac.DEFAULT_CONFIG.copy()
-    configure['num_workers'] = args.num_cpu
-    configure['num_gpus'] = args.num_gpu
     configure['env'] = TaxiRebalance
-    configure['timesteps_per_iteration'] = 300  # MDP steps per iteration
-    configure['optimization'] = {
-        "actor_learning_rate": args.a_lr,
-        "critic_learning_rate": args.c_lr,
-        "entropy_learning_rate": args.e_lr,
-    }
-    configure['env_config'] = {
-                "start_time": '08:00:00',
-                "time_horizon": 10,  # hours
-                "lazy": 1,
-                "range": 20,
-                "max_vehicle": 500000,
-                "reb_interval": 600,  # seconds 60 steps per episode
-                "max_travel_time": 1000,
-                "max_passenger": 1e6,
-                "nodes_list": node_list,
-                "near_neighbor": len(node_list)-1,
-                "plot_queue_len": True
-            }
+    try:
+        with open(args.config, 'r') as file:
+            file_conf = json.load(file)
+    except FileNotFoundError:
+        configure['num_workers'] = args.num_cpu
+        configure['num_gpus'] = args.num_gpu
+        configure['timesteps_per_iteration'] = 300  # MDP steps per iteration
+        configure['optimization'] = {
+            "actor_learning_rate": args.a_lr,
+            "critic_learning_rate": args.c_lr,
+            "entropy_learning_rate": args.e_lr,
+        }
+        configure['env_config'] = {
+                    "start_time": '08:00:00',
+                    "time_horizon": 10,  # hours
+                    "lazy": 1,
+                    "range": 20,
+                    "max_vehicle": 500000,
+                    "reb_interval": 600,  # seconds 60 steps per episode
+                    "max_travel_time": 1000,
+                    "max_passenger": 1e6,
+                    "nodes_list": node_list,
+                    "near_neighbor": len(node_list)-1,
+                    "plot_queue_len": True
+                }
+    else:
+        for conf in file_conf:
+            configure[conf] = file_conf[conf]
+        configure['env_config']['nodes_list'] = node_list
+        configure['env_config']["near_neighbor"] = len(node_list)-1
+
+    # with open('taxi_reb_sac.json', 'w') as file:
+    #     json.dump(configure, file, indent=4)
 
     trainer = sac.SACTrainer(config=configure)
     # trainer = ppo.PPOTrainer(config=configure)
