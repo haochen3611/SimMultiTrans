@@ -1,0 +1,35 @@
+{
+    "tau": 5e-3,
+    "Q_model": {
+        "hidden_activation": "relu",
+        "hidden_layer_sizes": [256, 256]
+    },
+    "policy_model": {
+        "hidden_activation": "relu",
+        "hidden_layer_sizes": [256, 128]
+    },
+    "rollout_fragment_length": 1,
+    "train_batch_size": 256,
+    "grad_norm_clipping": 5,
+    "target_network_update_freq": 0,
+    "target_entropy": 1,
+    "num_workers": 60,
+    "num_gpus": 0,
+    "timesteps_per_iteration": 300,
+    "optimization": {
+        "actor_learning_rate": 0.000001,
+        "critic_learning_rate": 0.000001,
+        "entropy_learning_rate": 0.000001
+    },
+    "env_config": {
+        "start_time": "08:00:00",
+        "time_horizon": 10,
+        "lazy": 1,
+        "range": 20,
+        "max_vehicle": 500000,
+        "reb_interval": 600,
+        "max_travel_time": 1000,
+        "max_passenger": 1000000.0,
+        "plot_queue_len": true
+    }
+}

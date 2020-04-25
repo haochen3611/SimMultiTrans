@@ -60,7 +60,7 @@ class TaxiRebalance(gym.Env, ABC):
 
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
-            self.sim.save_result(RESULTS)
+            # self.sim.save_result(RESULTS)
             if self._config['plot_queue_len']:
                 self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
                 self.sim.plot_pass_queue_len(mode='taxi', suffix=f'ep_{self._episode}')
@@ -206,7 +206,7 @@ if __name__ == '__main__':
         configure['env_config']['nodes_list'] = node_list
         configure['env_config']["near_neighbor"] = len(node_list)-1
 
-    # with open('taxi_reb_sac.json', 'w') as file:
+    # with open('sac_0.json', 'w') as file:
     #     json.dump(configure, file, indent=4)
 
     trainer = sac.SACTrainer(config=configure)
