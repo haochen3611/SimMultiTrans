@@ -12,7 +12,7 @@
     "train_batch_size": 256,
     "grad_norm_clipping": 5,
     "target_network_update_freq": 0,
-    "target_entropy": 1,
+    "target_entropy": "auto",
     "num_workers": 60,
     "num_gpus": 0,
     "timesteps_per_iteration": 300,
@@ -30,6 +30,6 @@
         "reb_interval": 600,
         "max_travel_time": 1000,
         "max_passenger": 1000000.0,
-        "plot_queue_len": true
+        "plot_queue_len": false
     }
 }

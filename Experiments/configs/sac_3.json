@@ -30,6 +30,6 @@
         "reb_interval": 600,
         "max_travel_time": 1000,
         "max_passenger": 1000000.0,
-        "plot_queue_len": true
+        "plot_queue_len": false
     }
 }
