@@ -10,7 +10,7 @@
     },
     "rollout_fragment_length": 1,
     "train_batch_size": 256,
-    "grad_norm_clipping": 5,
+    "grad_norm_clipping": null,
     "target_network_update_freq": 0,
     "target_entropy": "auto",
     "num_workers": 60,
