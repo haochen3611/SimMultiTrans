@@ -38,7 +38,8 @@ class TaxiRebalance(gym.Env, ABC):
         self.num_nodes = len(self._config['nodes_list'])
         self.near_neighbor = self._config['near_neighbor']
 
-        self.action_space = Box(low=0, high=1, shape=((self.near_neighbor+1)*self.num_nodes, ))
+        # self.action_space = Box(low=0, high=1, shape=((self.near_neighbor)*self.num_nodes, ))
+        self.action_space = MultiDiscrete([self.near_neighbor]*self.num_nodes)
         self.observation_space = Tuple((Box(0, self.max_passenger, shape=(self.num_nodes, ), dtype=np.int64),
                                         Box(0, self.max_vehicle, shape=(self.num_nodes, ), dtype=np.int64)))
 
@@ -89,7 +90,7 @@ class TaxiRebalance(gym.Env, ABC):
                 if i != j:
                     self._travel_time[i, j] = self.graph.graph_top[node]['node'].road[road].dist
         self._travel_time /= np.linalg.norm(self._travel_time, ord=np.inf)
-        self._pre_action = np.zeros((self.near_neighbor + 1, self.num_nodes))
+        self._pre_action = np.zeros((self.near_neighbor, self.num_nodes))
 
         with open(vehicle_file, 'r') as file:
             vehicle_dist = json.load(file)
@@ -103,17 +104,18 @@ class TaxiRebalance(gym.Env, ABC):
         if np.isnan(action).sum() > 0:
             print(self._step)
             action = self.action_space.sample()
-        action = action.reshape((self.num_nodes, self.near_neighbor+1))
-        action = action / np.sum(action, axis=1, keepdims=True)
-        # action = self._alpha*action + (1 - self._alpha) * np.eye(5)
-        # print(action)
+        action = np.squeeze(action)
+        action_mat = np.zeros((self.num_nodes, self.near_neighbor))
+        for idx, a in enumerate(action):
+            action_mat[idx, a] = 1
+        print(action_mat)
 
         if not self._is_running:
             self._is_running = True
 
         sim_action = dict()
         for idx, node in enumerate(self._config['nodes_list']):
-            sim_action[node] = np.squeeze(action[idx, :]/np.sum(action[idx, :]))
+            sim_action[node] = action_mat[idx, :]
         # print(sim_action)
         p_queue, v_queue = self.sim.step(action=sim_action,
                                          step_length=self.reb_interval,
@@ -121,7 +123,8 @@ class TaxiRebalance(gym.Env, ABC):
         self.curr_time += self.reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -(p_queue.sum() + 16*np.maximum(np.array(v_queue-p_queue, ndmin=2).T*action*self._travel_time, 0).sum())
+        reward = -(p_queue.sum() +
+                   np.maximum((v_queue-p_queue).reshape((self.num_nodes, 1))*action_mat*self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
@@ -162,7 +165,8 @@ if __name__ == '__main__':
         node_list = json.load(f)
     node_list = [x for x in node_list]
 
-    configure = sac.DEFAULT_CONFIG.copy()
+    # configure = sac.DEFAULT_CONFIG.copy()
+    configure = ppo.DEFAULT_CONFIG.copy()
     configure['env'] = TaxiRebalance
     try:
         with open(args.config, 'r') as file:
@@ -170,23 +174,7 @@ if __name__ == '__main__':
     except FileNotFoundError:
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
-        configure['timesteps_per_iteration'] = 300  # MDP steps per iteration
-
-        configure["Q_model"] = {
-            "hidden_activation": "relu",
-            "hidden_layer_sizes": (256, 256)}
-        configure["policy_model"] = {
-            "hidden_activation": "relu",
-            "hidden_layer_sizes": (256, ),
-        }
-        configure["grad_norm_clipping"] = 10
-        configure["tau"] = 1e-3
-        configure["target_network_update_freq"] = 30
-        configure['optimization'] = {
-            "actor_learning_rate": args.a_lr,
-            "critic_learning_rate": args.c_lr,
-            "entropy_learning_rate": args.e_lr,
-        }
+        configure['vf_clip_param'] = 1000
         configure['env_config'] = {
                     "start_time": '08:00:00',
                     "time_horizon": 10,  # hours
@@ -197,20 +185,20 @@ if __name__ == '__main__':
                     "max_travel_time": 1000,
                     "max_passenger": 1e6,
                     "nodes_list": node_list,
-                    "near_neighbor": len(node_list)-1,
-                    "plot_queue_len": False
+                    "near_neighbor": len(node_list),
+                    "plot_queue_len": True
                 }
     else:
         for conf in file_conf:
             configure[conf] = file_conf[conf]
         configure['env_config']['nodes_list'] = node_list
-        configure['env_config']["near_neighbor"] = len(node_list)-1
+        configure['env_config']["near_neighbor"] = len(node_list)
 
     # with open('sac_0.json', 'w') as file:
     #     json.dump(configure, file, indent=4)
 
-    trainer = sac.SACTrainer(config=configure)
-    # trainer = ppo.PPOTrainer(config=configure)
+    # trainer = sac.SACTrainer(config=configure)
+    trainer = ppo.PPOTrainer(config=configure)
     for _ in range(args.iter):
         # print('Iteration:', i)
         results = trainer.train()
@@ -218,29 +206,3 @@ if __name__ == '__main__':
             print(pretty_print(results))
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")
-
-    # analysis = tune.run(
-    #     "SAC",
-    #     stop=stop_condition,
-    #     reuse_actors=True,
-    #     config={
-    #         "env": TaxiRebalance,
-    #         "lr": 1e-4,
-    #         "num_workers": 1,
-    #         "env_config": {
-    #             "start_time": '08:00:00',
-    #             "time_horizon": 100,
-    #             "lazy": 1,
-    #             "range": 20,
-    #             "total_vehicle": 500000,
-    #             "reb_interval": 600,
-    #             "max_travel_time": 1000,
-    #             "max_passenger": 1e6,
-    #             "nodes_list": node_list,
-    #             "near_neighbor": len(node_list)-1,
-    #             "timesteps_total": stop_condition["timesteps_total"]
-    #         }
-    #     }
-    # )
-
-    # print(analysis)
