@@ -37,6 +37,7 @@ class TaxiRebalance(gym.Env, ABC):
         self.max_passenger = self._config['max_passenger']
         self.num_nodes = len(self._config['nodes_list'])
         self.near_neighbor = self._config['near_neighbor']
+        self.dispatch_rate = self._config['dispatch_rate']
 
         # self.action_space = Box(low=0, high=1, shape=((self.near_neighbor)*self.num_nodes, ))
         self.action_space = MultiDiscrete([self.near_neighbor]*self.num_nodes)
@@ -107,7 +108,9 @@ class TaxiRebalance(gym.Env, ABC):
         action = np.squeeze(action)
         action_mat = np.zeros((self.num_nodes, self.near_neighbor))
         for idx, a in enumerate(action):
-            action_mat[idx, a] = 1
+            action_mat[idx, a] = self.dispatch_rate
+            if a != idx:
+                action_mat[idx, idx] = 1 - self.dispatch_rate
         print(action_mat)
 
         if not self._is_running:
@@ -145,9 +148,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_cpu', nargs='?', metavar='<Number of CPU workers>', type=int, default=1)
     parser.add_argument('--num_gpu', nargs='?', metavar='<Number of GPU workers>', type=int, default=0)
     parser.add_argument('--iter', nargs='?', metavar='<Number of iterations>', type=int, default=1)
-    parser.add_argument('--a_lr', nargs='?', metavar='<Actor learning rate>', type=float, default=3e-3)
-    parser.add_argument('--c_lr', nargs='?', metavar='<Critic learning rate>', type=float, default=3e-3)
-    parser.add_argument('--e_lr', nargs='?', metavar='<entropy learning rate>', type=float, default=3e-3)
+    parser.add_argument('--lr', nargs='?', metavar='<Learning rate>', type=float, default=3e-3)
+    parser.add_argument('--dpr', nargs='?', metavar='<Percentage used for dispatch at each node>',
+                        type=float, default=1)
+
+
     args = parser.parse_args()
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
@@ -175,6 +180,7 @@ if __name__ == '__main__':
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
         configure['vf_clip_param'] = 1000
+        configure['lr'] = args.lr
         configure['env_config'] = {
                     "start_time": '08:00:00',
                     "time_horizon": 10,  # hours
@@ -186,7 +192,8 @@ if __name__ == '__main__':
                     "max_passenger": 1e6,
                     "nodes_list": node_list,
                     "near_neighbor": len(node_list),
-                    "plot_queue_len": True
+                    "plot_queue_len": True,
+                    "dispatch_rate": args.dpr
                 }
     else:
         for conf in file_conf:
