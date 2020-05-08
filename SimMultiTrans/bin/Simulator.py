@@ -437,9 +437,9 @@ class Simulator(object):
 
     def save_result(self, path_name, suffix=None):
         if suffix is None:
-            suffix = time()
+            suffix = str(time())
         else:
-            suffix += '-' + str(time())
+            suffix = str(suffix) + '-' + str(time())
         try:
             os.mkdir(path_name)
         except OSError:
