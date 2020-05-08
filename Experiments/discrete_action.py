@@ -111,7 +111,7 @@ class TaxiRebalance(gym.Env, ABC):
             action_mat[idx, a] = self.dispatch_rate
             if a != idx:
                 action_mat[idx, idx] = 1 - self.dispatch_rate
-        print(action_mat)
+        # print(action_mat)
 
         if not self._is_running:
             self._is_running = True
