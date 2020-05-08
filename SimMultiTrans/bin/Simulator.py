@@ -435,8 +435,11 @@ class Simulator(object):
     def set_multiprocessing(self, flag=False):
         self.multiprocessing_flag = flag
 
-    def save_result(self, path_name):
-        suffix = time()
+    def save_result(self, path_name, suffix=None):
+        if suffix is None:
+            suffix = time()
+        else:
+            suffix += '-' + str(time())
         try:
             os.mkdir(path_name)
         except OSError:

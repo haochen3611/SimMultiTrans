@@ -62,7 +62,7 @@ class TaxiRebalance(gym.Env, ABC):
             self.sim.finishing_touch(self._start_time)
             # self.sim.save_result(RESULTS)
             if self._config['plot_queue_len']:
-                self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
+                # self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
                 self.sim.plot_pass_queue_len(mode='taxi', suffix=f'ep_{self._episode}')
                 self.sim.plot_pass_wait_time(mode='taxi', suffix=f'ep_{self._episode}')
             self._is_running = False
