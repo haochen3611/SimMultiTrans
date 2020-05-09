@@ -47,7 +47,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._is_running = False
         self._done = False
         self._start_time = time.time()
-        self._alpha = 0
+        self._alpha = self._config['alpha']
         self._step = 0
         self._total_vehicle = None
         self._travel_time = None
@@ -71,7 +71,6 @@ class TaxiRebalance(gym.Env, ABC):
             self._is_running = False
 
         self.curr_time = 0
-        self._alpha = 0
         self._step = 0
 
         self.graph = Graph()
@@ -128,7 +127,8 @@ class TaxiRebalance(gym.Env, ABC):
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
         reward = -(p_queue.sum() +
-                   np.maximum((v_queue-p_queue).reshape((self.num_nodes, 1))*action_mat*self._travel_time, 0).sum())
+                   self._alpha*np.maximum((v_queue-p_queue).reshape((self.num_nodes, 1)) *
+                                          action_mat*self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
@@ -152,7 +152,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr', nargs='?', metavar='<Learning rate>', type=float, default=3e-3)
     parser.add_argument('--dpr', nargs='?', metavar='<Percentage used for dispatch at each node>',
                         type=float, default=1)
-
+    parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
+                        type=float, default=1)
 
     args = parser.parse_args()
 
@@ -183,19 +184,20 @@ if __name__ == '__main__':
         configure['vf_clip_param'] = 1000
         configure['lr'] = args.lr
         configure['env_config'] = {
-                    "start_time": '08:00:00',
-                    "time_horizon": 10,  # hours
-                    "lazy": 1,
-                    "range": 20,
-                    "max_vehicle": 500000,
-                    "reb_interval": 600,  # seconds 60 steps per episode
-                    "max_travel_time": 1000,
-                    "max_passenger": 1e6,
-                    "nodes_list": node_list,
-                    "near_neighbor": len(node_list),
-                    "plot_queue_len": False,
-                    "dispatch_rate": args.dpr
-                }
+            "start_time": '08:00:00',
+            "time_horizon": 10,  # hours
+            "lazy": 1,
+            "range": 20,
+            "max_vehicle": 500000,
+            "reb_interval": 600,  # seconds 60 steps per episode
+            "max_travel_time": 1000,
+            "max_passenger": 1e6,
+            "nodes_list": node_list,
+            "near_neighbor": len(node_list),
+            "plot_queue_len": False,
+            "dispatch_rate": args.dpr,
+            "alpha": args.alpha
+            }
     else:
         for conf in file_conf:
             configure[conf] = file_conf[conf]

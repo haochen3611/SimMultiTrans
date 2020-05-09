@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class Plot(object):
 
-    def __init__(self, graph, time_horizon, start_time):
+    def __init__(self, graph, time_horizon=None, start_time=None):
         self.graph = graph
         self.time_horizon = time_horizon
         self.start_time = start_time
@@ -35,10 +35,10 @@ class Plot(object):
             logger.error('Map Key Error!')
             raise
 
-    def import_results(self, path_name):
-        self.graph.import_graph(os.path.join(RESULTS, 'city_topology.json'))
+    def import_results(self, path_name=RESULTS):
+        self.graph.import_graph(os.path.join(path_name, 'city_topology.json'))
 
-        with open(os.path.join(RESULTS, 'simulation_info.json')) as json_file:
+        with open(os.path.join(path_name, 'simulation_info.json')) as json_file:
             simulation_info = json.load(json_file)
 
         self.time_horizon = simulation_info['Time_horizon']
@@ -259,7 +259,7 @@ class Plot(object):
         ani = go.Figure(ani_dict)
         pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_queue.html'), auto_open=False)
 
-    def combination_queue_animation(self, mode, frames, suffix):
+    def combination_queue_animation(self, mode, frames, suffix=None):
         logger.info(f'Plot combined queue length of passengers and {mode}')
         if suffix is None:
             suffix = ''
@@ -296,7 +296,7 @@ class Plot(object):
 
         pt.offline.plot(ani, filename=os.path.join(RESULTS, f'{mode}_combined_queue{suffix}.html'), auto_open=False)
 
-    def plot_passenger_queuelen_time(self, mode, suffix):
+    def plot_passenger_queuelen_time(self, mode, suffix=None):
         if suffix is None:
             suffix = ''
         else:
@@ -329,7 +329,7 @@ class Plot(object):
         # fig.update_layout(template='plotly_dark')
         pt.offline.plot(fig, filename=os.path.join(RESULTS, f'{mode}_queue_time{suffix}.html'), auto_open=False)
 
-    def plot_passenger_waittime(self, mode, suffix):
+    def plot_passenger_waittime(self, mode, suffix=None):
         if suffix is None:
             suffix = ''
         else:

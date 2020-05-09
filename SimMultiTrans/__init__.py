@@ -1,18 +1,20 @@
 import os
 import logging
 
-from SimMultiTrans.bin import Simulator
+from SimMultiTrans.bin import Simulator, Plot
 from SimMultiTrans.bin.Network import Graph
 import SimMultiTrans.utils as utils
 
 __all__ = [
     "Simulator",
     "Graph",
+    "Plot",
     "graph_file",
     "vehicle_file",
     "REBALANCE_POLICY",
     "ROUTING_POLICY",
     "utils",
+    "default_graph"
 ]
 
 os.makedirs(utils.RESULTS, exist_ok=True)
@@ -36,3 +38,9 @@ NEIGHBORS = 20
 
 graph_file = os.path.join(utils.CONFIG, graph_file)
 vehicle_file = os.path.join(utils.CONFIG, vehicle_file)
+
+
+def default_graph():
+    g = Graph()
+    g.import_graph(graph_file)
+    return g
