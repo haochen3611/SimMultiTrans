@@ -162,7 +162,7 @@ if __name__ == '__main__':
                         type=int, default=4000)
     parser.add_argument('--wkr_smpl_size', nargs='?', metavar='<Worker sample size>',
                         type=int, default=200)
-    parser.add_argument('--sdg_bat_size', nargs='?', metavar='<SGD minibatch size>',
+    parser.add_argument('--sgd_bat_size', nargs='?', metavar='<SGD minibatch size>',
                         type=int, default=128)
 
     args = parser.parse_args()
