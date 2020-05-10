@@ -58,7 +58,7 @@ class TaxiRebalance(gym.Env, ABC):
         if self._done:
             self._episode += 1
             self._done = False
-            print(f'Episode: {self._episode} done!')
+            # print(f'Episode: {self._episode} done!')
 
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     # trainer = sac.SACTrainer(config=configure)
     trainer = ppo.PPOTrainer(config=configure)
     for _ in range(args.iter):
-        # print('Iteration:', i)
+        print('Iteration:', _)
         results = trainer.train()
         if _ % 100 == 0:
             print(pretty_print(results))
