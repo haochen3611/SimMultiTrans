@@ -156,6 +156,14 @@ if __name__ == '__main__':
                         type=float, default=1)
     parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
                         type=float, default=1)
+    parser.add_argument('--vf_clip', nargs='?', metavar='<Value function clip parameter>',
+                        type=float, default=1000)
+    parser.add_argument('--tr_bat_size', nargs='?', metavar='<Training batch size>',
+                        type=int, default=4000)
+    parser.add_argument('--wkr_smpl_size', nargs='?', metavar='<Worker sample size>',
+                        type=int, default=200)
+    parser.add_argument('--sdg_bat_size', nargs='?', metavar='<SGD minibatch size>',
+                        type=int, default=128)
 
     args = parser.parse_args()
 
@@ -183,8 +191,11 @@ if __name__ == '__main__':
     except FileNotFoundError:
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
-        configure['vf_clip_param'] = 1000
+        configure['vf_clip_param'] = args.vf_clip
         configure['lr'] = args.lr
+        configure['train_batch_size'] = args.tr_bat_size
+        configure['rollout_fragment_length'] = args.wkr_smpl_size
+        configure['sgd_minibatch_size'] = args.sgd_bat_size
         configure['env_config'] = {
             "start_time": '08:00:00',
             "time_horizon": 10,  # hours
