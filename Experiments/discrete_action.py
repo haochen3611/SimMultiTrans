@@ -177,7 +177,8 @@ if __name__ == '__main__':
             file_conf = json.load(file)
     except FileNotFoundError:
         file_conf = None
-        raise
+        if args.config != 'None':
+            raise
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
