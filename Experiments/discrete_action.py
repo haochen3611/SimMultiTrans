@@ -186,7 +186,6 @@ if __name__ == '__main__':
     initial_vehicle = int(args.init_veh)
     iterations = args.iter
     if file_conf is not None:
-        print("Using file configuration!")
         NODES = sorted(file_conf.pop("nodes", NODES))
         initial_vehicle = int(file_conf.pop("init_veh", initial_vehicle))
         iterations = int(file_conf.pop("iter", iterations))

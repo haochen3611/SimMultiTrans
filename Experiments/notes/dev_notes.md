@@ -12,7 +12,7 @@ our action to discrete space for this method.
 * **PPO**: state of the art policy gradient method.
 
 
-### 4/24/2020
+## 4/24/2020
 * Parameters to tune for __SAC__
     * Learning rates for all three networks.
     * Policy update rate tau
@@ -37,10 +37,31 @@ our action to discrete space for this method.
  * **Results**: The results are way worse than before. Need to start from the 
  beginning to figure out which parameter was causing the problem, then proceed
  from there. 
-    
-### 5/10/2020
+ 
+## 5/09/2020
+
 * Switched to **PPO** with discrete action. Each node only chooses one nodes to 
 send a portion of its own empty vehicles
+
+* **Experiment Setting**
+    1. **lr 0.003**, iter 2000, init_veh 16 (orange)
+    2. **lr 0.005**, iter 2000, init_veh 16 (blue)
+  
+* **Results**: Only saved sim results for experiment 2. Problem fixed for future
+ code. The dispatch trip is 1883 larger than 749 of the MaxWeight. The highest
+ waiting time of 1 min occurred at node 186, which is less than MaxWeight's 1.6 min.
+ 
+* Losses: Smaller learning rate provided marginal difference in convergence speed.
+However, smaller lr caused instability as the algorithm got close to convergence.
+Both are worse than the reward scaled experiments.
+
+![losses](5-09-2020/losses.png)
+
+* KL: KL shows instability when lr = 0.005.
+
+![kl](5-09-2020/kl.png)
+
+## 5/10/2020
 
 * **Experiment Setting**
 ```shell script
