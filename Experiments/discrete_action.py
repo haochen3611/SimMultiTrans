@@ -53,6 +53,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._travel_time = None
         self._pre_action = None
         self._episode = 0
+        self._worker_id = str(hash(time.time()))
 
     def reset(self):
         if self._done:
@@ -62,12 +63,11 @@ class TaxiRebalance(gym.Env, ABC):
 
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
-            if self._episode % 1000 == 0:
-                self.sim.save_result(RESULTS, self._episode)
+            if self._episode % 100 == 0:
+                self.sim.save_result(RESULTS, self._worker_id)
                 if self._config['plot_queue_len']:
-                    # self.sim.plot_combo_queue_anim(mode='taxi', frames=100)
-                    self.sim.plot_pass_queue_len(mode='taxi', suffix=f'ep_{self._episode}')
-                    self.sim.plot_pass_wait_time(mode='taxi', suffix=f'ep_{self._episode}')
+                    self.sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
+                    self.sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
             self._is_running = False
 
         self.curr_time = 0
@@ -167,28 +167,40 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    NODES = sorted([236, 237, 186, 170, 141])
-
-    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
-                      os.path.join(CONFIG, 'aam.csv'),
-                      NODES)
-    update_vehicle_initial_distribution([int(args.init_veh) for i in range(len(NODES))],
-                                        nodes=NODES)
-
-    ray.init()
-    with open(graph_file, 'r') as f:
-        node_list = json.load(f)
-    node_list = [x for x in node_list]
-
-    # configure = sac.DEFAULT_CONFIG.copy()
-    configure = ppo.DEFAULT_CONFIG.copy()
-    configure['env'] = TaxiRebalance
     try:
         with open(args.config, 'r') as file:
             file_conf = json.load(file)
     except FileNotFoundError:
+        file_conf = None
+
+    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    NODES = sorted([236, 237, 186, 170, 141])
+    initial_vehicle = int(args.init_veh)
+    iterations = args.iter
+    if file_conf is not None:
+        NODES = sorted(file_conf.pop("nodes", NODES))
+        initial_vehicle = int(file_conf.pop("init_veh", initial_vehicle))
+        iterations = int(file_conf.pop("iter", iterations))
+
+    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
+                      os.path.join(CONFIG, 'aam.csv'),
+                      NODES)
+    update_vehicle_initial_distribution([initial_vehicle for i in range(len(NODES))],
+                                        nodes=NODES)
+
+    ray.init()
+    nodes_list = [str(x) for x in NODES]
+
+    configure = ppo.DEFAULT_CONFIG.copy()
+    configure['env'] = TaxiRebalance
+
+    if file_conf is not None:
+        for conf in file_conf:
+            configure[conf] = file_conf[conf]
+        configure['env_config']['nodes_list'] = nodes_list
+        configure['env_config']["near_neighbor"] = len(nodes_list)
+    else:
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
         configure['vf_clip_param'] = args.vf_clip
@@ -205,27 +217,18 @@ if __name__ == '__main__':
             "reb_interval": 600,  # seconds 60 steps per episode
             "max_travel_time": 1000,
             "max_passenger": 1e6,
-            "nodes_list": node_list,
-            "near_neighbor": len(node_list),
+            "nodes_list": nodes_list,
+            "near_neighbor": len(nodes_list),
             "plot_queue_len": False,
             "dispatch_rate": args.dpr,
             "alpha": args.alpha
-            }
-    else:
-        for conf in file_conf:
-            configure[conf] = file_conf[conf]
-        configure['env_config']['nodes_list'] = node_list
-        configure['env_config']["near_neighbor"] = len(node_list)
+        }
 
-    # with open('sac_0.json', 'w') as file:
-    #     json.dump(configure, file, indent=4)
-
-    # trainer = sac.SACTrainer(config=configure)
     trainer = ppo.PPOTrainer(config=configure)
-    for _ in range(args.iter):
-        print('Iteration:', _)
+    for _ in range(iterations):
+        print('Iteration:', _+1)
         results = trainer.train()
-        if _ % 100 == 0:
+        if (_+1) % 1 == 0:
             print(pretty_print(results))
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")

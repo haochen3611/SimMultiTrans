@@ -435,21 +435,16 @@ class Simulator(object):
     def set_multiprocessing(self, flag=False):
         self.multiprocessing_flag = flag
 
-    def save_result(self, path_name, suffix=None):
+    def save_result(self, path_name, suffix=None, unique_name=True):
         if suffix is None:
-            suffix = str(time())
+            suffix = '_' + str(time()) if unique_name else ''
         else:
-            suffix = str(suffix) + '-' + str(time())
-        try:
-            os.mkdir(path_name)
-        except OSError:
-            # print("Required directories are created.")
-            pass
+            suffix = '_' + str(suffix) + '_' + str(time()) if unique_name else '_' + str(suffix)
 
+        os.makedirs(path_name, exist_ok=True)
         saved_q_length = {}
         saved_v_length = {}
         # saved_wait_time = {}
-
         for node in self.graph.graph_top:
             saved_q_length[node] = {}
             saved_v_length[node] = {}
@@ -460,13 +455,13 @@ class Simulator(object):
                 # saved_wait_time[node][mode] = self.passenger_waittime[node][mode]
 
         # print(saved_q_length)
-        with open(os.path.join(path_name, f'passenger_queue_{suffix}.json'), 'w') as json_file:
+        with open(os.path.join(path_name, f'passenger_queue{suffix}.json'), 'w') as json_file:
             json.dump(saved_q_length, json_file)
 
-        with open(os.path.join(path_name, f'vehicle_queue_{suffix}.json'), 'w') as json_file:
+        with open(os.path.join(path_name, f'vehicle_queue{suffix}.json'), 'w') as json_file:
             json.dump(saved_v_length, json_file)
 
-        with open(os.path.join(path_name, f'wait_time_{suffix}.json'), 'w') as json_file:
+        with open(os.path.join(path_name, f'wait_time{suffix}.json'), 'w') as json_file:
             json.dump(self.passenger_waittime, json_file)
 
         total_num_arrival = 0
@@ -480,7 +475,7 @@ class Simulator(object):
             'total_num_arrival': total_num_arrival,
             'not_served': self.not_served
         }
-        with open(os.path.join(path_name, f'metrics_{suffix}.json'), 'w') as json_file:
+        with open(os.path.join(path_name, f'metrics{suffix}.json'), 'w') as json_file:
             json.dump(saved_metrics, json_file)
 
         self.plot.queue_p = self.passenger_queuelen
