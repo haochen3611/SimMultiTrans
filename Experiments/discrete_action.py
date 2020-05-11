@@ -54,6 +54,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._pre_action = None
         self._episode = 0
         self._worker_id = str(hash(time.time()))
+        self._save_res_every_ep = int(self._config['save_res_every_ep'])
 
     def reset(self):
         if self._done:
@@ -63,8 +64,8 @@ class TaxiRebalance(gym.Env, ABC):
 
         if self._is_running:
             self.sim.finishing_touch(self._start_time)
-            if self._episode % 100 == 0:
-                self.sim.save_result(RESULTS, self._worker_id)
+            if self._episode % self._save_res_every_ep == 0:
+                self.sim.save_result(RESULTS, self._worker_id, unique_name=False)
                 if self._config['plot_queue_len']:
                     self.sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
                     self.sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
@@ -93,8 +94,8 @@ class TaxiRebalance(gym.Env, ABC):
         self._travel_time /= np.linalg.norm(self._travel_time, ord=np.inf)
         self._pre_action = np.zeros((self.near_neighbor, self.num_nodes))
 
-        with open(vehicle_file, 'r') as file:
-            vehicle_dist = json.load(file)
+        with open(vehicle_file, 'r') as v_file:
+            vehicle_dist = json.load(v_file)
         vehicle_dist = vehicle_dist['taxi']['distrib']
         vehicle_dist = np.array([vehicle_dist[x] for x in vehicle_dist])
         return np.zeros((self.num_nodes,)), vehicle_dist
@@ -144,14 +145,18 @@ class TaxiRebalance(gym.Env, ABC):
 
 if __name__ == '__main__':
 
+    # unique results directory for every run
+    curr_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+    RESULTS = os.path.join(RESULTS, curr_time)
+
     parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
     parser.add_argument('--config', nargs='?', metavar='<Configuration file path>',
                         type=str, default='None')
-    parser.add_argument('--init_veh', nargs='?', metavar='<Initial vehicle per node>', type=int, default=10)
+    parser.add_argument('--init_veh', nargs='?', metavar='<Initial vehicle per node>', type=int, default=16)
     parser.add_argument('--num_cpu', nargs='?', metavar='<Number of CPU workers>', type=int, default=1)
     parser.add_argument('--num_gpu', nargs='?', metavar='<Number of GPU workers>', type=int, default=0)
     parser.add_argument('--iter', nargs='?', metavar='<Number of iterations>', type=int, default=1)
-    parser.add_argument('--lr', nargs='?', metavar='<Learning rate>', type=float, default=3e-3)
+    parser.add_argument('--lr', nargs='?', metavar='<Learning rate>', type=float, default=5e-3)
     parser.add_argument('--dpr', nargs='?', metavar='<Percentage used for dispatch at each node>',
                         type=float, default=1)
     parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
@@ -219,16 +224,17 @@ if __name__ == '__main__':
             "max_passenger": 1e6,
             "nodes_list": nodes_list,
             "near_neighbor": len(nodes_list),
-            "plot_queue_len": False,
+            "plot_queue_len": False,  # do not use plot function for now
             "dispatch_rate": args.dpr,
-            "alpha": args.alpha
+            "alpha": args.alpha,
+            "save_res_every_ep": 100
         }
 
     trainer = ppo.PPOTrainer(config=configure)
     for _ in range(iterations):
         print('Iteration:', _+1)
         results = trainer.train()
-        if (_+1) % 1 == 0:
+        if (_+1) % 100 == 0:
             print(pretty_print(results))
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")
