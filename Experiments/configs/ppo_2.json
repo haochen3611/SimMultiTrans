@@ -20,8 +20,6 @@
     "env_config": {
         "start_time": "08:00:00",
         "time_horizon": 20,
-        "lazy": 1,
-        "range": 20,
         "max_vehicle": 500000,
         "reb_interval": 600,
         "max_travel_time": 1000,

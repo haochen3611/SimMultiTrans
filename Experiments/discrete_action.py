@@ -9,6 +9,7 @@ from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
 import numpy as np
 import json
 import argparse as ap
+import pandas as pd
 
 import ray
 from ray import tune
@@ -48,6 +49,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._done = False
         self._start_time = time.time()
         self._alpha = self._config['alpha']
+        self._beta = self._config['beta']
         self._step = 0
         self._total_vehicle = None
         self._travel_time = None
@@ -129,9 +131,9 @@ class TaxiRebalance(gym.Env, ABC):
         self.curr_time += self.reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -(p_queue.sum() +
-                   self._alpha*np.maximum((v_queue-p_queue).reshape((self.num_nodes, 1)) *
-                                          action_mat*self._travel_time, 0).sum())
+        reward = -self._beta*(p_queue.sum() +
+                              self._alpha*np.maximum((v_queue-p_queue).reshape((self.num_nodes, 1)) *
+                                                     action_mat*self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
@@ -161,6 +163,8 @@ if __name__ == '__main__':
                         type=float, default=1)
     parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
                         type=float, default=1)
+    parser.add_argument('--beta', nargs='?', metavar='<Reward scaling coefficient>',
+                        type=float, default=1)
     parser.add_argument('--vf_clip', nargs='?', metavar='<Value function clip parameter>',
                         type=float, default=1000)
     parser.add_argument('--tr_bat_size', nargs='?', metavar='<Training batch size>',
@@ -181,8 +185,8 @@ if __name__ == '__main__':
             raise
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    NODES = sorted([236, 237, 186, 170, 141])
+    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    # NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = int(args.init_veh)
     iterations = args.iter
     if file_conf is not None:
@@ -218,8 +222,6 @@ if __name__ == '__main__':
         configure['env_config'] = {
             "start_time": '08:00:00',
             "time_horizon": 10,  # hours
-            "lazy": 1,
-            "range": 20,
             "max_vehicle": 500000,
             "reb_interval": 600,  # seconds 60 steps per episode
             "max_travel_time": 1000,
@@ -229,6 +231,7 @@ if __name__ == '__main__':
             "plot_queue_len": False,  # do not use plot function for now
             "dispatch_rate": args.dpr,
             "alpha": args.alpha,
+            "beta": args.beta,
             "save_res_every_ep": 100
         }
 
