@@ -89,12 +89,12 @@ class Simulator(object):
             'sec': 1 * unit[0]
         }
 
-        (tn1, tn2) = (self.graph.get_allnodes()[0], self.graph.get_allnodes()[1])
+        (tn1, tn2) = (self.graph.get_all_nodes()[0], self.graph.get_all_nodes()[1])
         if 'rate' in self.graph.graph_top[tn1]['nei'][tn2].keys():
             logger.debug(f'Rate infomation is embedded in city.json')
-            for index, node in enumerate(self.graph.get_allnodes()):
+            for index, node in enumerate(self.graph.get_all_nodes()):
                 rate = np.asarray([self.graph.graph_top[node]['nei'][dest]['rate'] / unit_trans[unit[1]]
-                                   if (dest != node) else 0 for dest in self.graph.get_allnodes()])
+                                   if (dest != node) else 0 for dest in self.graph.get_all_nodes()])
                 self.graph.graph_top[node]['node'].set_arrival_rate(rate)
         elif file_name is None:
             logger.warning('No input data!')
@@ -104,13 +104,13 @@ class Simulator(object):
             file_name = f'{file_name}'
             rate_matrix = (1 / unit_trans[unit[1]]) * np.loadtxt(file_name, delimiter=',')
 
-            # logger.info('Node: ', self.graph.get_allnodes())
+            # logger.info('Node: ', self.graph.get_all_nodes())
             (row, col) = rate_matrix.shape
             if (row != col) or (row != self.graph.get_size()):
                 logger.error('Different dimensions of matrix and nodes')
                 logger.warning('Error input matirx!')
             else:
-                for index, node in enumerate(self.graph.get_allnodes()):
+                for index, node in enumerate(self.graph.get_all_nodes()):
                     rate_matrix[index][index] = 0
                     self.graph.graph_top[node]['node'].set_arrival_rate(rate_matrix[:, index])
                     # logger.info(self.graph.graph_top[node]['node'].arr_prob_set)
@@ -121,7 +121,7 @@ class Simulator(object):
         '''
         # check the input correctness
         mode_list = []
-        for node in self.graph.get_allnodes():
+        for node in self.graph.get_all_nodes():
             modesinnodes = self.graph.get_graph_dic[node]['node'].mode
         for mode in self.vehicle_attri:
         '''
@@ -152,7 +152,7 @@ class Simulator(object):
     def ori_dest_generator(self, method):
         if method.equal('uniform'):
             # Generate random passengers
-            nodes_set = self.graph.get_allnodes()
+            nodes_set = self.graph.get_all_nodes()
             ori = random.choice(nodes_set)
             # print('ori: ',p_ori)
             nodes_set.remove(ori)
@@ -174,9 +174,9 @@ class Simulator(object):
         del saved_graph
         # print('.', end='')
 
-        cnt = len(self.graph.get_allnodes())
+        cnt = len(self.graph.get_all_nodes())
         # reset data set length
-        for index, node in enumerate(self.graph.get_allnodes()):
+        for index, node in enumerate(self.graph.get_all_nodes()):
             for mode in self.vehicle_attri:
                 self.vehicle_queuelen[node][mode] = np.zeros(self.time_horizon)
                 self.passenger_queuelen[node][mode] = np.zeros(self.time_horizon)
@@ -184,8 +184,8 @@ class Simulator(object):
 
         # generate passengers
         np.random.seed(seed)
-        for index, node in enumerate(self.graph.get_allnodes()):
-            self.graph.graph_top[node]['node'].passenger_generator(timehorizon=self.time_horizon)
+        for index, node in enumerate(self.graph.get_all_nodes()):
+            self.graph.graph_top[node]['node'].passenger_generator(time_horizon=self.time_horizon)
 
         # generate vehicles
         for mode in self.vehicle_attri:
@@ -237,7 +237,7 @@ class Simulator(object):
             # reb_list = [mode for mode in self.vehicle_attri if (self.vehicle_attri[mode]['reb'] == 'active')]
             mode = 'taxi'
             reb_flow = dict()
-            reb_trans = dict(nodes=self.graph.get_allnodes())
+            reb_trans = dict(nodes=self.graph.get_all_nodes())
             # for mode in reb_list:
             reb_flow[mode] = {'p': [], 'reb': False}
             reb_trans[mode] = {'p': [], 'reb': False}
@@ -247,27 +247,27 @@ class Simulator(object):
         for timestep in range(step_length):
             timestep += curr_time
             # match demands first
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_update(node, timestep)
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_match(node, timestep)
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_savedata(node, timestep)
 
             # rebalancing
             if (timestep + 1) % step_length == 0:
                 # for mode in reb_list:
-                queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_allnodes()]
-                queue_v = [self.vehicle_queuelen[node][mode][timestep - 1] for node in self.graph.get_allnodes()]
+                queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
+                queue_v = [self.vehicle_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
                 reb_flow[mode]['p'], reb_flow[mode]['reb'] = action, True
                 # dispatch
-                for node in self.graph.get_allnodes():
+                for node in self.graph.get_all_nodes():
                     reb_trans[mode] = {}
                     reb_trans[mode]['reb'] = reb_flow[mode]['reb']
                     if reb_trans[mode]['reb']:
                         reb_trans[mode]['p'] = reb_flow[mode]['p'][node]
                     self.node_rebalance(node, reb_trans)
-                for node in self.graph.get_allnodes():
+                for node in self.graph.get_all_nodes():
                     self.node_savedata(node, timestep)
         self._memory = (reb_flow, reb_trans, mode)
         return queue_p, queue_v
@@ -279,7 +279,7 @@ class Simulator(object):
         """
         self._is_running = False
         # At the end, count all the waiting time of passegners not served
-        for node in self.graph.get_allnodes():
+        for node in self.graph.get_all_nodes():
             self.not_served += self.graph.graph_top[node]['node'].passengers_clear()
             for mode in self.vehicle_attri:
                 self.passenger_waittime[node][mode] = self.graph.graph_top[node]['node'].get_average_wait_time(mode)
@@ -304,7 +304,7 @@ class Simulator(object):
 
         self.plot = Plot(self.graph, self.time_horizon, self.start_time)
 
-        for node in self.graph.get_allnodes():
+        for node in self.graph.get_all_nodes():
             logger.info(f'Node {node} history: {self.passenger_queuelen[node]}')
             # print(self.passenger_waittime[node])
             self.total_arrival['total'][node] = self.graph.graph_top[node]['node'].total_p
@@ -342,32 +342,32 @@ class Simulator(object):
         # list of modes that can rebalance
         reb_list = [mode for mode in self.vehicle_attri if (self.vehicle_attri[mode]['reb'] == 'active')]
         reb_flow = {}
-        reb_trans = {'nodes': self.graph.get_allnodes()}
+        reb_trans = {'nodes': self.graph.get_all_nodes()}
         for mode in reb_list:
             reb_flow[mode] = {'p': [], 'reb': False}
             reb_trans[mode] = {'p': [], 'reb': False}
 
-        # reb_flow = {'nodes': self.graph.get_allnodes()}
+        # reb_flow = {'nodes': self.graph.get_all_nodes()}
 
         # Time horizon
         for timestep in range(self.time_horizon):
             # reb_flag = False
             # match demands first
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_update(node, timestep)
 
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_match(node, timestep)
 
-            for node in self.graph.get_allnodes():
+            for node in self.graph.get_all_nodes():
                 self.node_savedata(node, timestep)
 
             # rebalancing
             if (timestep + 1) % self.reb_time == 0:
                 # reb_flag = True
                 for mode in reb_list:
-                    queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_allnodes()]
-                    queue_v = [self.vehicle_queuelen[node][mode][timestep - 1] for node in self.graph.get_allnodes()]
+                    queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
+                    queue_v = [self.vehicle_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
 
                     # reb_flow[mode] = {}
                     reb_flow[mode]['p'], reb_flow[mode]['reb'] = self.rebalance.Dispatch_active(mode=mode,
@@ -376,7 +376,7 @@ class Simulator(object):
                     # print(reb_flow[mode]['p'], reb_flow[mode]['reb'])
 
                 # dispatch
-                for node in self.graph.get_allnodes():
+                for node in self.graph.get_all_nodes():
                     for mode in reb_list:
                         reb_trans[mode] = {}
                         reb_trans[mode]['reb'] = reb_flow[mode]['reb']
@@ -385,7 +385,7 @@ class Simulator(object):
 
                     self.node_rebalance(node, reb_trans)
 
-                for node in self.graph.get_allnodes():
+                for node in self.graph.get_all_nodes():
                     self.node_savedata(node, timestep)
 
             # if timestep % (self.time_horizon / 20) == 0:
@@ -394,10 +394,7 @@ class Simulator(object):
         self.finishing_touch(start_time)
 
     def node_update(self, nid, timestep):
-        # n = self.graph.graph_top[node]['node']
         node = self.graph.graph_top[nid]['node']
-
-        # print(nid, timestep)
         node.time = timestep
 
         for road in self.road_set[nid]:
@@ -407,14 +404,12 @@ class Simulator(object):
     def node_match(self, nid, timestep):
         node = self.graph.graph_top[nid]['node']
 
-        # n.new_passenger_arrive(self.graph)
         info = {
             'p_queue': self.passenger_queuelen,
             'v_queue': self.vehicle_queuelen,
             'p_wait': self.passenger_waittime,
             'time': timestep
         }
-        # print(info)
         self.routing.syn_info(info)
         node.new_passenger_arrive(self.routing)
         node.match_demands(self.vehicle_attri)
@@ -425,8 +420,6 @@ class Simulator(object):
             if mode in node.mode:
                 self.passenger_queuelen[nid][mode][timestep] = len(node.passenger[mode])
                 self.vehicle_queuelen[nid][mode][timestep] = len(node.vehicle[mode])
-
-                # self.passenger_waittime[nid][mode] = node.get_average_wait_time(mode)
 
     def node_rebalance(self, node, reb_trans):
         # dispatch

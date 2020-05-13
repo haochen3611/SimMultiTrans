@@ -118,7 +118,7 @@ class Plot(object):
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [[0, '#33691E'], [np.abs(cmin) / (cmax - cmin), '#FAFAFA'], [1, '#FF6F00']]
         sizescale = self.relativesize / np.max([cmax, np.abs(cmin)])
-        text_str = [f'{self.graph.get_allnodes()[index]}: {data[index]}' for index in range(len(data))]
+        text_str = [f'{self.graph.get_all_nodes()[index]}: {data[index]}' for index in range(len(data))]
         data_dict = {
             'type': 'scattermapbox',
             'lon': self.lon, 'lat': self.lat,
@@ -190,7 +190,7 @@ class Plot(object):
         cmax = cmin + 1 if (cmax - cmin == 0) else cmax
         colorsacle = [[0, '#33691E'], [np.abs(cmin) / (cmax - cmin), '#FAFAFA'], [1, '#FF6F00']]
         sizescale = self.relativesize / np.max([cmax, np.abs(cmin)])
-        text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, 0]}' for index in range(len(data))]
+        text_str = [f'{self.graph.get_all_nodes()[index]}: {data[index, 0]}' for index in range(len(data))]
         data_dict = {
             'type': 'scattermapbox',
             'lon': lon, 'lat': lat,
@@ -207,7 +207,7 @@ class Plot(object):
         # make frames
         for frame_index in range(frames):
             frame = {'data': [], 'name': str(frame_index)}
-            text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
+            text_str = [f'{self.graph.get_all_nodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
             data_dict = {
                 'type': 'scattermapbox',
                 'lon': lon, 'lat': lat,
@@ -341,7 +341,7 @@ class Plot(object):
         fig_dict['layout']['hovermode'] = 'closest'
         fig_dict['layout']['title'] = 'Average Waiting Time'
 
-        x = [node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
+        x = [node for node in self.graph.get_all_nodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
         # print(self.passenger_waittime)
         y = [self.waittime_p[node][mode] for node in x]
         data_dict = {
@@ -362,7 +362,7 @@ class Plot(object):
         fig_dict['layout']['legend'] = {'x': 0, 'y': 0.4}
 
         # average waiting time
-        x = [node for node in self.graph.get_allnodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
+        x = [node for node in self.graph.get_all_nodes() if (self.graph.graph_top[node]['mode'] != 'walk')]
         # print(self.passenger_waittime)
         wait_y = np.around([self.waittime_p[node][mode] / 60.0 for node in x], decimals=2)
         data_dict = {
@@ -608,7 +608,7 @@ class Plot(object):
         # make frames
         for frame_index, fig_dict in enumerate(fig_dict_set):
             frame = {'data': [], 'name': str(frame_index)}
-            # text_str = [f'{self.graph.get_allnodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
+            # text_str = [f'{self.graph.get_all_nodes()[index]}: {data[index, frame_index]}' for index in range(len(data))]
             for data_dict in fig_dict['data']:
                 if data_dict['name'] in v_max:
                     fig_dict['layout'][v_max[data_dict['name']][1]]['range'] = [0, v_max[data_dict['name']][0] * 1.1]
@@ -654,7 +654,7 @@ class Plot(object):
         size = np.zeros([len(self.lon), 1]) + 10
         color = ['#FAFAFA' for node in self.lon]
 
-        text_str = [f'{self.graph.get_allnodes()[index]}' for index in range(len(self.lon))]
+        text_str = [f'{self.graph.get_all_nodes()[index]}' for index in range(len(self.lon))]
         data_dict = {
             'type': 'scattermapbox',
             'lon': self.lon, 'lat': self.lat,

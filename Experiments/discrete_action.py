@@ -185,8 +185,8 @@ if __name__ == '__main__':
             raise
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    # NODES = sorted([236, 237, 186, 170, 141])
+    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = int(args.init_veh)
     iterations = args.iter
     if file_conf is not None:

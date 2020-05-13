@@ -62,22 +62,8 @@ class Road(object):
         """
         leave_vehicle = []
         for (v, leave_time) in self.vehicle:
-            # (v, leave_time) = self.vehicle[v_index]
             if leave_time == self.time:
                 leave_vehicle.append((v, leave_time))
-                '''
-                self.vehicle.remove( (v, leave_time) )
-                # leave_vehicle.append(v)
-                if v.mode != 'walk':
-                    logging.info(f'Time {self.time}: Vel {v.id} leave road ({self.ori},{self.dest})')
-                g.graph_top[self.dest]['node'].vehicle_arrive(v)
-                '''
-            '''
-            elif leave_time > self.time:
-                # the rest of vehicles must not finish their trips
-                break
-            '''
-
         for (v, leave_time) in leave_vehicle:
             self.vehicle.remove((v, leave_time))
             if v.mode != 'walk':

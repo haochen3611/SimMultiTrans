@@ -57,7 +57,7 @@ class Graph(object):
         if ori in self.graph_top and dest in self.graph_top and ori != dest:
             self.graph_top[ori]['nei'][dest] = {'mode': mode, 'dist': dist}
 
-    def get_allnodes(self):
+    def get_all_nodes(self):
         return list(self.graph_top.keys())
 
     def get_size(self):
@@ -138,7 +138,7 @@ class Graph(object):
         for ori in range(msize):
             self.add_node(nid=chr(65 + ori), lat=loc_set[ori][0], lon=loc_set[ori][1], mode=transfer_mode)
             '''
-            for dest in self.get_allnodes():
+            for dest in self.get_all_nodes():
                 if (ori == dest):
                     break
                 else:
@@ -147,7 +147,7 @@ class Graph(object):
                     self.add_edge(ori=ori, dest=dest, mode=modeset[0], dist=dist)
                     self.add_edge(ori=dest, dest=ori, mode=modeset[0], dist=dist)
             '''
-        nodeperm = itt.permutations(self.get_allnodes(), 2)
+        nodeperm = itt.permutations(self.get_all_nodes(), 2)
         for odpair in nodeperm:
             dist = self.get_L1dist(odpair[0], odpair[1])
             self.add_edge(ori=odpair[0], dest=odpair[1], mode=modeset[0], dist=dist)
@@ -155,9 +155,9 @@ class Graph(object):
 
         self.generate_nodes()
 
-        print(self.get_allnodes())
+        print(self.get_all_nodes())
         # generate local nodes
-        for t_node in self.get_allnodes():
+        for t_node in self.get_all_nodes():
             top_matrix = int(np.random.randint(max_localnodes, size=1))
             x = self.graph_top[t_node]['lat']
             y = self.graph_top[t_node]['lon']

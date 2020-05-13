@@ -152,11 +152,11 @@ class Node(object):
                 # if v arrive at final stop, then move to the park
         if not isVwalk:
             if v.finalstop(self.id):
-                self.vehilce_leave(v)
+                self.vehicle_leave(v)
                 self.vehicle_park(v, self.time + v.park_time)
                 logging.info(f'Time {self.time}: Vel {v.id} parking at {self.id}')
 
-    def vehilce_leave(self, v):
+    def vehicle_leave(self, v):
         self.vehicle[v.mode].remove(v)
         if v.mode == 'walk':
             return
@@ -186,10 +186,10 @@ class Node(object):
         rd = np.random.uniform(0, range, size)
         return 1 - np.exp(- self.arr_rate * rd / np.sum(rd))
 
-    def passenger_generator(self, timehorizon):
+    def passenger_generator(self, time_horizon):
         time = 0
-        self.child_passenger = [0] * timehorizon
-        for time in range(timehorizon):
+        self.child_passenger = [0] * time_horizon
+        for time in range(time_horizon):
             self.child_passenger[time] = []
             randomness = np.random.uniform(low=0, high=1, size=(len(self.dest)))
             toss = np.greater(self.arr_prob_set, randomness)
@@ -239,7 +239,7 @@ class Node(object):
                         logging.info(f'Time {self.time}: Pas {p.id} takes {v.id} at node {self.id}')
                         # if vehicle is full, then move to road
                         if v.get_emptyseats() == 0 or v.type == 'priv':
-                            self.vehilce_leave(v)
+                            self.vehicle_leave(v)
                             self.road[v.nextstop].arrive(v)
 
                             # all public trans will leave
@@ -248,7 +248,7 @@ class Node(object):
             if attri[mode]['type'] == 'publ' and self.vehicle[mode]:
                 for v in self.vehicle[mode]:
                     v.set_destination(None)
-                    self.vehilce_leave(v)
+                    self.vehicle_leave(v)
                     self.road[v.nextstop].arrive(v)
 
     def dispatch(self, reb_flow):
@@ -272,7 +272,7 @@ class Node(object):
                         '''
                         if ( mode in self.graph_top[dest]['mode'] and dest != self.id ):
                             v.set_destination(dest)
-                            self.vehilce_leave(v)
+                            self.vehicle_leave(v)
                             self.road[v.nextstop].arrive(v)
                             # logging.info(f'Time {self.time}: Vel {v.id} is dispatched from {self.id} to {dest}')
                         '''
@@ -282,7 +282,7 @@ class Node(object):
 
                     # dispatch vehicles
                     for v in leave_list:
-                        self.vehilce_leave(v)
+                        self.vehicle_leave(v)
                         self.road[v.nextstop].arrive(v)
 
 
