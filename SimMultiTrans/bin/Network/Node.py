@@ -175,7 +175,7 @@ class Node(object):
         # print(prob)
         return prob
 
-    def random_exp_arrival_prob(self, range, size):
+    def random_exp_arrival_prob(self, range_, size):
         """
         default: exponential distribution\\
         rate = ln(1-p) => p = 1-exp(-rate)\\
@@ -183,12 +183,11 @@ class Node(object):
             range: np.array\\
             size: int
         """
-        rd = np.random.uniform(0, range, size)
+        rd = np.random.uniform(0, range_, size)
         return 1 - np.exp(- self.arr_rate * rd / np.sum(rd))
 
     def passenger_generator(self, time_horizon):
-        time = 0
-        self.child_passenger = [0] * time_horizon
+        self.child_passenger = [[]] * time_horizon
         for time in range(time_horizon):
             self.child_passenger[time] = []
             randomness = np.random.uniform(low=0, high=1, size=(len(self.dest)))

@@ -41,45 +41,7 @@ class Rebalancing(object):
         # np.set_printoptions(threshold=sys.maxsize)
 
     def MaxWeight(self, mode, queue, server):
-        """
-        # weight
-        c = np.kron( np.ones(self.size), -np.array(queue) )
-        # print('c',c)
 
-        # eq constraints
-        A_eq = np.kron( np.eye(self.size), np.ones(self.size) )
-        # b_eq = np.ones(shape=(self.size,1))
-        b_eq = server
-
-        # ineq constraints
-        b_ub = np.zeros(shape=(self.size, self.size))
-        for index, node in enumerate(self.graph.graph_top):
-            b = np.zeros(self.size)
-            if node not in self.k_near_nei:
-                dist_list = np.array( [ self.graph.graph_top[node]['nei'][dest]['dist']
-                    for dest in self.graph.graph_top[node]['nei'] ] )
-
-                k = self.range
-                if k > self.size-1:
-                    k = self.size-1
-                #
-                k_near_list = dist_list.argsort()[:k]
-            else:
-                k_near_list = self.k_near_nei[node]
-            b[k_near_list] = server[index]
-            b_ub[[index],:] = b.T
-            # print(b.T)
-
-        b_ub = b_ub.reshape((self.size**2, 1))
-        A_ub = np.eye( len(b_ub) )
-        # print(b_ub)
-
-        # print('b',b_ub.T)
-        # result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, 1], method='simplex')
-        result = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[0, max(server)],
-            method='interior-point', options={'lstsq': True, 'presolve': True})
-        # print(result.x.reshape((self.size, self.size)))
-        """
         result = np.zeros(shape=(self.size, self.size))
         for index, node in enumerate(self.graph.graph_top):
             k = self.range
@@ -88,23 +50,16 @@ class Rebalancing(object):
             if node not in self.k_near_nei:
                 dist_list = np.array([self.graph.graph_top[node]['nei'][dest]['dist']
                                       for dest in self.graph.graph_top[node]['nei']])
-
-                # k = self.size-1
                 self.k_near_nei[node] = dist_list.argsort()[:k]
-                # print(self.k_near_nei[node])
-
-        # for di, dest in enumerate(self.graph.graph_top):
         asy = np.array(server)
         for di, dest in enumerate(self.graph.graph_top):
             while queue[di] > 0:
                 queue[di] -= 1
-                maxnei = np.argmax(asy[self.k_near_nei[dest]])
+                max_nei = np.argmax(asy[self.k_near_nei[dest]])
                 ori = [oi for oi, ori in enumerate(asy)
-                       if asy[oi] == asy[self.k_near_nei[dest]][maxnei] and oi in self.k_near_nei[dest]]
-                # print(ori,dest)
+                       if asy[oi] == asy[self.k_near_nei[dest]][max_nei] and oi in self.k_near_nei[dest]]
                 result[ori[0]][di] += 1
                 asy[ori[0]] -= 1
-        # print(result)
         return result
 
     def Proportional(self, mode, queue, server):
@@ -301,16 +256,16 @@ class Rebalancing(object):
     def no_rebalance(self, mode, queue, server):
         return np.zeros(shape=(self.size, self.size))
 
-    def set_parameters(self, lazy=0, vrange=0):
-        '''
+    def set_parameters(self, lazy=0, v_range=0):
+        """
         Set the parameters for the rebalancing policy\\
         arge:\\
             lazy: weight the probability that a vehicle stays at current node\\
-            vrange: the number of nearest neighbourhoods that a vehicle can be dispathced
-        '''
+            v_range: the number of nearest neighbourhoods that a vehicle can be dispathced
+        """
         self.lazy = lazy
-        self.range = vrange
-        logger.info(f'Rebalancing Policy Parameters: lazy={lazy}, range={vrange}')
+        self.range = v_range
+        logger.info(f'Rebalancing Policy Parameters: lazy={lazy}, range={v_range}')
 
     def set_policy(self, policy):
         if policy in self.policies:

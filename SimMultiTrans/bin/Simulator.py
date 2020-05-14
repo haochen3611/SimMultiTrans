@@ -46,11 +46,11 @@ class Simulator(object):
         self.passenger_queuelen = {}
         self.vehicle_queuelen = {}
         self.passenger_waittime = {}
-        self.total_tripdist = {
+        self.total_trip_dist = {
             'total': {},
             'reb': {}
         }
-        self.total_triptime = {
+        self.total_trip_time = {
             'total': {},
             'reb': {}
         }
@@ -130,7 +130,7 @@ class Simulator(object):
             self.vehicle_attri[mode]['total'] = 0
             for node in self.vehicle_attri[mode]['distrib']:
                 self.vehicle_attri[mode]['total'] += self.vehicle_attri[mode]['distrib'][node]
-        # self.vehicle_attri[mode]['total'] =
+
         # set routing policy and rebalancing policy
         self.routing = Routing(self.graph, self.vehicle_attri)
         self.rebalance = Rebalancing(self.graph, self.vehicle_attri)
@@ -161,10 +161,7 @@ class Simulator(object):
             return ori, dest
 
     def initialize(self, seed=0):
-        # print('Simulation starts')
-
         # save graph structure
-        # file_path = 'results'
         saved_graph = copy.deepcopy(self.graph)
         for node in saved_graph.graph_top:
             saved_graph.graph_top[node]['node'] = None
@@ -174,7 +171,7 @@ class Simulator(object):
         del saved_graph
         # print('.', end='')
 
-        cnt = len(self.graph.get_all_nodes())
+        # cnt = len(self.graph.get_all_nodes())
         # reset data set length
         for index, node in enumerate(self.graph.get_all_nodes()):
             for mode in self.vehicle_attri:
@@ -200,10 +197,10 @@ class Simulator(object):
                     self.graph.graph_top[node]['node'].set_walk(v)
             # for others
             else:
-                self.total_tripdist['total'][mode] = 0
-                self.total_tripdist['reb'][mode] = 0
-                self.total_triptime['total'][mode] = 0
-                self.total_triptime['reb'][mode] = 0
+                self.total_trip_dist['total'][mode] = 0
+                self.total_trip_dist['reb'][mode] = 0
+                self.total_trip_time['total'][mode] = 0
+                self.total_trip_time['reb'][mode] = 0
 
                 name_cnt = 0
 
@@ -317,16 +314,16 @@ class Simulator(object):
                 self.total_trip['total'][node][mode] = 0
                 self.total_trip['reb'][node][mode] = 0
 
-                if mode in self.total_tripdist['total']:
+                if mode in self.total_trip_dist['total']:
                     for dest in self.graph.graph_top[node]['node'].road:
                         road = self.graph.graph_top[node]['node'].road[dest]
-                        self.total_tripdist['total'][mode] += road.get_total_distance(mode)
-                        self.total_triptime['total'][mode] += road.get_total_time(mode)
+                        self.total_trip_dist['total'][mode] += road.get_total_distance(mode)
+                        self.total_trip_time['total'][mode] += road.get_total_time(mode)
                         self.total_trip['total'][node][mode] += road.get_total_trip(mode)
 
-                        if mode in self.total_tripdist['reb']:
-                            self.total_tripdist['reb'][mode] += road.get_total_reb_distance(mode)
-                            self.total_triptime['reb'][mode] += road.get_total_reb_time(mode)
+                        if mode in self.total_trip_dist['reb']:
+                            self.total_trip_dist['reb'][mode] += road.get_total_reb_distance(mode)
+                            self.total_trip_time['reb'][mode] += road.get_total_reb_time(mode)
                             self.total_trip['reb'][node][mode] += road.get_total_reb_trip(mode)
 
         self.plot.queue_p = self.passenger_queuelen
@@ -462,8 +459,8 @@ class Simulator(object):
             total_num_arrival += self.total_arrival['total'][node]
         saved_metrics = {
             'total_trip': self.total_trip,
-            'total_tripdist': self.total_tripdist,
-            'total_triptime': self.total_triptime,
+            'total_tripdist': self.total_trip_dist,
+            'total_triptime': self.total_trip_time,
             'total_arrival': self.total_arrival,
             'total_num_arrival': total_num_arrival,
             'not_served': self.not_served
@@ -475,8 +472,8 @@ class Simulator(object):
         self.plot.queue_v = self.vehicle_queuelen
         self.plot.waittime_p = self.passenger_waittime
         self.plot.total_trip = self.total_trip
-        self.plot.total_tripdist = self.total_tripdist
-        self.plot.total_triptime = self.total_triptime
+        self.plot.total_tripdist = self.total_trip_dist
+        self.plot.total_triptime = self.total_trip_time
         self.plot.total_arrival = self.total_arrival
         self.plot.sum_totalarrival = total_num_arrival
         self.plot.not_served = self.not_served

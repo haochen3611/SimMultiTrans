@@ -51,7 +51,7 @@ class Routing(object):
                 # print(path)
                 return self.path[self.routing_method][ori][dest]
 
-        methodset = {
+        method_set = {
             'bus_simplex': self.bus_simplex,
             'simplex': self.simplex,
             'bus_walk_simplex': self.bus_walk_simplex,
@@ -59,13 +59,12 @@ class Routing(object):
         }
         # route = Routing(self, ori, dest)
         # print('routing: ', ori, dest)
-        path = methodset[self.routing_method](ori, dest)
+        path = method_set[self.routing_method](ori, dest)
         # print(path)
         self.save_path(ori, dest, self.routing_method, path)
         return path
 
     def simplex(self, ori, dest):
-        # print(ori, dest)
         if dest in self.graph.graph_top[ori]['nei']:
             return {ori: {'dest': dest, 'info': self.pathinfo_generator(ori=ori, dest=dest, method='simplex')}}
         else:

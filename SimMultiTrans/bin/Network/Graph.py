@@ -96,34 +96,6 @@ class Graph(object):
         else:
             return 0
 
-    '''
-    def get_path(self, ori, dest): 
-        # print('routing...')
-        if (ori not in self.graph_top and dest not in self.graph_top):
-            return {}
-
-        if (ori in self.graph_path) and (dest in self.graph_path[ori]):
-            # print('path exists')
-            return self.graph_path[ori][dest]
-        else:
-            route = Routing(self, ori, dest)
-            path = route.get_path('bus_simplex')
-            # print(path)
-            self.save_path(ori, dest, path)
-            return path
-
-
-    def save_path(self, ori, dest, path):
-        if (ori not in self.graph_path):
-            self.graph_path[ori] = {dest: []}
-            self.graph_path[ori][dest].append(path)
-        elif (dest not in self.graph_path):
-            self.graph_path[ori][dest] = []
-            self.graph_path[ori][dest].append(path)
-        else:
-            return
-    '''
-
     def randomize_graph(self, seed, msize, modeset, max_localnodes, mapscale):
         np.random.seed(seed)
         # top_matrix = np.random.randint(2, size=(msize, msize))
@@ -137,21 +109,11 @@ class Graph(object):
         # generage transfer nodes and edges
         for ori in range(msize):
             self.add_node(nid=chr(65 + ori), lat=loc_set[ori][0], lon=loc_set[ori][1], mode=transfer_mode)
-            '''
-            for dest in self.get_all_nodes():
-                if (ori == dest):
-                    break
-                else:
-                    dist = self.get_L1dist(ori, dest)
-                    # symmetric edge
-                    self.add_edge(ori=ori, dest=dest, mode=modeset[0], dist=dist)
-                    self.add_edge(ori=dest, dest=ori, mode=modeset[0], dist=dist)
-            '''
-        nodeperm = itt.permutations(self.get_all_nodes(), 2)
-        for odpair in nodeperm:
-            dist = self.get_L1dist(odpair[0], odpair[1])
-            self.add_edge(ori=odpair[0], dest=odpair[1], mode=modeset[0], dist=dist)
-            self.add_edge(ori=odpair[1], dest=odpair[0], mode=modeset[0], dist=dist)
+        node_perm = itt.permutations(self.get_all_nodes(), 2)
+        for od_pair in node_perm:
+            dist = self.get_L1dist(od_pair[0], od_pair[1])
+            self.add_edge(ori=od_pair[0], dest=od_pair[1], mode=modeset[0], dist=dist)
+            self.add_edge(ori=od_pair[1], dest=od_pair[0], mode=modeset[0], dist=dist)
 
         self.generate_nodes()
 

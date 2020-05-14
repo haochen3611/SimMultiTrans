@@ -46,7 +46,7 @@ def main():
     simu.set_running_time(starttime='08:00:00', timehorizon=1.84, unit='hour')
 
     simu.routing.set_routing_method(r_name)
-    simu.rebalance.set_parameters(lazy=l, vrange=r)
+    simu.rebalance.set_parameters(lazy=l, v_range=r)
     simu.rebalance.set_policy(p_name)
 
     simu.initialize(seed=0)
@@ -57,7 +57,7 @@ def main():
     simu.initialize(seed=0)
 
     for l in lazyset:
-        simu.rebalance.set_parameters(lazy=l, vrange=r)
+        simu.rebalance.set_parameters(lazy=l, v_range=r)
         simu.run()
         simu.save_result(path_name=f'results/{p_name}__l={simu.rebalance.lazy}r={simu.rebalance.range}')
     '''
