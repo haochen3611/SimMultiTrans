@@ -15,37 +15,13 @@ class Passenger(object):
 
         self.path = []
 
-    '''
-    def get_id(self):
-        return self.id
-
-    def get_odpair(self):
-        return (self.ori, self.dest)
-    '''
-
     def get_schdule(self, routing):
-        # print(self.ori, self.dest)
         self.path = routing.get_path(self.ori, self.dest)
-        # print(self.path)
-        # print(self.path)
+
         return self.path
 
-    '''
-    def set_location(self, loc):
-        self.loc = loc
-
-    def set_stoptime(self, time):
-        self.stop_time = time
-
-    def get_stoptime(self):
-        return self.stop_time
-    '''
-
     def get_waitingmode(self, loc):
-        # print(self.id, loc)
-        # print(self.id, self.path)
-        # mode = self.path[loc]['info']['mode'] if (loc in self.path and loc != self.dest) else None
-        # print(self.id, mode)
+
         return self.path[loc]['info']['mode'] if loc in self.path and loc != self.dest else None
 
     def geton(self, loc, v):
@@ -59,7 +35,6 @@ class Passenger(object):
         """
         return v.match_route(loc, self.path[loc]['dest']) if loc in self.path and self.path[loc]['info'][
             'mode'] == v.mode else False
-        # return True if next((edge for edge in self.path if (edge[0] == loc, edge[2]['mode'] == mode) ), False) else False
 
     def getoff(self, loc):
         # return True if next((edge for edge in self.path if edge[1] == loc), False) else False

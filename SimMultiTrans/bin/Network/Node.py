@@ -31,10 +31,8 @@ class Node(object):
         self.mode = graph_top[nid]['mode'].split(',')
 
         self.road = {}
-        for dest in graph_top[nid]['nei']:
+        for dest in graph_top[nid]['nei']:  # TODO: try separate this with the constructor
             # distance can be set by L1 norm
-            # dist = graph_top[nid]['nei'][dest]['dist']
-            # L1dist = np.abs(self.loc[0] - graph_top[dest]['lat']) + np.abs(self.loc[1] - graph_top[dest]['lon'])
             L1dist = Haversine((self.lat, self.lon), (graph_top[dest]['lat'], graph_top[dest]['lon'])).meters
             if graph_top[nid]['nei'][dest]['dist'] <= 0.2 * L1dist:
                 # dist = L1dist
@@ -77,13 +75,12 @@ class Node(object):
         return 0 if mode not in self.p_wait or len(self.p_wait[mode]) == 0 else sum(self.p_wait[mode]) / len(
             self.p_wait[mode])
 
-    def check_accessiblity(self, mode):
+    def check_accessibility(self, mode):
         return mode in self.mode
 
     def set_arrival_rate(self, rate):
-        if len(rate) != len(self.arr_prob_set):
-            print('Error arrival rate')
-            return
+        assert len(rate) == len(self.arr_prob_set)
+
         self.arr_rate = np.sum(rate)
         self.arr_prob_set = self.exp_arrival_prob(rate)
 
@@ -94,7 +91,7 @@ class Node(object):
         # self.passenger.append(p)
         mode = p.get_waitingmode(self.id)
         # print(mode)
-        if mode != None:
+        if mode is not None:
             self.passenger[mode].append(p)
             # p.set_stoptime(self.time)
             p.stoptime = self.time
@@ -195,7 +192,6 @@ class Node(object):
             for index, p_arrive in enumerate(toss):
                 if p_arrive:
                     dest = self.dest[index]
-
                     pid = f'{self.id}_{dest}_{time}'
                     self.child_passenger[time].append(Passenger(pid=pid, ori=self.id, dest=dest, arr_time=time))
                     self.total_p += 1

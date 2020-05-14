@@ -29,7 +29,7 @@ class Simulator(object):
         self.time = 0
 
         self.graph = graph
-        self.graph.generate_nodes()
+        # self.graph.generate_nodes()  # TODO: Can this be saved?
 
         self.plot = None
         self.routing = None
@@ -162,13 +162,11 @@ class Simulator(object):
 
     def initialize(self, seed=0):
         # save graph structure
-        saved_graph = copy.deepcopy(self.graph)
-        for node in saved_graph.graph_top:
-            saved_graph.graph_top[node]['node'] = None
-
+        saved_graph = copy.deepcopy(self.graph.graph_top)  # TODO: try to avoid this
+        for node in saved_graph:
+            saved_graph[node]['node'] = None
         with open(os.path.join(RESULTS, 'city_topology.json'), 'w') as json_file:
-            json.dump(saved_graph.graph_top, json_file)
-        del saved_graph
+            json.dump(saved_graph, json_file)
         # print('.', end='')
 
         # cnt = len(self.graph.get_all_nodes())
