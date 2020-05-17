@@ -252,8 +252,8 @@ class Simulator(object):
             # rebalancing
             if (timestep + 1) % step_length == 0:
                 # for mode in reb_list:
-                queue_p = [self.passenger_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
-                queue_v = [self.vehicle_queuelen[node][mode][timestep - 1] for node in self.graph.get_all_nodes()]
+                queue_p = [self.passenger_queuelen[node][mode][timestep] for node in self.graph.get_all_nodes()]
+                queue_v = [self.vehicle_queuelen[node][mode][timestep] for node in self.graph.get_all_nodes()]
                 reb_flow[mode]['p'], reb_flow[mode]['reb'] = action, True
                 # dispatch
                 for node in self.graph.get_all_nodes():

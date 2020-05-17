@@ -45,7 +45,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._neighbor_map = self._get_neighbors()
         self._dispatch_rate = self._config['dispatch_rate']
 
-        self.action_space = MultiDiscrete([self._num_neighbors] * self._num_nodes)
+        self.action_space = MultiDiscrete([self._num_neighbors+1] * self._num_nodes)
         self.observation_space = Tuple((Box(0, self.max_passenger, shape=(self._num_nodes,), dtype=np.int64),
                                         Box(0, self.max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
         self._is_running = False
@@ -63,14 +63,15 @@ class TaxiRebalance(gym.Env, ABC):
 
     def _get_neighbors(self):
         k = self._config['near_neighbor']
-        if k > len(self._nodes):
-            k = len(self._nodes)
+        if k + 1 > len(self._nodes):
+            k = len(self._nodes) - 1
+            self._num_neighbors = k
         neighbor_map = dict()
         for node in self._nodes:
             dist_lst = [(dest, self.graph.graph_top[node]['nei'][dest]['dist'])
-                        for dest in self.graph.graph_top[node]['nei'] if dest != node]
+                        for dest in self.graph.graph_top[node]['nei']]
             dist_lst.sort(key=lambda x: x[1])
-            neighbor_map[node] = tuple(self._nodes.index(x[0]) for x in dist_lst[:k])
+            neighbor_map[node] = tuple(self._nodes.index(x[0]) for x in dist_lst[:k+1])
         return neighbor_map
 
     def _preprocess_action(self, action):
@@ -201,9 +202,9 @@ if __name__ == '__main__':
         if args.config != 'None':
             raise
 
-    NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    # NODES = sorted([236, 237, 186, 170, 141])
+    NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = int(args.init_veh)
     iterations = args.iter
     if file_conf is not None:
@@ -221,6 +222,7 @@ if __name__ == '__main__':
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
     configure['env'] = TaxiRebalance
+    # configure['reuse_actors'] = True
 
     if file_conf is not None:
         for conf in file_conf:
@@ -243,7 +245,7 @@ if __name__ == '__main__':
             "max_travel_time": 1000,
             "max_passenger": 1e6,
             "nodes_list": nodes_list,
-            "near_neighbor": 5,
+            "near_neighbor": 4,
             "plot_queue_len": False,  # do not use plot function for now
             "dispatch_rate": args.dpr,
             "alpha": args.alpha,
@@ -251,19 +253,19 @@ if __name__ == '__main__':
             "save_res_every_ep": 100
         }
     trainer = ppo.PPOTrainer(config=configure)
-    import cProfile, pstats, io
-    from pstats import SortKey
-    pr = cProfile.Profile()
-    pr.enable()
+    # import cProfile, pstats, io
+    # from pstats import SortKey
+    # pr = cProfile.Profile()
+    # pr.enable()
     for _ in range(iterations):
         print('Iteration:', _+1)
         results = trainer.train()
         if (_+1) % 100 == 0:
             print(pretty_print(results))
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
-    ps.print_stats()
-    print(s.getvalue())
+    # pr.disable()
+    # s = io.StringIO()
+    # ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
+    # ps.print_stats()
+    # print(s.getvalue())
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")
