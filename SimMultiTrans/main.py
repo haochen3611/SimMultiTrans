@@ -14,7 +14,7 @@ def main():
     p_name = 'None'
     r_name = 'simplex'
     step_len = 600
-    time_hor = 1
+    time_hor = 10
     # create graph
     g = Graph()
     g.import_graph(file_name='conf/city_nyc.json')
@@ -53,13 +53,13 @@ def main():
 
 
 if __name__ == "__main__":
-    import cProfile, pstats, io
-    from pstats import SortKey
-    pr = cProfile.Profile()
-    pr.enable()
+    # import cProfile, pstats, io
+    # from pstats import SortKey
+    # pr = cProfile.Profile()
+    # pr.enable()
     main()
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
-    ps.print_stats()
-    print(s.getvalue())
+    # pr.disable()
+    # s = io.StringIO()
+    # ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
+    # ps.print_stats()
+    # print(s.getvalue())
