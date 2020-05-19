@@ -178,9 +178,14 @@ class Simulator(object):
                 self.passenger_waittime[node][mode] = 0
 
         # generate passengers
+        st = time()
+        total_p = 0
         np.random.seed(seed)
         for index, node in enumerate(self.graph.get_all_nodes()):
             self.graph.graph_top[node]['node'].passenger_generator(time_horizon=self.time_horizon)
+            total_p += self.graph.graph_top[node]['node'].total_p
+        print(total_p)
+        print('time used', time()-st)
 
         # generate vehicles
         for mode in self.vehicle_attri:
