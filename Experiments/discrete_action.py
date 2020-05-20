@@ -154,6 +154,7 @@ class TaxiRebalance(gym.Env, ABC):
                               self._alpha*self._vehicle_speed *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * action_mat *
                                          self._travel_time, 0).sum())
+        # print(self._vehicle_speed)
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
@@ -223,8 +224,9 @@ if __name__ == '__main__':
     update_graph_file(os.path.join(CONFIG, 'gps.csv'),
                       os.path.join(CONFIG, 'aam.csv'),
                       NODES)
-    update_vehicle_initial_distribution([initial_vehicle for i in range(len(NODES))],
-                                        nodes=NODES)
+    update_vehicle_initial_distribution(veh_dist=[initial_vehicle]*len(NODES),
+                                        nodes=NODES,
+                                        speed=vehicle_speed)
 
     ray.init()
     nodes_list = [str(x) for x in NODES]

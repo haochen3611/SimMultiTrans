@@ -41,7 +41,7 @@ def update_vehicle_initial_distribution(veh_dist, nodes, speed=None):
         nodes = [str(nodes)]
     assert isinstance(veh_dist, (int, float, list, tuple, np.ndarray))
     if isinstance(veh_dist, (list, tuple, np.ndarray)):
-        assert len(veh_dist) == nodes
+        assert len(veh_dist) == len(nodes)
     else:
         veh_dist = [int(veh_dist)] * len(nodes)
     if speed is not None:
@@ -64,5 +64,6 @@ if __name__ == '__main__':
     update_graph_file(os.path.join(CONFIG, 'gps.csv'),
                       os.path.join(CONFIG, 'aam.csv'),
                       NODES)
-    update_vehicle_initial_distribution([int(10) for i in range(len(NODES))],
-                                        nodes=NODES)
+    update_vehicle_initial_distribution(veh_dist=[int(200)] * len(NODES),
+                                        nodes=NODES,
+                                        speed=10)
