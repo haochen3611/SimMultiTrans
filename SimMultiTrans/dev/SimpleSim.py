@@ -100,16 +100,17 @@ class SimpleSimulator(BaseSimulator):
         super().__init__()
 
         # private
+        self._time_horizon = self._time_unit_converter(time_horizon, time_unit)
         self._g_file = graph_file
         self._v_file = vehicle_file
         self._vehicle_queue = np.zeros(0)
-        self._passenger_matrix = np.zeros(0)
+        self._passenger_queue = deque(maxlen=self._time_horizon)
+        self._node_pass_sum = np.zeros(0)  # Consider caching the queue sum for speed
         self._travel_time = np.zeros(0)
         self._travel_dist = np.zeros(0)
         self._arr_rate = np.zeros(0)
-        self._time_horizon = self._time_unit_converter(time_horizon, time_unit)
         self._passenger_schedule = np.zeros(0)
-        self._vehicle_schedule = deque
+        self._vehicle_schedule = deque(maxlen=self._time_horizon)
         self._cur_time = 0
 
         # public
@@ -127,7 +128,10 @@ class SimpleSimulator(BaseSimulator):
 
     @property
     def pass_queue(self):
-        return self._passenger_matrix.sum(axis=1)
+        pass_queue_sum = np.zeros(self.num_nodes)
+        for pass_queue in self._passenger_queue:
+            pass_queue_sum += pass_queue.sum(axis=1)
+        return pass_queue_sum
 
     @staticmethod
     def _time_unit_converter(time, unit):
@@ -206,23 +210,34 @@ class SimpleSimulator(BaseSimulator):
         arr_prob = self._exponential_dist()
         rd = np.random.uniform(0, 1, size=(time_horizon, self.num_nodes, self.num_nodes))
         rd /= rd.sum(axis=2)[:, :, np.newaxis]
-        new_pass = np.greater(arr_prob[np.newaxis, :, :], rd).astype(np.int)
+        new_pass = np.greater(arr_prob[np.newaxis, :, :], rd).astype(np.bool)
         return new_pass
 
     def passenger_arrival(self):
         """Call every second
+        Will not do checking for speed
         """
-        if self._passenger_matrix.shape != (self.num_nodes, self.num_nodes):
-            self._passenger_matrix = np.zeros((self.num_nodes, self.num_nodes))
-        self._passenger_matrix += self._passenger_schedule[self._cur_time]
+        if np.sum(self._passenger_schedule[self._cur_time]) != 0:
+            self._passenger_queue.appendleft(self._passenger_schedule[self._cur_time])
 
     def _match_demand(self):
-        curr_pass_queue = self.pass_queue
-        has_more_veh = np.greater(self._vehicle_queue, curr_pass_queue)
+        # curr_pass_queue = self.pass_queue
+        # has_more_veh = np.greater(self._vehicle_queue, curr_pass_queue)
         veh_trans_mat = np.zeros((self.num_nodes, self.num_nodes))
-        veh_trans_mat[has_more_veh, :] = self._passenger_matrix[has_more_veh, :]
-        # TODO: How to solve first come first sever?
-        self._vehicle_queue[has_more_veh] -= curr_pass_queue[has_more_veh]
+
+        while self._passenger_queue:
+            cur_p_q = self._passenger_queue.pop()
+            cur_q_sum = cur_p_q.sum(axis=1)
+            has_more_veh = np.greater_equal(self._vehicle_queue, cur_q_sum)
+
+            # nodes with more vehicle than passenger
+            self._vehicle_queue[has_more_veh] -= cur_q_sum[has_more_veh]
+            veh_trans_mat[has_more_veh, :] += cur_p_q[has_more_veh, :]
+
+            # nodes with less vehicle than passenger
+
+
+
 
 
 
