@@ -33,9 +33,19 @@ def update_graph_file(gps_file, aam_file, nodes):
                   indent=4)
 
 
-def update_vehicle_initial_distribution(veh_dist, nodes):
+def update_vehicle_initial_distribution(veh_dist, nodes, speed=None):
     with open(os.path.join(CONFIG, 'vehicle_nyc.json'), 'r') as f:
         vehicle_file = json.load(f)
+    assert isinstance(nodes, (str, int, float, list, tuple, np.ndarray))
+    if isinstance(nodes, (str, int, float)):
+        nodes = [str(nodes)]
+    assert isinstance(veh_dist, (int, float, list, tuple, np.ndarray))
+    if isinstance(veh_dist, (list, tuple, np.ndarray)):
+        assert len(veh_dist) == nodes
+    else:
+        veh_dist = [int(veh_dist)] * len(nodes)
+    if speed is not None:
+        vehicle_file['taxi']['vel'] = speed
 
     vehicle_file['taxi']['distrib'].clear()
     for idx, n in enumerate(nodes):

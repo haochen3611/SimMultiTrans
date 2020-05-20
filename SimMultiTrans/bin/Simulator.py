@@ -118,13 +118,6 @@ class Simulator(object):
     def import_vehicle_attribute(self, file_name):
         with open(f'{file_name}') as file_data:
             self.vehicle_attri = json.load(file_data)
-        '''
-        # check the input correctness
-        mode_list = []
-        for node in self.graph.get_all_nodes():
-            modesinnodes = self.graph.get_graph_dic[node]['node'].mode
-        for mode in self.vehicle_attri:
-        '''
         # total_vehicle = {}
         for mode in self.vehicle_attri:
             self.vehicle_attri[mode]['total'] = 0

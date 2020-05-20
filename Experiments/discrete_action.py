@@ -60,6 +60,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._episode = 0
         self._worker_id = str(hash(time.time()))
         self._save_res_every_ep = int(self._config['save_res_every_ep'])
+        self._vehicle_speed = self._config['veh_speed']
 
     def _get_neighbors(self):
         k = self._config['near_neighbor']
@@ -150,8 +151,9 @@ class TaxiRebalance(gym.Env, ABC):
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
         reward = -self._beta*(p_queue.sum() +
-                              self._alpha*16*np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) *
-                                                        action_mat * self._travel_time, 0).sum())
+                              self._alpha*self._vehicle_speed *
+                              np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * action_mat *
+                                         self._travel_time, 0).sum())
         # print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
@@ -191,6 +193,10 @@ if __name__ == '__main__':
                         type=int, default=200)
     parser.add_argument('--sgd_bat_size', nargs='?', metavar='<SGD minibatch size>',
                         type=int, default=128)
+    parser.add_argument('--veh_speed', nargs='?', metavar='<Average vehicle speed>',
+                        type=int, default=10)
+    parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
+                        type=int, default=4)
 
     args = parser.parse_args()
 
@@ -205,12 +211,14 @@ if __name__ == '__main__':
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
     NODES = sorted([236, 237, 186, 170, 141])
-    initial_vehicle = int(args.init_veh)
+    initial_vehicle = args.init_veh
     iterations = args.iter
+    vehicle_speed = args.veh_speed
     if file_conf is not None:
         NODES = sorted(file_conf.pop("nodes", NODES))
         initial_vehicle = int(file_conf.pop("init_veh", initial_vehicle))
         iterations = int(file_conf.pop("iter", iterations))
+        vehicle_speed = int(file_conf.pop("veh_speed", vehicle_speed))
 
     update_graph_file(os.path.join(CONFIG, 'gps.csv'),
                       os.path.join(CONFIG, 'aam.csv'),
@@ -228,7 +236,7 @@ if __name__ == '__main__':
         for conf in file_conf:
             configure[conf] = file_conf[conf]
         configure['env_config']['nodes_list'] = nodes_list
-        configure['env_config']["near_neighbor"] = len(nodes_list)
+        configure['env_config']["veh_speed"] = vehicle_speed
     else:
         configure['num_workers'] = args.num_cpu
         configure['num_gpus'] = args.num_gpu
@@ -245,12 +253,13 @@ if __name__ == '__main__':
             "max_travel_time": 1000,
             "max_passenger": 1e6,
             "nodes_list": nodes_list,
-            "near_neighbor": 4,
+            "near_neighbor": args.num_neighbor,
             "plot_queue_len": False,  # do not use plot function for now
             "dispatch_rate": args.dpr,
             "alpha": args.alpha,
             "beta": args.beta,
-            "save_res_every_ep": 100
+            "save_res_every_ep": 100,
+            "veh_speed": vehicle_speed
         }
     trainer = ppo.PPOTrainer(config=configure)
     # import cProfile, pstats, io
