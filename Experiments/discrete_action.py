@@ -171,7 +171,7 @@ if __name__ == '__main__':
     # unique results directory for every run
     curr_time = time.strftime("%Y-%m-%d-%H-%M-%S")
     RESULTS = os.path.join(RESULTS, curr_time)
-
+    # Config file has priority over CLI arguments
     parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
     parser.add_argument('--config', nargs='?', metavar='<Configuration file path>',
                         type=str, default='None')
@@ -232,37 +232,40 @@ if __name__ == '__main__':
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
     configure['env'] = TaxiRebalance
-    # configure['reuse_actors'] = True
+    configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
+    configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
+    configure['vf_clip_param'] = args.vf_clip
+    configure['lr'] = args.lr
+    configure['train_batch_size'] = args.tr_bat_size
+    configure['rollout_fragment_length'] = args.wkr_smpl_size
+    configure['sgd_minibatch_size'] = args.sgd_bat_size
+    configure['env_config'] = {
+        "start_time": '08:00:00',
+        "time_horizon": 10,  # hours
+        "max_vehicle": 500000,
+        "reb_interval": 600,  # seconds 60 steps per episode
+        "max_travel_time": 1000,
+        "max_passenger": 1e6,
+        "nodes_list": nodes_list,
+        "near_neighbor": args.num_neighbor,
+        "plot_queue_len": False,  # do not use plot function for now
+        "dispatch_rate": args.dpr,
+        "alpha": args.alpha,
+        "beta": args.beta,
+        "save_res_every_ep": 100,
+        "veh_speed": vehicle_speed
+    }
 
     if file_conf is not None:
-        for conf in file_conf:
-            configure[conf] = file_conf[conf]
-        configure['env_config']['nodes_list'] = nodes_list
-        configure['env_config']["veh_speed"] = vehicle_speed
-    else:
-        configure['num_workers'] = args.num_cpu
-        configure['num_gpus'] = args.num_gpu
-        configure['vf_clip_param'] = args.vf_clip
-        configure['lr'] = args.lr
-        configure['train_batch_size'] = args.tr_bat_size
-        configure['rollout_fragment_length'] = args.wkr_smpl_size
-        configure['sgd_minibatch_size'] = args.sgd_bat_size
-        configure['env_config'] = {
-            "start_time": '08:00:00',
-            "time_horizon": 10,  # hours
-            "max_vehicle": 500000,
-            "reb_interval": 600,  # seconds 60 steps per episode
-            "max_travel_time": 1000,
-            "max_passenger": 1e6,
-            "nodes_list": nodes_list,
-            "near_neighbor": args.num_neighbor,
-            "plot_queue_len": False,  # do not use plot function for now
-            "dispatch_rate": args.dpr,
-            "alpha": args.alpha,
-            "beta": args.beta,
-            "save_res_every_ep": 100,
-            "veh_speed": vehicle_speed
-        }
+        env_config = file_conf.pop('env_config', None)
+        configure.update(file_conf)
+        if env_config is not None:
+            configure['env_config'].update(env_config)
+
+    # print(configure['env_config']['veh_speed'])
+    # print(configure['env_config']['nodes_list'])
+    # print(configure['num_workers'])
+
     trainer = ppo.PPOTrainer(config=configure)
     # import cProfile, pstats, io
     # from pstats import SortKey

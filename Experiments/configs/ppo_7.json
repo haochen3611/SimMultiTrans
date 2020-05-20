@@ -5,7 +5,7 @@
     "lambda": 1.0,
     "rollout_fragment_length": 120,
     "train_batch_size": 4000,
-    "num_workers": 60,
+    "num_workers": 10,
     "num_gpus": 0,
     "sgd_minibatch_size": 128,
     "num_sgd_iter": 30,
@@ -29,6 +29,7 @@
         "alpha": 1,
         "beta": 1e-2,
         "save_res_every_ep": 100,
-        "near_neighbor": 4
+        "near_neighbor": 4,
+        "veh_speed": 10
     }
 }
