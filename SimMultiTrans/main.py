@@ -29,19 +29,19 @@ def main():
     # simu.rebalance.set_policy(p_name)
 
     simu.initialize(seed=0)
-    # action = np.random.random((len(g.get_all_nodes()), len(g.get_all_nodes())))
-    # sim_action = dict()
-    # for idx, node in enumerate(g.get_all_nodes()):
-    #     sim_action[node] = action[idx, :]/np.sum(action[idx, :])
-    # c_time = 0
-    # start_time = time.time()
-    # for idx in range(time_hor*3600//step_len):
-    #     print(c_time)
-    #     simu.step(action=sim_action,
-    #               step_length=step_len,
-    #               curr_time=c_time)
-    #     c_time += step_len
-    # simu.finishing_touch(start_time)
+    action = np.random.random((len(g.get_all_nodes()), len(g.get_all_nodes())))
+    sim_action = dict()
+    for idx, node in enumerate(g.get_all_nodes()):
+        sim_action[node] = action[idx, :]/np.sum(action[idx, :])
+    c_time = 0
+    start_time = time.time()
+    for idx in range(time_hor*3600//step_len):
+        print(c_time)
+        simu.step(action=sim_action,
+                  step_length=step_len,
+                  curr_time=c_time)
+        c_time += step_len
+    simu.finishing_touch(start_time)
     # simu.save_result(path_name=f'results/test.json')
 
     # plot = Plot(simu.graph, simu.time_horizon, simu.start_time)
@@ -53,13 +53,13 @@ def main():
 
 
 if __name__ == "__main__":
-    # import cProfile, pstats, io
-    # from pstats import SortKey
-    # pr = cProfile.Profile()
-    # pr.enable()
+    import cProfile, pstats, io
+    from pstats import SortKey
+    pr = cProfile.Profile()
+    pr.enable()
     main()
-    # pr.disable()
-    # s = io.StringIO()
-    # ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
-    # ps.print_stats()
-    # print(s.getvalue())
+    pr.disable()
+    s = io.StringIO()
+    ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
+    ps.print_stats()
+    print(s.getvalue())

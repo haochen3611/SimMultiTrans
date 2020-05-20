@@ -54,5 +54,5 @@ if __name__ == '__main__':
     update_graph_file(os.path.join(CONFIG, 'gps.csv'),
                       os.path.join(CONFIG, 'aam.csv'),
                       NODES)
-    update_vehicle_initial_distribution([int(10) for i in range(len(NODES))],
+    update_vehicle_initial_distribution([int(200) for i in range(len(NODES))],
                                         nodes=NODES)
