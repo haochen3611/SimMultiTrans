@@ -2,9 +2,10 @@ import numpy as np
 import json
 from collections import deque
 import heapq
-from numba import njit, prange
+from numba import njit, prange, jitclass
 
 from SimMultiTrans.bin.Network.Node import Haversine
+from SimMultiTrans import graph_file, vehicle_file
 
 
 class BaseSimulator:
@@ -15,7 +16,7 @@ class BaseSimulator:
         Implement constructor in subclass
         """
 
-    def _read_config_files(self):
+    def _initialize_from_configs(self, *args, **kwargs):
         """
         Read in graph file and parse the node info
         :return:
@@ -97,8 +98,11 @@ class BaseSimulator:
 
 
 class SimpleSimulator(BaseSimulator):
+    """
+    Not yet integrate numba acceleration
+    """
 
-    def __init__(self, graph_file, vehicle_file, time_horizon, time_unit='hour'):
+    def __init__(self, graph_config, vehicle_config, time_horizon, time_unit='hour'):
         super().__init__()
 
         # private
@@ -106,8 +110,8 @@ class SimpleSimulator(BaseSimulator):
         # self._original_time = time_horizon
         # self._time_unit = time_unit
 
-        self._g_file = graph_file
-        self._v_file = vehicle_file
+        self._g_file = graph_config
+        self._v_file = vehicle_config
         self._vehicle_queue = np.zeros(0)
         # self._passenger_queue = deque(maxlen=self._time_horizon)  # cannot use with numba
         self._passenger_queue = list()
@@ -126,8 +130,13 @@ class SimpleSimulator(BaseSimulator):
         self.node_to_index = dict()
         self.index_to_node = list()
 
+        with open(self._g_file, 'r') as g_file:
+            self.g_config = json.load(g_file)
+        with open(self._v_file, 'r') as v_file:
+            self.v_config = json.load(v_file)
+
         # initialize everything except for passengers
-        self._read_config_files()
+        self._initialize_from_configs(self.g_config, self.v_config)
         # initialize passengers
         self._generate_passengers()
 
@@ -155,12 +164,7 @@ class SimpleSimulator(BaseSimulator):
         else:
             raise ValueError(f"Invalid value received for \'unit\': {unit}")
 
-    @njit(fastmath=True, parallel=True, nonpython=True)
-    def _read_config_files(self):
-        with open(self._g_file, 'r') as g_file:
-            graph_config = json.load(g_file)
-        with open(self._v_file, 'r') as v_file:
-            vehicle_config = json.load(v_file)
+    def _initialize_from_configs(self, graph_config, vehicle_config):
         self.num_nodes = len(graph_config)
         self.avg_veh_speed = vehicle_config['taxi']['vel']
 
@@ -172,16 +176,22 @@ class SimpleSimulator(BaseSimulator):
         # initialize travel time and distance
         self._travel_time = np.zeros((self.num_nodes, self.num_nodes))
         self._travel_dist = np.zeros((self.num_nodes, self.num_nodes))
+        self._arr_rate = np.zeros((self.num_nodes, self.num_nodes))
         for start in graph_config:
             for end in graph_config[start]['nei']:
                 l1_dist = Haversine((graph_config[start]['lat'], graph_config[start]['lon']),
-                                    (graph_config[end]['lat'], graph_config[end]['lon'].meters)).meters
+                                    (graph_config[end]['lat'], graph_config[end]['lon'])).meters
                 self._travel_time[self.node_to_index[start],
-                                  self.node_to_index[end]] = l1_dist / self.avg_veh_speed \
-                    if 'time' not in graph_config[start]['nei'][end] else graph_config[start]['nei'][end]['time']
+                                  self.node_to_index[end]] = np.ceil(l1_dist / self.avg_veh_speed).astype(int) \
+                    if ('time' not in graph_config[start]['nei'][end]) or \
+                       (graph_config[start]['nei'][end]['time'] == 0) else graph_config[start]['nei'][end]['time']
                 graph_config[start]['nei'][end]['dist'] = l1_dist
                 self._travel_dist[self.node_to_index[start],
                                   self.node_to_index[end]] = l1_dist
+                # initialize arrival rate
+                self._arr_rate[self.node_to_index[start],
+                               self.node_to_index[end]] = graph_config[start]['nei'][end]['rate'] if start != end else 0
+
         # initialize vehicles
         self._vehicle_queue = np.zeros(self.num_nodes)
         for nd in vehicle_config["taxi"]["distrib"]:
@@ -202,9 +212,9 @@ class SimpleSimulator(BaseSimulator):
         else:
             assert isinstance(size, int)
 
-        rd = np.random.uniform(0, 1, (size, size))
-        rd /= rd.sum(axis=1)[:, np.newaxis]
-        return 1 - np.exp(-arr_rate * rd)
+        # rd = np.random.uniform(0, 1, (size, size))
+        # rd /= rd.sum(axis=1)[:, np.newaxis]
+        return 1 - np.exp(-arr_rate)
 
     def _generate_passengers(self, time_horizon=None):
         """
@@ -219,22 +229,22 @@ class SimpleSimulator(BaseSimulator):
 
         arr_prob = self._exponential_dist()
         rd = np.random.uniform(0, 1, size=(time_horizon, self.num_nodes, self.num_nodes))
-        rd /= rd.sum(axis=2)[:, :, np.newaxis]
-        self._passenger_schedule = np.greater(arr_prob[np.newaxis, :, :], rd).astype(np.bool)
+        # rd /= rd.sum(axis=2)[:, :, np.newaxis]
+        self._passenger_schedule = np.greater(arr_prob, rd).astype(np.int8)
 
-    @njit(fastmath=True, parallel=True, nonpython=True)
     def _passenger_arrival(self):
         """Call every second
         Will not do checking for speed
         """
         if np.sum(self._passenger_schedule[self._cur_time]) != 0:
             self._passenger_queue.append(self._passenger_schedule[self._cur_time])
+            # print(f'time {self._cur_time} pass arrive {np.sum(self._passenger_schedule[self._cur_time])}')
 
-    @njit(fastmath=True, parallel=True, nonpython=True)
     def _match_demand_and_dispatch(self, dispatch_mat=None):
         """Call every second
         Match passenger demand and dispatch empty vehicles
         Handles vehicle leave and passenger leave. No need for separate functions
+        Assume no passenger from one node to itself (forced arrival rate to be zero in configuration)
         :param dispatch_mat:
         :return:
         """
@@ -255,7 +265,7 @@ class SimpleSimulator(BaseSimulator):
             # nodes with less vehicle than passenger
             ava_veh = self._vehicle_queue[~has_more_veh]
             wait_pass = cur_p_q[~has_more_veh, :]
-            for idx in prange(len(ava_veh)):
+            for idx in range(len(ava_veh)):
                 while ava_veh[idx] > 0:
                     for jdx in range(len(wait_pass[idx])):  # try prange later
                         # try use np.where
@@ -271,6 +281,7 @@ class SimpleSimulator(BaseSimulator):
 
         # put vehicle schedule on heap queue
         # np.where, np.nonzero, np.argwhere
+        # TODO: need to subtract dispatch vehicle from vehicle queue
         if dispatch_mat is not None:
             veh_trans_mat += dispatch_mat
         for non_z in np.argwhere(veh_trans_mat):
@@ -279,30 +290,31 @@ class SimpleSimulator(BaseSimulator):
                             veh_trans_mat[non_z[0], non_z[1]],
                             non_z[1]))
 
-    @njit(fastmath=True, parallel=True, nonpython=True)
     def _vehicle_arrival(self):
-        """
+        """Call every second
         Check the top of the heap to see if the scheduled event happens now
         Adds the arriving vehicles to the vehicle queue
         :return:
         """
-        try:
-            if self._vehicle_schedule[0][0] == self._cur_time:
-                cur_arr_veh = heapq.heappop(self._vehicle_queue)
-                self._vehicle_queue[cur_arr_veh[2]] += cur_arr_veh[1]
-        except IndexError:
-            pass
-        else:
-            if self._vehicle_queue[0][0] > self._cur_time:
-                raise Exception(f'Vehicle queue fall behind. '
-                                f'Queue time: {self._vehicle_queue[0][0]}. Current time: {self._cur_time}')
+        while True:
+            try:
+                if self._vehicle_schedule[0][0] == self._cur_time:
+                    cur_arr_veh = heapq.heappop(self._vehicle_schedule)
+                    self._vehicle_queue[cur_arr_veh[2]] += cur_arr_veh[1]
+                    print(f'time {self._cur_time} vehicle arrive {cur_arr_veh[1]} at node {cur_arr_veh[2]}')
+                elif self._vehicle_schedule[0][0] < self._cur_time:
+                    raise Exception(f'Vehicle queue fall behind. '
+                                    f'Queue time: {self._vehicle_schedule[0][0]}. Current time: {self._cur_time}')
+                else:
+                    break
+            except IndexError:
+                break
 
     def _sim_one_second_routine(self, action=None):
         self._passenger_arrival()
         self._vehicle_arrival()
         self._match_demand_and_dispatch(action)
 
-    @njit(fastmath=True, parallel=True, nonpython=True)
     def step(self, action, step_length):
         assert isinstance(action, np.ndarray)
         assert action.shape == (self.num_nodes, self.num_nodes)
@@ -340,11 +352,45 @@ class SimpleSimulator(BaseSimulator):
         self.index_to_node = list()
 
         # initialize everything except for passengers
-        self._read_config_files()
+        self._initialize_from_configs(self.g_config, self.v_config)
         # initialize passengers
         self._generate_passengers()
 
+        return self.pass_queue, self.veh_queue
 
+
+if __name__ == '__main__':
+
+    import pandas as pd
+
+    # FAKE_ARR = np.array([11, 55, 85, 56, 107])
+    th = 10
+    sl = 600
+    stp = th*3600//600
+
+    sim = SimpleSimulator(graph_config=graph_file,
+                          vehicle_config=vehicle_file,
+                          time_horizon=th,
+                          time_unit='hour')
+    pq_lst = []
+    vq_lst = []
+    for stp in range(stp+1):
+        print(stp)
+        if stp == 0:
+            pq, vq = sim.reset()
+        else:
+            # act = np.random.random((sim.num_nodes, sim.num_nodes))
+            act = np.eye(sim.num_nodes)
+            pq, vq = sim.step(act, step_length=sl)
+        pq_lst.append(pq)
+        vq_lst.append(vq)
+
+    pq_lst = pd.DataFrame(data=pq_lst, columns=list(sim.node_to_index.keys()))
+    vq_lst = pd.DataFrame(data=vq_lst, columns=list(sim.node_to_index.keys()))
+
+    ps = sim._passenger_schedule
+    print(np.sum(ps))
+    print(np.sum(sim._arr_rate)*36000)
 
 
 
