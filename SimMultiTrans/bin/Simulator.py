@@ -178,14 +178,14 @@ class Simulator(object):
                 self.passenger_waittime[node][mode] = 0
 
         # generate passengers
-        st = time()
+        # st = time()
         total_p = 0
         np.random.seed(seed)
         for index, node in enumerate(self.graph.get_all_nodes()):
             self.graph.graph_top[node]['node'].passenger_generator(time_horizon=self.time_horizon)
             total_p += self.graph.graph_top[node]['node'].total_p
-        print(total_p)
-        print('time used', time()-st)
+        print("Total Passengers:", total_p)
+        # print('time used', time()-st)
 
         # generate vehicles
         for mode in self.vehicle_attri:
@@ -230,6 +230,7 @@ class Simulator(object):
     def reset(self):
         raise NotImplementedError
 
+    # @profile
     def step(self, action, step_length, curr_time):
         if not self._is_running:
             logger.info(f'Simulation started at {time()}')

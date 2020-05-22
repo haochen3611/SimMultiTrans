@@ -151,11 +151,8 @@ if __name__ == '__main__':
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
     NODES = sorted([236, 237, 186, 170, 141])
 
-    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
-                      os.path.join(CONFIG, 'aam.csv'),
-                      NODES)
-    update_vehicle_initial_distribution([int(args.init_veh) for i in range(len(NODES))],
-                                        nodes=NODES)
+    update_graph_file(NODES, os.path.join(CONFIG, 'gps.csv'), os.path.join(CONFIG, 'aam.csv'))
+    update_vehicle_initial_distribution(nodes=NODES, veh_dist=[int(args.init_veh) for i in range(len(NODES))])
 
     ray.init()
     with open(graph_file, 'r') as f:
