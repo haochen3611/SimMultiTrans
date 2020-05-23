@@ -32,7 +32,8 @@ def main():
 
     simu.initialize(seed=0)
     # action = np.random.random((len(g.get_all_nodes()), len(g.get_all_nodes())))
-    action = np.zeros((len(g.get_all_nodes()), len(g.get_all_nodes())))
+    action = np.eye(len(g.get_all_nodes()))
+    # action = np.zeros((len(g.get_all_nodes()), len(g.get_all_nodes())))
     sim_action = dict()
     for idx, node in enumerate(g.get_all_nodes()):
         sim_action[node] = action[idx, :]/np.sum(action[idx, :]) if np.sum(action[idx, :]) != 0 else 0
