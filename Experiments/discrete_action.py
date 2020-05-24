@@ -221,12 +221,8 @@ if __name__ == '__main__':
         iterations = int(file_conf.pop("iter", iterations))
         vehicle_speed = int(file_conf.pop("veh_speed", vehicle_speed))
 
-    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
-                      os.path.join(CONFIG, 'aam.csv'),
-                      NODES)
-    update_vehicle_initial_distribution(veh_dist=[initial_vehicle]*len(NODES),
-                                        nodes=NODES,
-                                        speed=vehicle_speed)
+    update_graph_file(NODES, os.path.join(CONFIG, 'gps.csv'), os.path.join(CONFIG, 'aam.csv'))
+    update_vehicle_initial_distribution(nodes=NODES, veh_dist=[initial_vehicle for i in range(len(NODES))])
 
     ray.init()
     nodes_list = [str(x) for x in NODES]

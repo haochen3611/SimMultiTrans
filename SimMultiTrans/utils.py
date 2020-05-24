@@ -8,7 +8,11 @@ CONFIG = os.path.join(ROOT, 'conf')
 RESULTS = os.path.join(ROOT, 'results')
 
 
-def update_graph_file(gps_file, aam_file, nodes):
+def update_graph_file(nodes, gps_file=None, aam_file=None):
+    if gps_file is None:
+        gps_file = os.path.join(CONFIG, 'gps.csv')
+    if aam_file is None:
+        aam_file = os.path.join(CONFIG, 'aam.csv')
 
     aam = pd.read_csv(aam_file, index_col=0, header=0)
     aam = aam.loc[(aam.index.isin(nodes))]
@@ -33,7 +37,7 @@ def update_graph_file(gps_file, aam_file, nodes):
                   indent=4)
 
 
-def update_vehicle_initial_distribution(veh_dist, nodes, speed=None):
+def update_vehicle_initial_distribution(nodes, veh_dist, speed=None):
     with open(os.path.join(CONFIG, 'vehicle_nyc.json'), 'r') as f:
         vehicle_file = json.load(f)
     assert isinstance(nodes, (str, int, float, list, tuple, np.ndarray))
@@ -57,13 +61,12 @@ def update_vehicle_initial_distribution(veh_dist, nodes, speed=None):
 
 if __name__ == '__main__':
 
-    NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    # NODES = sorted([236, 237, 186, 170, 141])
+    NODES = sorted([236, 237, 186, 170, 141])
 
-    update_graph_file(os.path.join(CONFIG, 'gps.csv'),
-                      os.path.join(CONFIG, 'aam.csv'),
-                      NODES)
-    update_vehicle_initial_distribution(veh_dist=[int(200)] * len(NODES),
-                                        nodes=NODES,
+    update_graph_file(NODES)
+
+    update_vehicle_initial_distribution(nodes=NODES,
+                                        veh_dist=[int(200)] * len(NODES),
                                         speed=10)
