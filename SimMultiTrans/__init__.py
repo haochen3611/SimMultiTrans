@@ -4,6 +4,7 @@ import logging
 from SimMultiTrans.bin import Simulator, Plot
 from SimMultiTrans.bin.Network import Graph
 import SimMultiTrans.utils as utils
+from SimMultiTrans.dev import SimpleSimulator
 
 __all__ = [
     "Simulator",
@@ -14,7 +15,8 @@ __all__ = [
     "REBALANCE_POLICY",
     "ROUTING_POLICY",
     "utils",
-    "default_graph"
+    "default_graph",
+    "SimpleSimulator"
 ]
 
 os.makedirs(utils.RESULTS, exist_ok=True)

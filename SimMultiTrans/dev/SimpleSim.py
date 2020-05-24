@@ -10,8 +10,6 @@ import time
 import os
 
 from SimMultiTrans.bin.Network.Node import Haversine
-from SimMultiTrans import graph_file, vehicle_file
-from SimMultiTrans.utils import update_graph_file, update_vehicle_initial_distribution, CONFIG
 
 
 class BaseSimulator:
@@ -153,6 +151,12 @@ class SimpleSimulator(BaseSimulator):
         # initialize passengers
         # self._generate_passengers()
 
+    @classmethod
+    def init_with_configs(cls, graph_config, vehicle_config, time_horizon, time_unit='hour', seed=0):
+        cls_inst = cls(graph_config, vehicle_config, time_horizon, time_unit, seed)
+        cls_inst._initialize_from_configs(cls_inst.g_config, cls_inst.v_config)
+        return cls_inst
+
     def reset(self):
         """
         Need a more efficient one. But this will do for now
@@ -198,6 +202,14 @@ class SimpleSimulator(BaseSimulator):
         for node in self._passenger_queue:
             pass_queue_sum[self.node_to_index[node]] += len(self._passenger_queue[node])
         return pass_queue_sum
+
+    @property
+    def travel_time_matrix(self):
+        return np.copy(self._travel_time)
+
+    @property
+    def travel_dist_matrix(self):
+        return np.copy(self._travel_dist)
 
     @staticmethod
     def _time_unit_converter(time_, unit):
@@ -284,7 +296,7 @@ class SimpleSimulator(BaseSimulator):
         self._rdn = self._rng.uniform(0, 1, size=(time_horizon, self.num_nodes, self.num_nodes))
         arr_prob = 1 - np.exp(-arr_rate)
         pass_mat = np.greater(arr_prob, self._rdn).astype(np.int64)
-        print('Total passengers:', np.sum(pass_mat))
+        # print('Total passengers:', np.sum(pass_mat))
         self._passenger_schedule = []
         for _ in range(len(pass_mat)):
             self._passenger_schedule.append(np.argwhere(pass_mat[_]).tolist())
@@ -450,6 +462,8 @@ def pass_gen(arr_rate, time_horizon, size):
 
 
 if __name__ == '__main__':
+    from SimMultiTrans import graph_file, vehicle_file
+    from SimMultiTrans.utils import update_graph_file, update_vehicle_initial_distribution, CONFIG
 
     time_hor = 10
     step_len = 600

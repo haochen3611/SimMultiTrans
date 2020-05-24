@@ -3,7 +3,7 @@ from abc import ABC
 import os
 import sys
 
-from SimMultiTrans import Simulator, Graph, graph_file, vehicle_file
+from SimMultiTrans import SimpleSimulator, Simulator, Graph, graph_file, vehicle_file
 from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
 import gym
 from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
@@ -29,16 +29,16 @@ class TaxiRebalance(gym.Env, ABC):
 
     def __init__(self, config):
         self._config = config
-        self.curr_time = 0
-        self.graph = Graph()
-        self.graph.import_graph(graph_file)
-        self.sim = Simulator(self.graph)
+        self._curr_time = 0
+        self._graph = Graph()
+        self._graph.import_graph(graph_file)
+        self._sim = Simulator(self._graph)
 
-        self.max_vehicle = self._config['max_vehicle']
-        self.reb_interval = self._config['reb_interval']
-        self.max_travel_t = self._config['max_travel_time']
-        self.max_lookback_steps = int(np.ceil(self.max_travel_t/self.reb_interval))
-        self.max_passenger = self._config['max_passenger']
+        self._max_vehicle = self._config['max_vehicle']
+        self._reb_interval = self._config['reb_interval']
+        self._max_travel_t = self._config['max_travel_time']
+        self._max_lookback_steps = int(np.ceil(self._max_travel_t / self._reb_interval))
+        self._max_passenger = self._config['max_passenger']
         self._num_nodes = len(self._config['nodes_list'])
         self._nodes = tuple(self._config['nodes_list'])
         self._num_neighbors = self._config['near_neighbor']
@@ -46,8 +46,8 @@ class TaxiRebalance(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors+1] * self._num_nodes)
-        self.observation_space = Tuple((Box(0, self.max_passenger, shape=(self._num_nodes,), dtype=np.int64),
-                                        Box(0, self.max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
+                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
         self._is_running = False
         self._done = False
         self._start_time = time.time()
@@ -55,7 +55,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._beta = self._config['beta']
         self._step = 0
         self._total_vehicle = None
-        self._travel_time = None
+        self._travel_dist = None
         self._pre_action = None
         self._episode = 0
         self._worker_id = str(hash(time.time()))
@@ -69,8 +69,8 @@ class TaxiRebalance(gym.Env, ABC):
             self._num_neighbors = k
         neighbor_map = dict()
         for node in self._nodes:
-            dist_lst = [(dest, self.graph.graph_top[node]['nei'][dest]['dist'])
-                        for dest in self.graph.graph_top[node]['nei']]
+            dist_lst = [(dest, self._graph.graph_top[node]['nei'][dest]['dist'])
+                        for dest in self._graph.graph_top[node]['nei']]
             dist_lst.sort(key=lambda x: x[1])
             neighbor_map[node] = tuple(self._nodes.index(x[0]) for x in dist_lst[:k+1])
         return neighbor_map
@@ -101,35 +101,35 @@ class TaxiRebalance(gym.Env, ABC):
             # print(f'Episode: {self._episode} done!')
 
         if self._is_running:
-            self.sim.finishing_touch(self._start_time)
+            self._sim.finishing_touch(self._start_time)
             if self._episode % self._save_res_every_ep == 0:
-                self.sim.save_result(RESULTS, self._worker_id, unique_name=False)
+                self._sim.save_result(RESULTS, self._worker_id, unique_name=False)
                 if self._config['plot_queue_len']:
-                    self.sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
-                    self.sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
+                    self._sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
+                    self._sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
             self._is_running = False
 
-        self.curr_time = 0
+        self._curr_time = 0
         self._step = 0
 
-        self.graph = Graph()
-        self.graph.import_graph(graph_file)
-        self.sim = Simulator(self.graph)
-        self.sim.import_arrival_rate(unit=(1, 'sec'))
-        self.sim.import_vehicle_attribute(file_name=vehicle_file)
-        self.sim.set_running_time(start_time=self._config['start_time'],
-                                  time_horizon=self._config['time_horizon'],
-                                  unit='hour')
-        self.sim.routing.set_routing_method('simplex')
-        self.sim.initialize(seed=0)
-        self._total_vehicle = self.sim.vehicle_attri['taxi']['total']
+        self._graph = Graph()
+        self._graph.import_graph(graph_file)
+        self._sim = Simulator(self._graph)
+        self._sim.import_arrival_rate(unit=(1, 'sec'))
+        self._sim.import_vehicle_attribute(file_name=vehicle_file)
+        self._sim.set_running_time(start_time=self._config['start_time'],
+                                   time_horizon=self._config['time_horizon'],
+                                   unit='hour')
+        self._sim.routing.set_routing_method('simplex')
+        self._sim.initialize(seed=0)
+        self._total_vehicle = self._sim.vehicle_attri['taxi']['total']
 
-        self._travel_time = np.zeros((self._num_nodes, self._num_nodes))
-        for i, node in enumerate(self.graph.graph_top):
-            for j, road in enumerate(self.graph.graph_top):
+        self._travel_dist = np.zeros((self._num_nodes, self._num_nodes))
+        for i, node in enumerate(self._graph.graph_top):
+            for j, road in enumerate(self._graph.graph_top):
                 if i != j:
-                    self._travel_time[i, j] = self.graph.graph_top[node]['node'].road[road].dist
-        self._travel_time /= np.linalg.norm(self._travel_time, ord=np.inf)
+                    self._travel_dist[i, j] = self._graph.graph_top[node]['node'].road[road].dist
+        self._travel_dist /= np.linalg.norm(self._travel_dist, ord=np.inf)
         self._pre_action = np.zeros((self._num_neighbors, self._num_nodes))
 
         with open(vehicle_file, 'r') as v_file:
@@ -144,16 +144,16 @@ class TaxiRebalance(gym.Env, ABC):
             self._is_running = True
         sim_action, action_mat = self._preprocess_action(action)
         # print(sim_action)
-        p_queue, v_queue = self.sim.step(action=sim_action,
-                                         step_length=self.reb_interval,
-                                         curr_time=self.curr_time)
-        self.curr_time += self.reb_interval
+        p_queue, v_queue = self._sim.step(action=sim_action,
+                                          step_length=self._reb_interval,
+                                          curr_time=self._curr_time)
+        self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
         reward = -self._beta*(p_queue.sum() +
-                              self._alpha*self._vehicle_speed *
+                              self._alpha *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * action_mat *
-                                         self._travel_time, 0).sum())
+                                         self._travel_dist, 0).sum())
         # print(self._vehicle_speed)
         # print(reward)
         # print('passenger', p_queue)
@@ -161,7 +161,122 @@ class TaxiRebalance(gym.Env, ABC):
         # print(f'at node {v_queue.sum()}, on road {self._total_vehicle - v_queue.sum()}')
         # print(f'action diff {np.linalg.norm(self._pre_action-action)}')
         self._pre_action = action
-        if self.curr_time >= self._config['time_horizon']*3600 - 1:
+        if self._curr_time >= self._config['time_horizon']*3600 - 1:
+            self._done = True
+        return (p_queue, v_queue), reward, self._done, {}
+
+
+class TaxiRebLite(gym.Env, ABC):
+
+    def __init__(self, config):
+        self._config = config
+        self._curr_time = 0
+
+        self._sim = SimpleSimulator.init_with_configs(graph_config=graph_file,
+                                                      vehicle_config=vehicle_file,
+                                                      time_horizon=self._config['time_horizon'],
+                                                      time_unit='hour')
+
+        self._max_vehicle = self._config['max_vehicle']
+        self._reb_interval = self._config['reb_interval']
+        self._max_travel_t = self._config['max_travel_time']
+        self._max_lookback_steps = int(np.ceil(self._max_travel_t / self._reb_interval))
+        self._max_passenger = self._config['max_passenger']
+        self._num_nodes = len(self._sim.index_to_node)
+        self._nodes = tuple(self._sim.index_to_node)
+        self._num_neighbors = self._config['near_neighbor']
+        self._neighbor_map = self._get_neighbors()
+        self._dispatch_rate = self._config['dispatch_rate']
+
+        self.action_space = MultiDiscrete([self._num_neighbors + 1] * self._num_nodes)
+        self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
+                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        self._is_running = False
+        self._done = False
+        self._start_time = time.time()
+        self._alpha = self._config['alpha']
+        self._beta = self._config['beta']
+        self._step = 0
+        self._total_vehicle = None
+        self._travel_dist = self._sim.travel_dist_matrix
+        self._travel_dist /= np.linalg.norm(self._travel_dist, ord=np.inf)
+        self._pre_action = None
+        self._episode = 0
+        self._worker_id = str(hash(time.time()))
+        self._save_res_every_ep = int(self._config['save_res_every_ep'])
+        self._vehicle_speed = self._config['veh_speed']
+
+    def _get_neighbors(self):
+        k = self._config['near_neighbor']
+        if k + 1 > len(self._nodes):
+            k = len(self._nodes) - 1
+            self._num_neighbors = k
+        neighbor_map = dict()
+        dist_mat = self._sim.travel_dist_matrix
+        for _i, node in enumerate(self._nodes):
+            dist_lst = np.argsort(dist_mat[_i, :])
+            neighbor_map[node] = tuple(x for x in dist_lst[:k+1])
+        return neighbor_map
+
+    def _preprocess_action(self, action):
+        assert isinstance(action, np.ndarray)
+        if np.isnan(action).sum() > 0:
+            print(self._step)
+            action = self.action_space.sample()
+        action = np.squeeze(action)
+        action_mat = np.zeros((self._num_nodes, self._num_nodes))
+        for nd_idx, cnb in enumerate(action):
+            nb_idx = self._neighbor_map[self._nodes[nd_idx]][cnb]
+            if nb_idx != nd_idx:
+                action_mat[nd_idx, nb_idx] = self._dispatch_rate
+                action_mat[nd_idx, nd_idx] = 1 - self._dispatch_rate
+            else:
+                action_mat[nd_idx, nd_idx] = 1
+
+        return action_mat
+
+    def reset(self):
+        if self._done:
+            self._episode += 1
+            self._done = False
+            print(f'Episode: {self._episode} done!')
+        if self._is_running:
+            # self._sim.finishing_touch(self._start_time)
+            # if self._episode % self._save_res_every_ep == 0:
+            #     self._sim.save_result(RESULTS, self._worker_id, unique_name=False)
+            #     if self._config['plot_queue_len']:
+            #         self._sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
+            #         self._sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
+            self._is_running = False
+        self._curr_time = 0
+        self._step = 0
+        p_q_0, v_q_0 = self._sim.reset()
+
+        return p_q_0, v_q_0
+
+    def step(self, action):
+        self._step += 1
+        if not self._is_running:
+            self._is_running = True
+        sim_action = self._preprocess_action(action)
+        # print(sim_action)
+        p_queue, v_queue = self._sim.step(action=sim_action,
+                                          step_length=self._reb_interval)
+        self._curr_time += self._reb_interval
+        p_queue = np.array(p_queue)
+        v_queue = np.array(v_queue)
+        reward = -self._beta*(p_queue.sum() +
+                              self._alpha * self._vehicle_speed *
+                              np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * sim_action *
+                                         self._travel_dist, 0).sum())
+        # print(self._vehicle_speed)
+        # print(reward)
+        # print('passenger', p_queue)
+        # print('vehicle', v_queue)
+        # print(f'at node {v_queue.sum()}, on road {self._total_vehicle - v_queue.sum()}')
+        # print(f'action diff {np.linalg.norm(self._pre_action-action)}')
+        self._pre_action = action
+        if self._curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
         return (p_queue, v_queue), reward, self._done, {}
 
@@ -209,9 +324,9 @@ if __name__ == '__main__':
         if args.config != 'None':
             raise
 
-    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
     # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    NODES = sorted([236, 237, 186, 170, 141])
+    # NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = args.init_veh
     iterations = args.iter
     vehicle_speed = args.veh_speed
@@ -227,7 +342,8 @@ if __name__ == '__main__':
     ray.init()
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
-    configure['env'] = TaxiRebalance
+    # configure['env'] = TaxiRebalance
+    configure['env'] = TaxiRebLite
     configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
     configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
     configure['vf_clip_param'] = args.vf_clip
@@ -261,7 +377,7 @@ if __name__ == '__main__':
     # print(configure['env_config']['veh_speed'])
     # print(configure['env_config']['nodes_list'])
     # print(configure['num_workers'])
-
+    stt = time.time()
     trainer = ppo.PPOTrainer(config=configure)
     # import cProfile, pstats, io
     # from pstats import SortKey
@@ -279,3 +395,4 @@ if __name__ == '__main__':
     # print(s.getvalue())
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")
+    print(time.time()-stt)
