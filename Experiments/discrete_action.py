@@ -344,8 +344,8 @@ if __name__ == '__main__':
     ray.init()
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
-    # configure['env'] = TaxiRebalance
-    configure['env'] = TaxiRebLite
+    configure['env'] = TaxiRebalance
+    # configure['env'] = TaxiRebLite
     configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
     configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
     configure['vf_clip_param'] = args.vf_clip
