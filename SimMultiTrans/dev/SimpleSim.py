@@ -1,13 +1,11 @@
-import numpy as np
-import json
-from collections import deque
 import heapq
-import numba as nb
-import matplotlib.pyplot as plt
-import pandas as pd
-import line_profiler as lpf
+import json
 import time
-import os
+from collections import deque
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 from SimMultiTrans.bin.Network.Node import Haversine
 
@@ -463,7 +461,7 @@ def pass_gen(arr_rate, time_horizon, size):
 
 if __name__ == '__main__':
     from SimMultiTrans import graph_file, vehicle_file
-    from SimMultiTrans.utils import update_graph_file, update_vehicle_initial_distribution, CONFIG
+    from SimMultiTrans.utils import update_graph_file, update_vehicle_initial_distribution
 
     time_hor = 10
     step_len = 600
