@@ -46,8 +46,10 @@ class TaxiRebalance(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors+1] * self._num_nodes)
-        self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
-                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        # self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
+        #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
+
         self._is_running = False
         self._done = False
         self._start_time = time.time()
@@ -163,7 +165,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._pre_action = action
         if self._curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
-        return (p_queue, v_queue), reward, self._done, {}
+        return p_queue - v_queue, reward, self._done, {}
 
 
 class TaxiRebLite(gym.Env, ABC):
