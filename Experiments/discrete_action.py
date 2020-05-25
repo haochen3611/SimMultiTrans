@@ -138,7 +138,7 @@ class TaxiRebalance(gym.Env, ABC):
             vehicle_dist = json.load(v_file)
         vehicle_dist = vehicle_dist['taxi']['distrib']
         vehicle_dist = np.array([vehicle_dist[x] for x in vehicle_dist])
-        return np.zeros((self._num_nodes,)), vehicle_dist
+        return -vehicle_dist
 
     def step(self, action):
         self._step += 1
@@ -191,8 +191,9 @@ class TaxiRebLite(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors + 1] * self._num_nodes)
-        self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
-                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        # self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
+        #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
         self._is_running = False
         self._done = False
         self._start_time = time.time()
@@ -254,7 +255,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._step = 0
         p_q_0, v_q_0 = self._sim.reset()
 
-        return p_q_0, v_q_0
+        return p_q_0 - v_q_0
 
     def step(self, action):
         self._step += 1
@@ -280,7 +281,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._pre_action = action
         if self._curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
-        return (p_queue, v_queue), reward, self._done, {}
+        return p_queue - v_queue, reward, self._done, {}
 
 
 if __name__ == '__main__':
@@ -315,6 +316,7 @@ if __name__ == '__main__':
                         type=int, default=10)
     parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
                         type=int, default=4)
+    parser.add_argument('--lite', action='store_true', default=False, help='Use lite version or not')
 
     args = parser.parse_args()
 
@@ -326,8 +328,8 @@ if __name__ == '__main__':
         if args.config != 'None':
             raise
 
-    NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
+    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
     # NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = args.init_veh
     iterations = args.iter
@@ -344,8 +346,11 @@ if __name__ == '__main__':
     ray.init()
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
-    configure['env'] = TaxiRebalance
-    # configure['env'] = TaxiRebLite
+    if not args.lite:
+        configure['env'] = TaxiRebalance
+    else:
+        print('using lite')
+        configure['env'] = TaxiRebLite
     configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
     configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
     configure['vf_clip_param'] = args.vf_clip
