@@ -268,7 +268,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() +
+        reward = -self._beta*(p_queue.sum() * 0 +
                               self._alpha * self._vehicle_speed *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * sim_action *
                                          self._travel_dist, 0).sum())
@@ -317,6 +317,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
                         type=int, default=4)
     parser.add_argument('--lite', action='store_true', default=False, help='Use lite version or not')
+    parser.add_argument('--no_share', action='store_false', default=True,
+                        help='Not share network layers between policy and value function')
 
     args = parser.parse_args()
 
@@ -346,6 +348,7 @@ if __name__ == '__main__':
     ray.init()
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
+    configure['vf_share_layers'] = args.no_share
     if not args.lite:
         configure['env'] = TaxiRebalance
     else:
@@ -403,3 +406,6 @@ if __name__ == '__main__':
     check_pt = trainer.save()
     print(f"Model saved at {check_pt}")
     print(time.time()-stt)
+
+    policy = trainer.get_policy()
+
