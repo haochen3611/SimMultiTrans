@@ -121,6 +121,7 @@ class SimpleSimulator(BaseSimulator):
         self._node_pass_sum = np.zeros(0)  # Consider caching the queue sum for speed
         self._travel_time = np.zeros(0)
         self._travel_dist = np.zeros(0)
+        self._max_travel_dist = np.zeros(0)
         self._arr_rate = np.zeros(0)
         self._passenger_schedule = np.zeros(0)
         # self._vehicle_schedule = deque(maxlen=self._time_horizon)
@@ -171,6 +172,7 @@ class SimpleSimulator(BaseSimulator):
         self._node_pass_sum = np.zeros(0)  # Consider caching the queue sum for speed
         self._travel_time = np.zeros(0)
         self._travel_dist = np.zeros(0)
+        self._max_travel_dist = np.zeros(0)
         self._arr_rate = np.zeros(0)
         self._passenger_schedule = np.zeros(0)
         # self._vehicle_schedule = deque(maxlen=self._time_horizon)
@@ -248,7 +250,7 @@ class SimpleSimulator(BaseSimulator):
 
     def _initialize_from_configs(self, graph_config, vehicle_config):
         self.num_nodes = len(graph_config)
-        self.avg_veh_speed = vehicle_config['taxi']['vel']
+        self.avg_veh_speed = vehicle_config['taxi']['vel']  # unit is MPH
 
         self.node_to_index = dict()
         self._passenger_queue = dict()
@@ -257,18 +259,19 @@ class SimpleSimulator(BaseSimulator):
             self._passenger_queue[nd] = deque()
         self.index_to_node = list(graph_config.keys())
         # initialize travel time and distance
-        self._travel_time = np.zeros((self.num_nodes, self.num_nodes), dtype=np.int64)
-        self._travel_dist = np.zeros((self.num_nodes, self.num_nodes), dtype=np.float64)
+        self._travel_time = np.zeros((self.num_nodes, self.num_nodes), dtype=np.int64)  # unit seconds
+        self._travel_dist = np.zeros((self.num_nodes, self.num_nodes), dtype=np.float64)  # unit is mile
+        self._max_travel_dist = np.zeros((self.num_nodes, self.num_nodes), dtype=np.float64)
         self._arr_rate = np.zeros((self.num_nodes, self.num_nodes), dtype=np.float64)
         for start in graph_config:
             for end in graph_config[start]['nei']:
                 l1_dist = Haversine((graph_config[start]['lat'], graph_config[start]['lon']),
-                                    (graph_config[end]['lat'], graph_config[end]['lon'])).meters
+                                    (graph_config[end]['lat'], graph_config[end]['lon'])).miles
                 # travel time from one node to itself is 1 second
                 if ('time' not in graph_config[start]['nei'][end]) or (graph_config[start]['nei'][end]['time'] == 0):
                     self._travel_time[self.node_to_index[start],
-                                      self.node_to_index[end]] = np.int64(np.ceil(l1_dist / self.avg_veh_speed)) \
-                        if start != end else 1
+                                      self.node_to_index[end]] = \
+                        np.int64(np.ceil(l1_dist * 3600 / self.avg_veh_speed)) if start != end else 1
                 else:
                     self._travel_time[self.node_to_index[start],
                                       self.node_to_index[end]] = graph_config[start]['nei'][end]['time']
@@ -280,6 +283,8 @@ class SimpleSimulator(BaseSimulator):
                 # initialize arrival rate
                 self._arr_rate[self.node_to_index[start],
                                self.node_to_index[end]] = graph_config[start]['nei'][end]['rate'] if start != end else 0
+        self._max_travel_dist = np.linalg.norm(self._travel_dist, ord=np.inf) \
+            if np.linalg.norm(self._travel_dist, ord=np.inf) != 0 else 1
         # Over rewrite graph config
         self.g_config = graph_config
         # initialize vehicles
@@ -433,7 +438,7 @@ class SimpleSimulator(BaseSimulator):
         p_q = self.pass_queue
         v_q = self.veh_queue
         self.imbalance.append(p_q - v_q)
-        return p_q, v_q, step_reb_miles
+        return p_q, v_q, step_reb_miles/self._max_travel_dist
 
     def plot_results(self):
 
@@ -447,6 +452,24 @@ class SimpleSimulator(BaseSimulator):
         # plt.show()
         # reb_df.plot(y=reb_df.columns, legend=True, title='Rebalanced Vehicles')
         # plt.show()
+
+    def save_results(self, file_path, suffix=None, unique=False):
+        if unique:
+            suffix = '-' + str(hash(time.time())) if suffix is None else '-' + str(suffix)+'-'+str(hash(time.time()))
+        else:
+            suffix = '' if suffix is None else '-' + str(suffix)
+        file_name = f'sim-lite-results{suffix}.json'
+        res_dict = dict()
+        res_dict['total_trips'] = int(self.total_trips)
+        res_dict['total_miles'] = int(self.total_miles)
+        res_dict['reb_trips'] = int(self.rebalancing_trips)
+        res_dict['reb_miles'] = int(self.rebalancing_miles)
+        res_dict['avg_wait_time'] = self.avg_wait_time.tolist()
+        res_dict['throughput'] = self.throughput.tolist()
+        import os
+        os.makedirs(file_path, exist_ok=True)
+        with open(os.path.join(file_path, file_name), 'w') as res_file:
+            json.dump(res_dict, res_file, indent=4)
 
 
 # @nb.jit(cache=True)  # This doubles the speed!
@@ -527,6 +550,7 @@ if __name__ == '__main__':
         print(sim._cur_time)
 
     sim.plot_results()
+    sim.save_results('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results')
     print("Time used:", time.time()-start_time)
 
 

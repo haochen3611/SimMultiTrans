@@ -246,16 +246,15 @@ class TaxiRebLite(gym.Env, ABC):
             self._done = False
             # print(f'Episode: {self._episode} done!')
         if self._is_running:
-            # self._sim.finishing_touch(self._start_time)
             # if self._episode % self._save_res_every_ep == 0:
-            #     self._sim.save_result(RESULTS, self._worker_id, unique_name=False)
+            self._sim.save_results(RESULTS, self._worker_id, unique=False)
             #     if self._config['plot_queue_len']:
             #         self._sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
             #         self._sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
             self._is_running = False
         self._curr_time = 0
         self._step = 0
-        p_q_0, v_q_0 = self._sim.reset()
+        p_q_0, v_q_0, _ = self._sim.reset()
 
         return p_q_0 - v_q_0
 
@@ -265,15 +264,14 @@ class TaxiRebLite(gym.Env, ABC):
             self._is_running = True
         sim_action = self._preprocess_action(action)
         # print(sim_action)
-        p_queue, v_queue = self._sim.step(action=sim_action,
-                                          step_length=self._reb_interval)
+        p_queue, v_queue, reb_cost = self._sim.step(action=sim_action,
+                                                    step_length=self._reb_interval)
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() * self._sigma +
-                              self._alpha * self._vehicle_speed *
-                              np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * sim_action *
-                                         self._travel_dist, 0).sum())
+        reward = - self._beta * (self._sigma * p_queue.sum()/np.linalg.norm(p_queue, ord=np.inf) +
+                                 self._alpha * reb_cost)
+        print(reb_cost)
         # print(self._vehicle_speed)
         # print(reward)
         # print('passenger', p_queue)
@@ -321,8 +319,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
                         type=int, default=4)
     parser.add_argument('--lite', action='store_true', default=False, help='Use lite version or not')
-    parser.add_argument('--no_share', action='store_false', default=True,
-                        help='Not share network layers between policy and value function')
 
     args = parser.parse_args()
 
@@ -352,7 +348,6 @@ if __name__ == '__main__':
     ray.init()
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
-    configure['vf_share_layers'] = args.no_share
     if not args.lite:
         configure['env'] = TaxiRebalance
     else:
