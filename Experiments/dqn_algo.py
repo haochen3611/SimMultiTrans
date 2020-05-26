@@ -55,7 +55,6 @@ class TaxiRebalance(gym.Env, ABC):
         self._start_time = time.time()
         self._alpha = self._config['alpha']
         self._beta = self._config['beta']
-        self._sigma = self._config['sigma']
         self._step = 0
         self._total_vehicle = None
         self._travel_dist = None
@@ -153,7 +152,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() * self._sigma +
+        reward = -self._beta*(p_queue.sum() * 0 +
                               self._alpha *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * action_mat *
                                          self._travel_dist, 0).sum())
@@ -200,7 +199,6 @@ class TaxiRebLite(gym.Env, ABC):
         self._start_time = time.time()
         self._alpha = self._config['alpha']
         self._beta = self._config['beta']
-        self._sigma = self._config['sigma']
         self._step = 0
         self._total_vehicle = None
         self._travel_dist = self._sim.travel_dist_matrix
@@ -270,7 +268,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() * self._sigma +
+        reward = -self._beta*(p_queue.sum() * 0 +
                               self._alpha * self._vehicle_speed *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * sim_action *
                                          self._travel_dist, 0).sum())
@@ -305,9 +303,7 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
                         type=float, default=1)
     parser.add_argument('--beta', nargs='?', metavar='<Reward scaling coefficient>',
-                        type=float, default=1)
-    parser.add_argument('--sigma', nargs='?', metavar='<Weight on passenger queue>',
-                        type=float, default=1)
+                        type=float, default=0.001)
     parser.add_argument('--vf_clip', nargs='?', metavar='<Value function clip parameter>',
                         type=float, default=1000)
     parser.add_argument('--tr_bat_size', nargs='?', metavar='<Training batch size>',
@@ -335,8 +331,8 @@ if __name__ == '__main__':
             raise
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    # NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    NODES = sorted([236, 237, 186, 170, 141])
+    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
+    # NODES = sorted([236, 237, 186, 170, 141])
     initial_vehicle = args.init_veh
     iterations = args.iter
     vehicle_speed = args.veh_speed
@@ -351,8 +347,7 @@ if __name__ == '__main__':
 
     ray.init()
     nodes_list = [str(x) for x in NODES]
-    configure = ppo.DEFAULT_CONFIG.copy()
-    configure['vf_share_layers'] = args.no_share
+    configure = dqn.DEFAULT_CONFIG.copy()
     if not args.lite:
         configure['env'] = TaxiRebalance
     else:
@@ -360,11 +355,7 @@ if __name__ == '__main__':
         configure['env'] = TaxiRebLite
     configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
     configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
-    configure['vf_clip_param'] = args.vf_clip
     configure['lr'] = args.lr
-    configure['train_batch_size'] = args.tr_bat_size
-    configure['rollout_fragment_length'] = args.wkr_smpl_size
-    configure['sgd_minibatch_size'] = args.sgd_bat_size
     configure['env_config'] = {
         "start_time": '08:00:00',
         "time_horizon": 10,  # hours
@@ -378,7 +369,6 @@ if __name__ == '__main__':
         "dispatch_rate": args.dpr,
         "alpha": args.alpha,
         "beta": args.beta,
-        "sigma": args.simga,
         "save_res_every_ep": 100,
         "veh_speed": vehicle_speed
     }
@@ -393,7 +383,7 @@ if __name__ == '__main__':
     # print(configure['env_config']['nodes_list'])
     # print(configure['num_workers'])
     stt = time.time()
-    trainer = ppo.PPOTrainer(config=configure)
+    trainer = dqn.DQNTrainer(configure)
     # import cProfile, pstats, io
     # from pstats import SortKey
     # pr = cProfile.Profile()
