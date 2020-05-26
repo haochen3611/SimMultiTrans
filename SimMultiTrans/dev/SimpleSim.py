@@ -138,6 +138,12 @@ class SimpleSimulator(BaseSimulator):
         self.p_q_history = list()
         self.reb_history = list()
         self.imbalance = list()
+        self.total_wait_time = np.zeros(0)
+        self.throughput = np.zeros(0)
+        self.total_trips = 0
+        self.rebalancing_trips = 0
+        self.total_miles = 0
+        self.rebalancing_miles = 0
 
         with open(self._g_file, 'r') as g_file:
             self.g_config = json.load(g_file)
@@ -182,13 +188,19 @@ class SimpleSimulator(BaseSimulator):
         self.p_q_history = list()
         self.reb_history = list()
         self.imbalance = list()
+        self.total_wait_time = np.zeros(0)
+        self.throughput = np.zeros(0)
+        self.total_trips = 0
+        self.rebalancing_trips = 0
+        self.total_miles = 0
+        self.rebalancing_miles = 0
 
         # initialize everything except for passengers
         self._initialize_from_configs(self.g_config, self.v_config)
         # initialize passengers
         self._generate_passengers()
 
-        return self.pass_queue, self.veh_queue
+        return self.pass_queue, self.veh_queue, 0
 
     @property
     def veh_queue(self):
@@ -208,6 +220,10 @@ class SimpleSimulator(BaseSimulator):
     @property
     def travel_dist_matrix(self):
         return np.copy(self._travel_dist)
+
+    @property
+    def avg_wait_time(self):
+        return self.total_wait_time / self.throughput
 
     @staticmethod
     def _time_unit_converter(time_, unit):
@@ -270,6 +286,9 @@ class SimpleSimulator(BaseSimulator):
         self._vehicle_queue = np.zeros(self.num_nodes, dtype=np.int64)
         for nd in vehicle_config["taxi"]["distrib"]:
             self._vehicle_queue[self.node_to_index[nd]] = int(vehicle_config["taxi"]["distrib"][nd])
+        # initialize recordings
+        self.total_wait_time = np.zeros(self.num_nodes, dtype=np.int64)
+        self.throughput = np.zeros(self.num_nodes, dtype=np.int64)
 
         # initialize passengers
         # use a separate function due numba compatibility issue
@@ -305,7 +324,7 @@ class SimpleSimulator(BaseSimulator):
         """
         for new_pass in self._passenger_schedule[self._cur_time]:
             # Put passenger tuples in different queues base on its origin
-            self._passenger_queue[self.index_to_node[new_pass[0]]].append(tuple(new_pass))  # mutable! Must use copy!
+            self._passenger_queue[self.index_to_node[new_pass[0]]].append(tuple(new_pass) + (self._cur_time, ))
         # print(f'time {self._cur_time} pass queue length {self.pass_queue}')
         # print(f'time {self._cur_time} pass queue length {len(self._passenger_queue)}')
 
@@ -319,6 +338,7 @@ class SimpleSimulator(BaseSimulator):
         :return:
         """
         veh_trans_mat = np.zeros((self.num_nodes, self.num_nodes), dtype=np.int64)
+        reb_miles = 0
 
         for node in self.index_to_node:
             node_pass_q = self._passenger_queue[node]
@@ -327,6 +347,8 @@ class SimpleSimulator(BaseSimulator):
                 pass_od = node_pass_q.popleft()
                 veh_trans_mat[pass_od[0], pass_od[1]] += 1
                 self._vehicle_queue[node_idx] -= 1
+                self.total_wait_time[pass_od[0]] += self._cur_time - pass_od[2]
+                self.throughput[pass_od[0]] += 1
                 
             if dispatch_queue is not None:
                 dsp_veh_q = dispatch_queue[node]
@@ -336,15 +358,24 @@ class SimpleSimulator(BaseSimulator):
                     if self._vehicle_queue[node_idx] >= veh_need:
                         veh_trans_mat[veh_od[0], veh_od[1]] += veh_need
                         self._vehicle_queue[node_idx] -= veh_need
+                        self.rebalancing_trips += veh_need
+                        reb_miles += veh_need * self._travel_dist[veh_od[0], veh_od[1]]
                     else:
                         veh_trans_mat[veh_od[0], veh_od[1]] += self._vehicle_queue[node_idx]
+                        self.rebalancing_trips += self._vehicle_queue[node_idx]
+                        reb_miles += self._vehicle_queue[node_idx] * self._travel_dist[veh_od[0], veh_od[1]]
                         self._vehicle_queue[node_idx] = 0
+
+        self.rebalancing_miles += reb_miles
+        self.total_miles += np.sum(veh_trans_mat * self._travel_dist)
+        self.total_trips += np.sum(veh_trans_mat)
         # put vehicle schedule on heap queue
         for non_z in np.argwhere(veh_trans_mat):
             heapq.heappush(self._vehicle_schedule,
                            (self._travel_time[non_z[0], non_z[1]] + self._cur_time,
                             veh_trans_mat[non_z[0], non_z[1]],
                             non_z[1]))
+        return reb_miles
 
     def _vehicle_arrival(self):
         """Call every second
@@ -377,8 +408,7 @@ class SimpleSimulator(BaseSimulator):
         self._vehicle_arrival()
         # self.v_q_history.append(self.veh_queue)
         # self.p_q_history.append(self.pass_queue)
-        self.imbalance.append(self.pass_queue-self.veh_queue)
-        self._match_demand_and_dispatch(action)
+        return self._match_demand_and_dispatch(action)
 
     def step(self, action, step_length):
         """
@@ -393,13 +423,17 @@ class SimpleSimulator(BaseSimulator):
         action /= action.sum(axis=1)
         veh_dispatch = np.rint(action * self._vehicle_queue[:, np.newaxis]).astype(np.int64)
         dict_action = self._action_converter(veh_dispatch)
+        step_reb_miles = 0
         for time_step in range(step_length):
             if (time_step+1) == step_length:
-                self._sim_one_second_routine(action=dict_action)
+                step_reb_miles += self._sim_one_second_routine(action=dict_action)
             else:
                 self._sim_one_second_routine()
             self._cur_time += 1
-        return self.pass_queue, self.veh_queue
+        p_q = self.pass_queue
+        v_q = self.veh_queue
+        self.imbalance.append(p_q - v_q)
+        return p_q, v_q, step_reb_miles
 
     def plot_results(self):
 
@@ -483,12 +517,13 @@ if __name__ == '__main__':
     vq_lst = []
     for step in range(num_steps + 1):
         if step == 0:
-            pq, vq = sim.reset()
+            pq, vq, _ = sim.reset()
         else:
-            # act = np.random.random((sim.num_nodes, sim.num_nodes))
+            act = np.random.random((sim.num_nodes, sim.num_nodes))
             # act = np.zeros((sim.num_nodes, sim.num_nodes))
-            act = np.eye(sim.num_nodes)
-            pq, vq = sim.step(act, step_length=step_len)
+            # act = np.eye(sim.num_nodes)
+            pq, vq, _ = sim.step(act, step_length=step_len)
+            print(_)
         print(sim._cur_time)
 
     sim.plot_results()
