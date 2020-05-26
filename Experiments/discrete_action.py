@@ -269,8 +269,9 @@ class TaxiRebLite(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = - self._beta * (self._sigma * p_queue.sum()/np.linalg.norm(p_queue, ord=np.inf) +
-                                 self._alpha * reb_cost)
+        normalized_p_q = p_queue/np.linalg.norm(p_queue, ord=np.inf) \
+            if np.linalg.norm(p_queue, ord=np.inf) != 0 else p_queue
+        reward = - self._beta * (self._sigma * normalized_p_q.sum() + self._alpha * reb_cost)
         # print(reb_cost)
         # print(self._vehicle_speed)
         # print(reward)
