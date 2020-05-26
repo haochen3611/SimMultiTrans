@@ -378,7 +378,7 @@ if __name__ == '__main__':
         "dispatch_rate": args.dpr,
         "alpha": args.alpha,
         "beta": args.beta,
-        "sigma": args.simga,
+        "sigma": args.sigma,
         "save_res_every_ep": 100,
         "veh_speed": vehicle_speed
     }
