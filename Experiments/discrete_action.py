@@ -271,7 +271,7 @@ class TaxiRebLite(gym.Env, ABC):
         v_queue = np.array(v_queue)
         reward = - self._beta * (self._sigma * p_queue.sum()/np.linalg.norm(p_queue, ord=np.inf) +
                                  self._alpha * reb_cost)
-        print(reb_cost)
+        # print(reb_cost)
         # print(self._vehicle_speed)
         # print(reward)
         # print('passenger', p_queue)
