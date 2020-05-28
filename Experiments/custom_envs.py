@@ -1,28 +1,41 @@
+import json
 import time
 from abc import ABC
-import os
-import sys
+
+import gym
+import numpy as np
+from gym.spaces import Box, MultiDiscrete
 
 from SimMultiTrans import SimpleSimulator, Simulator, Graph, graph_file, vehicle_file
 from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
-import gym
-from gym.spaces import Discrete, Box, MultiDiscrete, Dict, Tuple
-import numpy as np
-import json
-import argparse as ap
-import pandas as pd
 
-import ray
-from ray import tune
-from ray.rllib.utils import try_import_tf
-from ray.tune import grid_search
-import ray.rllib.agents.sac as sac
-import ray.rllib.agents.dqn as dqn
-import ray.rllib.agents.ppo as ppo
-from ray.tune.logger import pretty_print
-tf = try_import_tf()
-my_devices = tf.config.experimental.list_physical_devices(device_type='CPU')
-tf.config.experimental.set_visible_devices(devices=my_devices, device_type='CPU')
+__all__ = [
+    'TaxiRebLite',
+    'TaxiRebalance',
+    'get_CLI_options',
+    'RESULTS',
+    'CONFIG',
+    'update_graph_file',
+    'update_vehicle_initial_distribution',
+]
+
+_DEFAULT_ENV_CONFIG = {
+        "start_time": '08:00:00',
+        "time_horizon": 10,  # hours
+        "max_vehicle": 500000,
+        "reb_interval": 600,  # seconds 60 steps per episode
+        "max_travel_time": 1000,
+        "max_passenger": 1e6,
+        "nodes_list": [],
+        "near_neighbor": 0,
+        "plot_queue_len": False,  # do not use plot function for now
+        "dispatch_rate": 1,
+        "alpha": 1,
+        "beta": 1,
+        "sigma": 1,
+        "save_res_every_ep": 100,
+        "veh_speed": 1
+}
 
 
 class TaxiRebalance(gym.Env, ABC):
@@ -55,6 +68,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._start_time = time.time()
         self._alpha = self._config['alpha']
         self._beta = self._config['beta']
+        self._sigma = self._config['sigma']
         self._step = 0
         self._total_vehicle = None
         self._travel_dist = None
@@ -152,7 +166,7 @@ class TaxiRebalance(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() * 0 +
+        reward = -self._beta*(p_queue.sum() * self._sigma +
                               self._alpha *
                               np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * action_mat *
                                          self._travel_dist, 0).sum())
@@ -191,7 +205,8 @@ class TaxiRebLite(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors + 1] * self._num_nodes)
-        # self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
+        # self.observation_space = Tuple((Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,),
+        #                                     dtype=np.int64),
         #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
         self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
         self._is_running = False
@@ -199,6 +214,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._start_time = time.time()
         self._alpha = self._config['alpha']
         self._beta = self._config['beta']
+        self._sigma = self._config['sigma']
         self._step = 0
         self._total_vehicle = None
         self._travel_dist = self._sim.travel_dist_matrix
@@ -244,16 +260,16 @@ class TaxiRebLite(gym.Env, ABC):
             self._done = False
             # print(f'Episode: {self._episode} done!')
         if self._is_running:
-            # self._sim.finishing_touch(self._start_time)
-            # if self._episode % self._save_res_every_ep == 0:
-            #     self._sim.save_result(RESULTS, self._worker_id, unique_name=False)
+            if self._episode % self._save_res_every_ep == 0:
+                self._sim.save_results(RESULTS, self._worker_id, unique=False)
+                self._sim.plot_results(RESULTS, self._worker_id, unique=False)
             #     if self._config['plot_queue_len']:
             #         self._sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
             #         self._sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
             self._is_running = False
         self._curr_time = 0
         self._step = 0
-        p_q_0, v_q_0 = self._sim.reset()
+        p_q_0, v_q_0, _ = self._sim.reset()
 
         return p_q_0 - v_q_0
 
@@ -263,15 +279,15 @@ class TaxiRebLite(gym.Env, ABC):
             self._is_running = True
         sim_action = self._preprocess_action(action)
         # print(sim_action)
-        p_queue, v_queue = self._sim.step(action=sim_action,
-                                          step_length=self._reb_interval)
+        p_queue, v_queue, reb_cost = self._sim.step(action=sim_action,
+                                                    step_length=self._reb_interval)
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        reward = -self._beta*(p_queue.sum() * 0 +
-                              self._alpha * self._vehicle_speed *
-                              np.maximum((v_queue-p_queue).reshape((self._num_nodes, 1)) * sim_action *
-                                         self._travel_dist, 0).sum())
+        normalized_p_q = p_queue/np.linalg.norm(p_queue, ord=np.inf) \
+            if np.linalg.norm(p_queue, ord=np.inf) != 0 else p_queue
+        reward = - self._beta * (self._sigma * normalized_p_q.sum() + self._alpha * reb_cost)
+        # print(reb_cost)
         # print(self._vehicle_speed)
         # print(reward)
         # print('passenger', p_queue)
@@ -284,12 +300,9 @@ class TaxiRebLite(gym.Env, ABC):
         return p_queue - v_queue, reward, self._done, {}
 
 
-if __name__ == '__main__':
+def get_CLI_options():
+    import argparse as ap
 
-    # unique results directory for every run
-    curr_time = time.strftime("%Y-%m-%d-%H-%M-%S")
-    RESULTS = os.path.join(RESULTS, curr_time)
-    # Config file has priority over CLI arguments
     parser = ap.ArgumentParser(prog="Taxi Rebalance", description="CLI input to Taxi Rebalance")
     parser.add_argument('--config', nargs='?', metavar='<Configuration file path>',
                         type=str, default='None')
@@ -303,7 +316,9 @@ if __name__ == '__main__':
     parser.add_argument('--alpha', nargs='?', metavar='<Weight on travel distance>',
                         type=float, default=1)
     parser.add_argument('--beta', nargs='?', metavar='<Reward scaling coefficient>',
-                        type=float, default=0.001)
+                        type=float, default=1)
+    parser.add_argument('--sigma', nargs='?', metavar='<Weight on passenger queue>',
+                        type=float, default=1)
     parser.add_argument('--vf_clip', nargs='?', metavar='<Value function clip parameter>',
                         type=float, default=1000)
     parser.add_argument('--tr_bat_size', nargs='?', metavar='<Training batch size>',
@@ -317,90 +332,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
                         type=int, default=4)
     parser.add_argument('--lite', action='store_true', default=False, help='Use lite version or not')
-    parser.add_argument('--no_share', action='store_false', default=True,
-                        help='Not share network layers between policy and value function')
 
     args = parser.parse_args()
 
-    try:
-        with open(args.config, 'r') as file:
-            file_conf = json.load(file)
-    except FileNotFoundError:
-        file_conf = None
-        if args.config != 'None':
-            raise
-
-    # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
-    NODES = sorted([236, 237, 186, 170, 141, 162, 140, 238, 142, 229, 239, 48, 161, 107, 263, 262, 234, 68, 100, 143])
-    # NODES = sorted([236, 237, 186, 170, 141])
-    initial_vehicle = args.init_veh
-    iterations = args.iter
-    vehicle_speed = args.veh_speed
-    if file_conf is not None:
-        NODES = sorted(file_conf.pop("nodes", NODES))
-        initial_vehicle = int(file_conf.pop("init_veh", initial_vehicle))
-        iterations = int(file_conf.pop("iter", iterations))
-        vehicle_speed = int(file_conf.pop("veh_speed", vehicle_speed))
-
-    update_graph_file(NODES, os.path.join(CONFIG, 'gps.csv'), os.path.join(CONFIG, 'aam.csv'))
-    update_vehicle_initial_distribution(nodes=NODES, veh_dist=[initial_vehicle for i in range(len(NODES))])
-
-    ray.init()
-    nodes_list = [str(x) for x in NODES]
-    configure = dqn.DEFAULT_CONFIG.copy()
-    if not args.lite:
-        configure['env'] = TaxiRebalance
-    else:
-        print('using lite')
-        configure['env'] = TaxiRebLite
-    configure['num_workers'] = args.num_cpu if args.num_cpu is not None else 1
-    configure['num_gpus'] = args.num_gpu if args.num_gpu is not None else 0
-    configure['lr'] = args.lr
-    configure['env_config'] = {
-        "start_time": '08:00:00',
-        "time_horizon": 10,  # hours
-        "max_vehicle": 500000,
-        "reb_interval": 600,  # seconds 60 steps per episode
-        "max_travel_time": 1000,
-        "max_passenger": 1e6,
-        "nodes_list": nodes_list,
-        "near_neighbor": args.num_neighbor,
-        "plot_queue_len": False,  # do not use plot function for now
-        "dispatch_rate": args.dpr,
-        "alpha": args.alpha,
-        "beta": args.beta,
-        "save_res_every_ep": 100,
-        "veh_speed": vehicle_speed
-    }
-
-    if file_conf is not None:
-        env_config = file_conf.pop('env_config', None)
-        configure.update(file_conf)
-        if env_config is not None:
-            configure['env_config'].update(env_config)
-
-    # print(configure['env_config']['veh_speed'])
-    # print(configure['env_config']['nodes_list'])
-    # print(configure['num_workers'])
-    stt = time.time()
-    trainer = dqn.DQNTrainer(configure)
-    # import cProfile, pstats, io
-    # from pstats import SortKey
-    # pr = cProfile.Profile()
-    # pr.enable()
-    for _ in range(iterations):
-        print('Iteration:', _+1)
-        results = trainer.train()
-        if (_+1) % 100 == 0:
-            print(pretty_print(results))
-    # pr.disable()
-    # s = io.StringIO()
-    # ps = pstats.Stats(pr, stream=s).sort_stats(SortKey.CUMULATIVE)
-    # ps.print_stats()
-    # print(s.getvalue())
-    check_pt = trainer.save()
-    print(f"Model saved at {check_pt}")
-    print(time.time()-stt)
-
-    policy = trainer.get_policy()
+    return args
 

@@ -65,7 +65,7 @@ Both are worse than the reward scaled experiments.
 
 * **Experiment Setting**
 ```shell script
-python3 ~/SimMultiTrans/Experiments/discrete_action.py \
+python3 ~/SimMultiTrans/Experiments/ppo_trainer.py \
     --num_cpu 60 \
     --iter 2000 \
     --init_veh 16 \
