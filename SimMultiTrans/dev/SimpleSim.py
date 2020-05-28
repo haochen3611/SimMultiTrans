@@ -459,7 +459,7 @@ class SimpleSimulator(BaseSimulator):
         else:
             suffix = '' if suffix is None else '-' + str(suffix)
         file_name = f'sim-lite-ImbalancePlot{suffix}.png'
-        imb_df = pd.DataFrame(self.imbalance, columns=list(sim.node_to_index.keys()))
+        imb_df = pd.DataFrame(self.imbalance, columns=list(self.node_to_index.keys()))
         plt.rc('axes', titlesize=30)
         plt.rc('legend', fontsize=20)
         plt.rc('axes', labelsize=20)
