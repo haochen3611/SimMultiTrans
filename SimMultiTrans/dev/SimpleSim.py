@@ -2,6 +2,7 @@ import heapq
 import json
 import time
 from collections import deque
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -227,6 +228,18 @@ class SimpleSimulator(BaseSimulator):
     def avg_wait_time(self):
         return self.total_wait_time / self.throughput
 
+    @property
+    def current_time(self):
+        return self._cur_time
+
+    @property
+    def travel_distance_matrix(self):
+        return np.copy(self._travel_dist)
+
+    @property
+    def node_name_list(self):
+        return tuple(self.index_to_node)
+
     @staticmethod
     def _time_unit_converter(time_, unit):
         assert isinstance(unit, str)
@@ -440,20 +453,29 @@ class SimpleSimulator(BaseSimulator):
         self.imbalance.append(p_q - v_q)
         return p_q, v_q, step_reb_miles/self._max_travel_dist
 
-    def plot_results(self):
-
-        # v_df = pd.DataFrame(self.v_q_history, columns=list(sim.node_to_index.keys()))
-        # p_df = pd.DataFrame(self.p_q_history, columns=list(sim.node_to_index.keys()))
-        # reb_df = pd.DataFrame(self.reb_history, columns=list(sim.node_to_index.keys()))
+    def plot_results(self, folder_path, suffix=None, unique=False):
+        if unique:
+            suffix = '-' + str(hash(time.time())) if suffix is None else '-' + str(suffix)+'-'+str(hash(time.time()))
+        else:
+            suffix = '' if suffix is None else '-' + str(suffix)
+        file_name = f'sim-lite-ImbalancePlot{suffix}.png'
         imb_df = pd.DataFrame(self.imbalance, columns=list(sim.node_to_index.keys()))
-        imb_df.plot(y=imb_df.columns, legend=True, title='System Imbalance')
-        plt.savefig('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results/simlite-imbalance.png')
-        # p_df.plot(y=p_df.columns, legend=True, title='Passenger Queue')
-        # plt.show()
-        # reb_df.plot(y=reb_df.columns, legend=True, title='Rebalanced Vehicles')
-        # plt.show()
+        plt.rc('axes', titlesize=30)
+        plt.rc('legend', fontsize=20)
+        plt.rc('axes', labelsize=20)
+        imb_df.plot(y=imb_df.columns,
+                    legend=True,
+                    title='System Imbalance',
+                    figsize=(18, 12),
+                    fontsize=20,
+                    grid=True)
+        plt.xlabel('Timesteps')
+        plt.ylabel('Imbalance')
+        plt.tight_layout()
+        plt.savefig(os.path.join(folder_path, file_name))
+        plt.close()
 
-    def save_results(self, file_path, suffix=None, unique=False):
+    def save_results(self, folder_path, suffix=None, unique=False):
         if unique:
             suffix = '-' + str(hash(time.time())) if suffix is None else '-' + str(suffix)+'-'+str(hash(time.time()))
         else:
@@ -466,9 +488,8 @@ class SimpleSimulator(BaseSimulator):
         res_dict['reb_miles'] = int(self.rebalancing_miles)
         res_dict['avg_wait_time'] = self.avg_wait_time.tolist()
         res_dict['throughput'] = self.throughput.tolist()
-        import os
-        os.makedirs(file_path, exist_ok=True)
-        with open(os.path.join(file_path, file_name), 'w') as res_file:
+        os.makedirs(folder_path, exist_ok=True)
+        with open(os.path.join(folder_path, file_name), 'w') as res_file:
             json.dump(res_dict, res_file, indent=4)
 
 
@@ -521,7 +542,7 @@ if __name__ == '__main__':
     from SimMultiTrans.utils import update_graph_file, update_vehicle_initial_distribution
 
     time_hor = 10
-    step_len = 600
+    step_len = 100
     num_steps = time_hor * 3600 // step_len
 
     # NODES = sorted(pd.read_csv(os.path.join(CONFIG, 'aam.csv'), index_col=0, header=0).index.values.tolist())
@@ -547,10 +568,13 @@ if __name__ == '__main__':
             # act = np.eye(sim.num_nodes)
             pq, vq, _ = sim.step(act, step_length=step_len)
             print(_)
-        print(sim._cur_time)
+        print(sim.current_time)
 
-    sim.plot_results()
+    sim.plot_results('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results')
     sim.save_results('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results')
+    td_pd = pd.DataFrame(data=sim.travel_dist_matrix, index=sim.node_name_list, columns=sim.node_name_list)
+    td_pd.to_csv('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results/travel_dist_20.csv',
+                 float_format='%.2f')
     print("Time used:", time.time()-start_time)
 
 

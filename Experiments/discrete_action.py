@@ -192,9 +192,10 @@ class TaxiRebLite(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors + 1] * self._num_nodes)
-        # self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
-        #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
-        self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
+        self.observation_space = Tuple((Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,),
+                                            dtype=np.int64),
+                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        # self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
         self._is_running = False
         self._done = False
         self._start_time = time.time()
@@ -246,8 +247,8 @@ class TaxiRebLite(gym.Env, ABC):
             self._done = False
             # print(f'Episode: {self._episode} done!')
         if self._is_running:
-            # if self._episode % self._save_res_every_ep == 0:
-            self._sim.save_results(RESULTS, self._worker_id, unique=False)
+            if self._episode % self._save_res_every_ep == 0:
+                self._sim.save_results(RESULTS, self._worker_id, unique=False)
             #     if self._config['plot_queue_len']:
             #         self._sim.plot_pass_queue_len(mode='taxi', suffix=self._worker_id)
             #         self._sim.plot_pass_wait_time(mode='taxi', suffix=self._worker_id)
