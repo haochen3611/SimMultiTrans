@@ -255,6 +255,7 @@ class SimpleSimulator(BaseSimulator):
         
     def _action_converter(self, action):
         """Expects a square ndarry of integers"""
+        action -= np.diag(action.diagonal())
         nz_idx_lst = np.argwhere(action).tolist()
         dict_action = dict([(nd, deque()) for nd in self.index_to_node])
         for nz_idx in nz_idx_lst:
@@ -357,6 +358,7 @@ class SimpleSimulator(BaseSimulator):
         """
         veh_trans_mat = np.zeros((self.num_nodes, self.num_nodes), dtype=np.int64)
         reb_miles = 0
+        reb_trips = 0
 
         for node in self.index_to_node:
             node_pass_q = self._passenger_queue[node]
@@ -376,17 +378,18 @@ class SimpleSimulator(BaseSimulator):
                     if self._vehicle_queue[node_idx] >= veh_need:
                         veh_trans_mat[veh_od[0], veh_od[1]] += veh_need
                         self._vehicle_queue[node_idx] -= veh_need
-                        self.rebalancing_trips += veh_need
+                        reb_trips += veh_need
                         reb_miles += veh_need * self._travel_dist[veh_od[0], veh_od[1]]
                     else:
                         veh_trans_mat[veh_od[0], veh_od[1]] += self._vehicle_queue[node_idx]
-                        self.rebalancing_trips += self._vehicle_queue[node_idx]
+                        reb_trips += self._vehicle_queue[node_idx]
                         reb_miles += self._vehicle_queue[node_idx] * self._travel_dist[veh_od[0], veh_od[1]]
                         self._vehicle_queue[node_idx] = 0
 
+        self.rebalancing_trips += reb_trips
         self.rebalancing_miles += reb_miles
         self.total_miles += np.sum(veh_trans_mat * self._travel_dist)
-        self.total_trips += np.sum(veh_trans_mat)
+        self.total_trips += np.sum(veh_trans_mat) - np.trace(veh_trans_mat)
         # put vehicle schedule on heap queue
         for non_z in np.argwhere(veh_trans_mat):
             heapq.heappush(self._vehicle_schedule,
@@ -487,7 +490,7 @@ class SimpleSimulator(BaseSimulator):
         res_dict['reb_trips'] = int(self.rebalancing_trips)
         res_dict['reb_miles'] = float(self.rebalancing_miles)
         res_dict['avg_wait_time'] = self.avg_wait_time.tolist()
-        res_dict['throughput'] = self.throughput.tolist()
+        res_dict['pass_throughput_per_min'] = (self.throughput/(self._time_horizon/60)).tolist()
         os.makedirs(folder_path, exist_ok=True)
         with open(os.path.join(folder_path, file_name), 'w') as res_file:
             json.dump(res_dict, res_file, indent=4)
@@ -563,18 +566,18 @@ if __name__ == '__main__':
         if step == 0:
             pq, vq, _ = sim.reset()
         else:
-            act = np.random.random((sim.num_nodes, sim.num_nodes))
+            # act = np.random.random((sim.num_nodes, sim.num_nodes))
             # act = np.zeros((sim.num_nodes, sim.num_nodes))
-            # act = np.eye(sim.num_nodes)
+            act = np.eye(sim.num_nodes)
             pq, vq, _ = sim.step(act, step_length=step_len)
             print(_)
         print(sim.current_time)
 
     sim.plot_results('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results')
     sim.save_results('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results')
-    td_pd = pd.DataFrame(data=sim.travel_dist_matrix, index=sim.node_name_list, columns=sim.node_name_list)
-    td_pd.to_csv('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results/travel_dist_20.csv',
-                 float_format='%.2f')
+    # td_pd = pd.DataFrame(data=sim.travel_dist_matrix, index=sim.node_name_list, columns=sim.node_name_list)
+    # td_pd.to_csv('/home/haochen/PycharmProjects/SimMultiTrans/SimMultiTrans/results/travel_dist_20.csv',
+    #              float_format='%.2f')
     print("Time used:", time.time()-start_time)
 
 
