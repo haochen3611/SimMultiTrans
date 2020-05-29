@@ -1,5 +1,6 @@
 import json
 import time
+import os
 from abc import ABC
 
 import gym
@@ -8,6 +9,10 @@ from gym.spaces import Box, MultiDiscrete
 
 from SimMultiTrans import SimpleSimulator, Simulator, Graph, graph_file, vehicle_file
 from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
+
+# unique results directory for every run
+curr_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+RESULTS = os.path.join(RESULTS, curr_time)
 
 __all__ = [
     'TaxiRebLite',
@@ -284,12 +289,10 @@ class TaxiRebLite(gym.Env, ABC):
         self._curr_time += self._reb_interval
         p_queue = np.array(p_queue)
         v_queue = np.array(v_queue)
-        normalized_p_q = p_queue/np.linalg.norm(p_queue, ord=np.inf) \
-            if np.linalg.norm(p_queue, ord=np.inf) != 0 else p_queue
-        reward = - self._beta * (self._sigma * normalized_p_q.sum() + self._alpha * reb_cost)
-        # print(reb_cost)
+        reward = - self._beta * (self._sigma * p_queue.sum() + self._alpha * reb_cost)
+        print(reb_cost)
         # print(self._vehicle_speed)
-        # print(reward)
+        print(reward)
         # print('passenger', p_queue)
         # print('vehicle', v_queue)
         # print(f'at node {v_queue.sum()}, on road {self._total_vehicle - v_queue.sum()}')
@@ -332,6 +335,7 @@ def get_CLI_options():
     parser.add_argument('--num_neighbor', nargs='?', metavar='<Number of nearest neighbor>',
                         type=int, default=4)
     parser.add_argument('--lite', action='store_true', default=False, help='Use lite version or not')
+    parser.add_argument('--checkpoint', nargs='?', metavar='<Checkpoint path>', type=str, default='')
 
     args = parser.parse_args()
 

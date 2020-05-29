@@ -18,8 +18,9 @@
     "kl_target": 0.01,
     "entropy_coeff": 0,
     "model": {
-        "fcnet_hiddens": [256, 256, 128]
+        "fcnet_hiddens": [400, 300]
     },
+    "checkpoint": "/home/cc/SimMultiTrans/Experiments/chkpt_select/two_layer/checkpoint-3000",
     "env_config": {
         "start_time": "08:00:00",
         "time_horizon": 10,

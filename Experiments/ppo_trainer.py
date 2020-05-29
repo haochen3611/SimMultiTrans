@@ -18,9 +18,6 @@ tf.config.experimental.set_visible_devices(devices=my_devices, device_type='CPU'
 
 if __name__ == '__main__':
 
-    # unique results directory for every run
-    curr_time = time.strftime("%Y-%m-%d-%H-%M-%S")
-    RESULTS = os.path.join(RESULTS, curr_time)
     # Config file has priority over CLI arguments
     args = get_CLI_options()
 
@@ -39,12 +36,15 @@ if __name__ == '__main__':
     iterations = args.iter
     vehicle_speed = args.veh_speed
     use_lite = args.lite
+    chk_pt_path = args.checkpoint
+
     if file_conf is not None:
         NODES = sorted(file_conf.pop("nodes", NODES))
         initial_vehicle = int(file_conf.pop("init_veh", initial_vehicle))
         iterations = int(file_conf.pop("iter", iterations))
         vehicle_speed = int(file_conf.pop("veh_speed", vehicle_speed))
         use_lite = bool(file_conf.pop('use_lite', use_lite))
+        chk_pt_path = str(file_conf.pop('checkpoint', chk_pt_path))
 
     update_graph_file(NODES, os.path.join(CONFIG, 'gps.csv'), os.path.join(CONFIG, 'aam.csv'))
     update_vehicle_initial_distribution(nodes=NODES, veh_dist=[initial_vehicle for i in range(len(NODES))])
@@ -96,6 +96,9 @@ if __name__ == '__main__':
     stt = time.time()
     trainer = ppo.PPOTrainer(config=configure)
 
+    if os.path.exists(chk_pt_path):
+        trainer.restore(chk_pt_path)
+
     for _ in range(iterations):
         print('Iteration:', _+1)
         results = trainer.train()
@@ -106,6 +109,7 @@ if __name__ == '__main__':
     print(f"Model saved at {check_pt}")
     print(time.time()-stt)
 
-    policy = trainer.get_policy()
+    # policy = trainer.get_policy()
+    # print(policy.model.base_model.summary())
 
 
