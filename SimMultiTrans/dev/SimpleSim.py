@@ -483,9 +483,9 @@ class SimpleSimulator(BaseSimulator):
         file_name = f'sim-lite-results{suffix}.json'
         res_dict = dict()
         res_dict['total_trips'] = int(self.total_trips)
-        res_dict['total_miles'] = int(self.total_miles)
+        res_dict['total_miles'] = float(self.total_miles)
         res_dict['reb_trips'] = int(self.rebalancing_trips)
-        res_dict['reb_miles'] = int(self.rebalancing_miles)
+        res_dict['reb_miles'] = float(self.rebalancing_miles)
         res_dict['avg_wait_time'] = self.avg_wait_time.tolist()
         res_dict['throughput'] = self.throughput.tolist()
         os.makedirs(folder_path, exist_ok=True)
