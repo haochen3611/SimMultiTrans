@@ -5,7 +5,7 @@ from abc import ABC
 
 import gym
 import numpy as np
-from gym.spaces import Box, MultiDiscrete
+from gym.spaces import Box, MultiDiscrete, Tuple
 
 from SimMultiTrans import SimpleSimulator, Simulator, Graph, graph_file, vehicle_file
 from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
@@ -210,10 +210,10 @@ class TaxiRebLite(gym.Env, ABC):
         self._dispatch_rate = self._config['dispatch_rate']
 
         self.action_space = MultiDiscrete([self._num_neighbors + 1] * self._num_nodes)
-        # self.observation_space = Tuple((Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,),
-        #                                     dtype=np.int64),
-        #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
-        self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
+        self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,),
+                                            dtype=np.int64),
+                                        Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
+        # self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
         self._is_running = False
         self._done = False
         self._start_time = time.time()
@@ -276,7 +276,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._step = 0
         p_q_0, v_q_0, _ = self._sim.reset()
 
-        return p_q_0 - v_q_0
+        return p_q_0, v_q_0
 
     def step(self, action):
         self._step += 1
@@ -300,7 +300,7 @@ class TaxiRebLite(gym.Env, ABC):
         self._pre_action = action
         if self._curr_time >= self._config['time_horizon']*3600 - 1:
             self._done = True
-        return p_queue - v_queue, reward, self._done, {}
+        return (p_queue, v_queue), reward, self._done, {}
 
 
 def get_CLI_options():
