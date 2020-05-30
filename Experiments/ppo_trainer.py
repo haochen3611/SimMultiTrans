@@ -104,9 +104,10 @@ if __name__ == '__main__':
         results = trainer.train()
         if (_+1) % 100 == 0:
             print(pretty_print(results))
+        if (_+1) % 500 == 0:
+            check_pt = trainer.save()
+            print(f"Model saved at {check_pt}")
 
-    check_pt = trainer.save()
-    print(f"Model saved at {check_pt}")
     print(time.time()-stt)
 
     # policy = trainer.get_policy()
