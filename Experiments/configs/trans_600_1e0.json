@@ -31,7 +31,7 @@
         "plot_queue_len": false,
         "dispatch_rate": 1,
         "alpha": 1,
-        "beta": 1,
+        "beta": 0.001,
         "sigma": 1,
         "save_res_every_ep": 100,
         "near_neighbor": 30,
