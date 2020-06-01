@@ -1,7 +1,16 @@
 import SimMultiTrans as smt
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import os.path as ospath
+import glob
+import json
+import numpy as np
+matplotlib.rc('text', usetex=True)
+matplotlib.rcParams['text.latex.preamble'] = [
+    r'\usepackage{amsmath}',
+    r'\usepackage{amssymb}',
+    r'\DeclareMathOperator{\Span}{\mathbf{span}}']
 
 
 def plot_metric():
