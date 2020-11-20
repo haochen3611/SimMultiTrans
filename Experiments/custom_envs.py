@@ -5,7 +5,7 @@ from abc import ABC
 
 import gym
 import numpy as np
-from gym.spaces import Box, MultiDiscrete, Tuple
+from gym.spaces import Box, MultiDiscrete, Tuple, Discrete
 
 from SimMultiTrans import SimpleSimulator, Simulator, Graph, graph_file, vehicle_file
 from SimMultiTrans.utils import RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
@@ -25,21 +25,22 @@ __all__ = [
 ]
 
 _DEFAULT_ENV_CONFIG = {
-        "start_time": '08:00:00',
-        "time_horizon": 10,  # hours
-        "max_vehicle": 500000,
-        "reb_interval": 600,  # seconds 60 steps per episode
-        "max_travel_time": 1000,
-        "max_passenger": 1e6,
-        "nodes_list": [],
-        "near_neighbor": 0,
-        "plot_queue_len": False,  # do not use plot function for now
-        "dispatch_rate": 1,
-        "alpha": 1,
-        "beta": 1,
-        "sigma": 1,
-        "save_res_every_ep": 100,
-        "veh_speed": 1
+    "start_time": '08:00:00',
+    "time_horizon": 10,  # hours
+    "max_vehicle": 500000,
+    "reb_interval": 600,  # seconds 60 steps per episode
+    "max_travel_time": 1000,
+    "max_passenger": 1e6,
+    "nodes_list": [],
+    "near_neighbor": 0,
+    "plot_queue_len": False,  # do not use plot function for now
+    "dispatch_rate": 1,
+    "alpha": 1,
+    "beta": 1,
+    "sigma": 1,
+    "save_res_every_ep": 100,
+    "veh_speed": 1,
+    "action_levels": 5
 }
 
 
@@ -62,8 +63,9 @@ class TaxiRebalance(gym.Env, ABC):
         self._num_neighbors = self._config['near_neighbor']
         self._neighbor_map = self._get_neighbors()
         self._dispatch_rate = self._config['dispatch_rate']
+        self._action_levels = self._config['action_levels']
 
-        self.action_space = MultiDiscrete([self._num_neighbors+1] * self._num_nodes)
+        self.action_space = MultiDiscrete([(self._num_neighbors+1)*self._action_levels] * self._num_nodes)
         # self.observation_space = Tuple((Box(0, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64),
         #                                 Box(0, self._max_vehicle, shape=(self._num_nodes,), dtype=np.int64)))
         self.observation_space = Box(-self._max_vehicle, self._max_passenger, shape=(self._num_nodes,), dtype=np.int64)
@@ -101,13 +103,15 @@ class TaxiRebalance(gym.Env, ABC):
         if np.isnan(action).sum() > 0:
             print(self._step)
             action = self.action_space.sample()
-        action = np.squeeze(action)
         action_mat = np.zeros((self._num_nodes, self._num_nodes))
-        for nd_idx, cnb in enumerate(action):
+        for _idx, cnb in enumerate(action):
+            nd_idx = _idx // self._action_levels
+            ac_idx = _idx % self._action_levels
             nb_idx = self._neighbor_map[self._nodes[nd_idx]][cnb]
-            action_mat[nd_idx, nb_idx] = self._dispatch_rate
+            dispatch_rate = (ac_idx+1) / self._action_levels
+            action_mat[nd_idx, nb_idx] = dispatch_rate
             if nb_idx != nd_idx:
-                action_mat[nd_idx, nd_idx] = 1 - self._dispatch_rate
+                action_mat[nd_idx, nd_idx] = 1 - dispatch_rate
             else:
                 action_mat[nd_idx, nd_idx] = 1
         sim_action = dict()
@@ -169,7 +173,9 @@ class TaxiRebalance(gym.Env, ABC):
                                           step_length=self._reb_interval,
                                           curr_time=self._curr_time)
         self._curr_time += self._reb_interval
-        p_queue = np.array(p_queue)
+        arr_mat: np.ndarray = self._graph.arr_matrix
+        norm_station_arr = arr_mat.sum(axis=1) / np.sum(arr_mat)
+        p_queue = np.array(p_queue) * norm_station_arr
         v_queue = np.array(v_queue)
         reward = -self._beta*(p_queue.sum() * self._sigma +
                               self._alpha *

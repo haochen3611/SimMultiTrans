@@ -11,7 +11,7 @@ from ray.tune.logger import pretty_print
 from Experiments import TaxiRebLite, TaxiRebalance, get_CLI_options, \
     RESULTS, CONFIG, update_graph_file, update_vehicle_initial_distribution
 
-tf = try_import_tf()
+tf = try_import_tf()[1]
 my_devices = tf.config.experimental.list_physical_devices(device_type='CPU')
 tf.config.experimental.set_visible_devices(devices=my_devices, device_type='CPU')
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     update_graph_file(NODES, os.path.join(CONFIG, 'gps.csv'), os.path.join(CONFIG, 'aam.csv'))
     update_vehicle_initial_distribution(nodes=NODES, veh_dist=[initial_vehicle for i in range(len(NODES))])
 
-    ray.init()
+    ray.init(local_mode=True)
     nodes_list = [str(x) for x in NODES]
     configure = ppo.DEFAULT_CONFIG.copy()
     if not use_lite:
@@ -81,7 +81,8 @@ if __name__ == '__main__':
         "beta": args.beta,
         "sigma": args.sigma,
         "save_res_every_ep": 100,
-        "veh_speed": vehicle_speed
+        "veh_speed": vehicle_speed,
+        "action_levels": 5
     }
 
     if file_conf is not None:

@@ -26,6 +26,8 @@ class Graph(object):
         # path ram
         self.graph_path = {}
 
+        self.arr_matrix = None
+
     def import_graph(self, file_name):
         with open(f'{file_name}') as file_data:
             self.graph_top = json.load(file_data)
@@ -37,7 +39,11 @@ class Graph(object):
         self.graph_top[nid].update({'node': n})
 
     def generate_nodes(self):
-        for node in self.graph_top:
+        self.arr_matrix = np.zeros((len(self.graph_top), len(self.graph_top)))
+
+        for idx, node in enumerate(self.graph_top):
+            for idx_n, node_n in enumerate(self.graph_top[node]["nei"]):
+                self.arr_matrix[idx][idx_n] = self.graph_top[node]["nei"][node_n]["rate"]
             n = Node(node, self.graph_top)
             self.graph_top[node].update({'node': n})
 
